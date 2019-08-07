@@ -1,0 +1,12 @@
+{
+  "logger": {
+    "path": "./log"
+  },
+  "httpserver": {
+    "staticpath": "./static/dist/",
+    "host": "localhost",
+    "port": "8080",
+    "schema": "http",
+    "usecache": "true"
+  }
+}
