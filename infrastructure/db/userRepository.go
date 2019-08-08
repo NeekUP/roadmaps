@@ -11,9 +11,9 @@ type userRepository struct {
 	Conn *sql.DB
 }
 
-//func NewUserRepository(conn *sql.DB) core.UserRepository{
-//	return &userRepository{Conn: conn}
-//}
+func NewUserRepository(conn *sql.DB) core.UserRepository {
+	return &userRepository{Conn: conn}
+}
 
 func (r *userRepository) Get(id string) *domain.User {
 	return nil

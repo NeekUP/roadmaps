@@ -2,6 +2,7 @@ package core
 
 import (
 	"roadmaps/domain"
+	"time"
 )
 
 type UserRepository interface {
@@ -27,5 +28,13 @@ type EmailChecker interface {
 type TokenService interface {
 	Create(user *domain.User, fingerprint, useragent string) (auth string, refresh string, err error)
 	Refresh(authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error)
-	Validate(authToken string) (bool, error)
+	Validate(authToken string) (userID string, rights int, err error)
+}
+
+type ReqContext interface {
+	Deadline() (deadline time.Time, ok bool)
+	Done() <-chan struct{}
+	Err() error
+	Value(key interface{}) interface{}
+	ReqId() string
 }
