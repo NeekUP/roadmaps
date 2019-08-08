@@ -10,7 +10,7 @@ import (
 
 func TestSuccess(t *testing.T) {
 
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	email := "name@dd.dd"
 	name := "name"
@@ -35,7 +35,7 @@ func TestSuccess(t *testing.T) {
 
 func TestInvalidName(t *testing.T) {
 
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	email := "name@dd.dd"
 	names := [...]string{
@@ -66,7 +66,7 @@ func TestInvalidName(t *testing.T) {
 
 func TestInvalidEmail(t *testing.T) {
 
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "name"
 	emails := [...]string{
@@ -96,7 +96,7 @@ func TestInvalidEmail(t *testing.T) {
 
 func TestInvalidPassword(t *testing.T) {
 
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "name"
 	email := "e@ee.ee"
@@ -128,7 +128,7 @@ func TestInvalidPassword(t *testing.T) {
 
 func TestExistsName(t *testing.T) {
 
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "exists"
 	email := "e@ee.ee"
@@ -146,7 +146,7 @@ func TestExistsName(t *testing.T) {
 }
 
 func TestExistsEmail(t *testing.T) {
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "name"
 	email := "exists@email.com"
