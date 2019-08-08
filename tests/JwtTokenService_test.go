@@ -1,15 +1,18 @@
-package infrastructure
+package tests
 
 import (
-	"github.com/google/uuid"
+	"roadmaps/core"
 	"roadmaps/domain"
+	"roadmaps/infrastructure"
+	"roadmaps/infrastructure/db"
 	"testing"
 )
 
 var (
-	userId string       = uuid.New().String()
-	secret string       = "ih7Cp1aB0exNXzsHjV9Z66qBczoG8g15_bBBW7iK1L-szDYVIbhWDZv6R-d_PD_TOjriomFr44UYMky2snKInO_7UL23uBmsH6hFlaqGJv12SQl4LC_1D7DW1iNLWSB22u1f3YowVH8YS_odqsUs5klaR7BlsvnQxucJcqSom6JuuZynz3j8p-8MevBDWTPAD7QeD4NUjTp55JftBEEg8J3Qf0ZrFOxkP2ULKvX-VbTwBN2U3YnNHJsdQ5aleUH-62NiG9EUiEDrLuEWw73oHaSCDPLVhIM1zCHW25Nmy8oxzW7rBVPwyLHC9v63QBSH7JXVhBOfDm-F55eOG0zlBw"
-	user   *domain.User = &domain.User{Id: userId,
+	userId    string = "92382cd6-2acd-431b-b2b4-3500eaa9e342"
+	secret    string = "ih7Cp1aB0exNXzsHjV9Z66qBczoG8g15_bBBW7iK1L-szDYVIbhWDZv6R-d_PD_TOjriomFr44UYMky2snKInO_7UL23uBmsH6hFlaqGJv12SQl4LC_1D7DW1iNLWSB22u1f3YowVH8YS_odqsUs5klaR7BlsvnQxucJcqSom6JuuZynz3j8p-8MevBDWTPAD7QeD4NUjTp55JftBEEg8J3Qf0ZrFOxkP2ULKvX-VbTwBN2U3YnNHJsdQ5aleUH-62NiG9EUiEDrLuEWw73oHaSCDPLVhIM1zCHW25Nmy8oxzW7rBVPwyLHC9v63QBSH7JXVhBOfDm-F55eOG0zlBw"
+	jwtTokens core.TokenService
+	user      *domain.User = &domain.User{Id: userId,
 		Name:           "name",
 		Email:          "email@email.ru",
 		EmailConfirmed: true,
@@ -20,9 +23,13 @@ var (
 		Salt:           nil}
 )
 
-func TestCreateValidateRefreshSuccess(t *testing.T) {
+func init() {
+	userRepo := db.NewUserRepository(nil)
+	userRepo.Create(user, nil, nil)
+	jwtTokens = &infrastructure.JwtTokenService{UserRepo: userRepo, Secret: secret}
+}
 
-	jwtTokens := &JwtTokenService{UserRepo: &userRepoJwtTokenService{}, Secret: secret}
+func TestCreateValidateRefreshSuccess(t *testing.T) {
 
 	a, r, err := jwtTokens.Create(user, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
 	if a == "" || r == "" || err != nil {
@@ -62,7 +69,6 @@ func TestCreateValidateRefreshSuccess(t *testing.T) {
 }
 
 func TestCreateValidateBadToken(t *testing.T) {
-	jwtTokens := &JwtTokenService{UserRepo: &userRepoJwtTokenService{}, Secret: secret}
 
 	a, r, err := jwtTokens.Create(user, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
 	if a == "" || r == "" || err != nil {
@@ -85,7 +91,6 @@ func TestCreateValidateBadToken(t *testing.T) {
 }
 
 func TestCreateRefreshByAuthToken(t *testing.T) {
-	jwtTokens := &JwtTokenService{UserRepo: &userRepoJwtTokenService{}, Secret: secret}
 
 	a, r, err := jwtTokens.Create(user, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
 	if a == "" || r == "" || err != nil {
@@ -105,33 +110,4 @@ func TestCreateRefreshByAuthToken(t *testing.T) {
 	if rr != "" {
 		t.Errorf("Token returned refresh validating fail: [%s]", rr)
 	}
-}
-
-type userRepoJwtTokenService struct{}
-
-func (userRepoJwtTokenService) Get(id string) *domain.User {
-	if id == user.Id {
-		return user
-	}
-	return nil
-}
-
-func (userRepoJwtTokenService) Create(user *domain.User, passHash []byte, salt []byte) bool {
-	panic("implement me")
-}
-
-func (userRepoJwtTokenService) Update(user *domain.User) bool {
-	return true
-}
-
-func (userRepoJwtTokenService) ExistsName(name string) bool {
-	panic("implement me")
-}
-
-func (userRepoJwtTokenService) ExistsEmail(email string) bool {
-	panic("implement me")
-}
-
-func (userRepoJwtTokenService) FindByEmail(email string) *domain.User {
-	panic("implement me")
 }

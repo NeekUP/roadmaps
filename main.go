@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"roadmaps/api"
+	"roadmaps/core"
 	"roadmaps/core/usecases"
 	"roadmaps/infrastructure"
 	"roadmaps/infrastructure/db"
@@ -22,7 +23,7 @@ import (
 )
 
 var (
-	AppLog    infrastructure.AppLogger
+	AppLog    core.AppLogger
 	Cfg       *infrastructure.Config
 	JwtSecret = "ih7Cp1aB0exNXzsHjV9Z66qBczoG8g14_bBBW7iK1L-szDYVIbhWDZv6R-d_PD_TOjriomFr44UYMky2snKInO_7UL23uBmsH6hFlaqGJv12SQl4LC_1D7DW1iNLWSB22u1f3YowVH8YS_odqsUs5klaR7BlsvnQxucJcqSom6JuuZynz3j8p-8MevBDWTPAD7QeD4NUjTp55JftBEEg8J3Qf0ZrFOxkP2ULKvX-VbTwBN2U3YnNHJsdQ5aleUH-62NiG9EUiEDrLuEWw73oHaSCDPLVhIM1zCHW25Nmy8oxzW7rBVPwyLHC9v63QBSH7JXVhBOfDm-F55eOG0zlBw"
 )
@@ -50,8 +51,18 @@ func main() {
 	hashProvider := infrastructure.NewSha256HashProvider()
 	userRepo := db.NewUserRepository(dbConnection.Db)
 	captcha := infrastructure.SuccessCaptcha{}
+	// tokenService := infrastructure.NewJwtTokenService(userRepo, JwtSecret)
+	// emailChecker := infrastructure.EmailChecker{}
 	regUser := usecases.NewRegisterUser(userRepo, initLogger("registerUser"), hashProvider)
+	// loginUser := usecases.NewLoginUser(userRepo, initLogger("loginUser"), hashProvider, tokenService)
+	// refreshToken := usecases.NewRefreshToken(userRepo, initLogger("refreshToken"), emailChecker, tokenService, JwtSecret)
+
 	apiReqUser := api.RegUser(regUser, initLogger("apiReqUser"), captcha)
+
+	// Fill db if empty
+	dbSeed := infrastructure.NewDbSeed(regUser, userRepo)
+	dbSeed.Seed()
+
 	r.Post("/", apiReqUser)
 
 	port := os.Getenv("PORT")
@@ -64,17 +75,6 @@ func main() {
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), r))
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	_, err := fmt.Fprint(w, "Hello, World!")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-}
-
 func initConfig(dat []byte) *infrastructure.Config {
 	var cfg infrastructure.Config
 	err := json.Unmarshal(dat, &cfg)
@@ -82,7 +82,7 @@ func initConfig(dat []byte) *infrastructure.Config {
 	return &cfg
 }
 
-func initLogger(name string) infrastructure.AppLogger {
+func initLogger(name string) core.AppLogger {
 
 	mainLogger := zapcore.AddSync(&lumberjack.Logger{
 		Filename:   fmt.Sprintf("%s/%s.log", Cfg.Logger.Path, name),
@@ -112,7 +112,7 @@ func initLogger(name string) infrastructure.AppLogger {
 	return logger.Sugar()
 }
 
-func httpLogger(l infrastructure.AppLogger) func(next http.Handler) http.Handler {
+func httpLogger(l core.AppLogger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)

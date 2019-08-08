@@ -1,29 +1,36 @@
 package usecases
 
 import (
-	"context"
 	"roadmaps/core"
-	"roadmaps/domain"
-	"roadmaps/infrastructure"
 )
 
 type RefreshToken interface {
-	Do(ctx context.Context, authToken, refreshToken string) (*domain.User, error)
+	Do(ctx core.ReqContext, authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error)
+}
+
+func NewRefreshToken(ur core.UserRepository, log core.AppLogger, emailChecker core.EmailChecker, ts core.TokenService, secret string) RefreshToken {
+	return &refreshToken{
+		UserRepo:     ur,
+		Log:          log,
+		EmailChecker: emailChecker,
+		Secret:       secret,
+		TokenService: ts,
+	}
 }
 
 type refreshToken struct {
 	UserRepo     core.UserRepository
-	Log          infrastructure.AppLogger
+	Log          core.AppLogger
 	EmailChecker core.EmailChecker
-	JwtSecret    string
+	Secret       string
 	TokenService core.TokenService
 }
 
-func (this *refreshToken) Do(ctx context.Context, authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error) {
+func (this *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error) {
 
 	if ok, err := this.validate(authToken, refreshToken, fingerprint, useragent); !ok {
 		this.Log.Infow("Not valid data",
-			"ReqId", infrastructure.GetReqID(ctx),
+			"ReqId", ctx.ReqId(),
 			"authToken", authToken,
 			"refreshToken", refreshToken,
 			"fingerprint", fingerprint,
@@ -31,13 +38,13 @@ func (this *refreshToken) Do(ctx context.Context, authToken, refreshToken, finge
 			"error", err)
 		return "", "", core.NewError(core.InvalidRequest)
 	}
-	useragent = infrastructure.UserAgentFingerprint(useragent)
+	useragent = core.UserAgentFingerprint(useragent)
 
 	auth, refresh, err := this.TokenService.Refresh(authToken, refreshToken, fingerprint, useragent)
 
 	if err != nil {
 		this.Log.Infow("Fail to refresh token",
-			"ReqId", infrastructure.GetReqID(ctx),
+			"ReqId", ctx.ReqId(),
 			"authToken", authToken,
 			"refreshToken", refreshToken,
 			"fingerprint", fingerprint,
