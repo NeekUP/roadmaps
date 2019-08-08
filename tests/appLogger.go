@@ -2,76 +2,76 @@ package tests
 
 import "fmt"
 
-type AppLoggerForTests struct{}
+type appLoggerForTests struct{}
 
-func (AppLoggerForTests) Debug(args ...interface{}) {
+func (appLoggerForTests) Debug(args ...interface{}) {
 
 }
 
-func (AppLoggerForTests) Info(args ...interface{}) {
+func (appLoggerForTests) Info(args ...interface{}) {
 }
 
-func (AppLoggerForTests) Warn(args ...interface{}) {
+func (appLoggerForTests) Warn(args ...interface{}) {
 }
 
-func (AppLoggerForTests) Error(args ...interface{}) {
+func (appLoggerForTests) Error(args ...interface{}) {
 }
 
-func (AppLoggerForTests) DPanic(args ...interface{}) {
+func (appLoggerForTests) DPanic(args ...interface{}) {
 }
 
-func (AppLoggerForTests) Panic(args ...interface{}) {
+func (appLoggerForTests) Panic(args ...interface{}) {
 }
 
-func (AppLoggerForTests) Fatal(args ...interface{}) {
+func (appLoggerForTests) Fatal(args ...interface{}) {
 }
 
-func (AppLoggerForTests) Debugf(template string, args ...interface{}) {
+func (appLoggerForTests) Debugf(template string, args ...interface{}) {
 }
 
-func (AppLoggerForTests) Infof(template string, args ...interface{}) {
+func (appLoggerForTests) Infof(template string, args ...interface{}) {
 }
 
-func (AppLoggerForTests) Warnf(template string, args ...interface{}) {
+func (appLoggerForTests) Warnf(template string, args ...interface{}) {
 	fmt.Println(template, args)
 }
 
-func (AppLoggerForTests) Errorf(template string, args ...interface{}) {
+func (appLoggerForTests) Errorf(template string, args ...interface{}) {
 	fmt.Println(template, args)
 }
 
-func (AppLoggerForTests) DPanicf(template string, args ...interface{}) {
+func (appLoggerForTests) DPanicf(template string, args ...interface{}) {
 	fmt.Println(template, args)
 }
 
-func (AppLoggerForTests) Panicf(template string, args ...interface{}) {
+func (appLoggerForTests) Panicf(template string, args ...interface{}) {
 	fmt.Println(template, args)
 }
 
-func (AppLoggerForTests) Fatalf(template string, args ...interface{}) {
+func (appLoggerForTests) Fatalf(template string, args ...interface{}) {
 	fmt.Println(template, args)
 }
 
-func (AppLoggerForTests) Debugw(msg string, keysAndValues ...interface{}) {
+func (appLoggerForTests) Debugw(msg string, keysAndValues ...interface{}) {
 	fmt.Println(msg, keysAndValues)
 }
 
-func (AppLoggerForTests) Infow(msg string, keysAndValues ...interface{}) {
+func (appLoggerForTests) Infow(msg string, keysAndValues ...interface{}) {
 	fmt.Println(msg, keysAndValues)
 }
 
-func (AppLoggerForTests) Warnw(msg string, keysAndValues ...interface{}) {
+func (appLoggerForTests) Warnw(msg string, keysAndValues ...interface{}) {
 	fmt.Println(msg, keysAndValues)
 }
 
-func (AppLoggerForTests) Errorw(msg string, keysAndValues ...interface{}) {
+func (appLoggerForTests) Errorw(msg string, keysAndValues ...interface{}) {
 	fmt.Println(msg, keysAndValues)
 }
 
-func (AppLoggerForTests) DPanicw(msg string, keysAndValues ...interface{}) {
+func (appLoggerForTests) DPanicw(msg string, keysAndValues ...interface{}) {
 	fmt.Println(msg, keysAndValues)
 }
 
-func (AppLoggerForTests) Panicw(msg string, keysAndValues ...interface{}) {
+func (appLoggerForTests) Panicw(msg string, keysAndValues ...interface{}) {
 	fmt.Println(msg, keysAndValues)
 }
