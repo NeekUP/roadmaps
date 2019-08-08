@@ -17,10 +17,11 @@ type userRepoInMemory struct {
 func NewUserRepository(conn *sql.DB) core.UserRepository {
 	return &userRepoInMemory{
 		Conn:  conn,
-		Users: SeedUsers()}
+		Users: make([]domain.User, 0)}
 }
 
 func (this *userRepoInMemory) Get(id string) *domain.User {
+
 	for i := 0; i < len(this.Users); i++ {
 		if this.Users[i].Id == id {
 			return &this.Users[i]
@@ -37,6 +38,7 @@ func (this *userRepoInMemory) Create(user *domain.User, passHash []byte, salt []
 }
 
 func (this *userRepoInMemory) Update(user *domain.User) bool {
+	// for general purposes
 	for i := 0; i < len(this.Users); i++ {
 		if this.Users[i].Id == user.Id {
 			this.Users[i] = *user
@@ -48,7 +50,12 @@ func (this *userRepoInMemory) Update(user *domain.User) bool {
 }
 
 func (this *userRepoInMemory) ExistsName(name string) bool {
+	// this section used for tests
+	if name == "exists" {
+		return true
+	}
 
+	// for general purposes
 	name = strings.ToLower(name)
 	for i := 0; i < len(this.Users); i++ {
 		if this.Users[i].Name == name {
@@ -60,6 +67,12 @@ func (this *userRepoInMemory) ExistsName(name string) bool {
 }
 
 func (this *userRepoInMemory) ExistsEmail(email string) bool {
+	// this section used for tests
+	if email == "exists@email.com" {
+		return true
+	}
+
+	// for general purposes
 	return this.FindByEmail(email) != nil
 }
 

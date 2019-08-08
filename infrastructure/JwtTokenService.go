@@ -14,6 +14,10 @@ type JwtTokenService struct {
 	Secret   string
 }
 
+func NewJwtTokenService(ur core.UserRepository, secret string) core.TokenService {
+	return &JwtTokenService{ur, secret}
+}
+
 func (this *JwtTokenService) Validate(authToken string) (userID string, rights int, err error) {
 	token, err := jwt.ParseWithClaims(authToken, &authClaims{}, func(token *jwt.Token) (interface{}, error) {
 
@@ -85,7 +89,6 @@ func (this *JwtTokenService) Refresh(authToken, refreshToken, fingerprint, usera
 		if t.Id == rClaims.RID && t.Id == aClaims.RID {
 			validRID = true
 			validMeta = t.Fingerprint == fingerprint && t.UserAgent == useragent
-
 			user.RemoveToken(i)
 			break
 		}

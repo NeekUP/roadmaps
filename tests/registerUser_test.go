@@ -1,25 +1,21 @@
-package usecases
+package tests
 
 import (
-	"github.com/google/uuid"
 	"roadmaps/core"
-	"roadmaps/domain"
+	"roadmaps/core/usecases"
 	"roadmaps/infrastructure"
+	"roadmaps/infrastructure/db"
 	"testing"
-	"time"
 )
 
 func TestSuccess(t *testing.T) {
 
-	r := &registerUser{
-		&userRepoForTests{},
-		&infrastructure.AppLoggerForTests{},
-		&infrastructure.Sha256HashProvider{}}
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	email := "name@dd.dd"
 	name := "name"
 
-	user, err := r.Do(&contextForTests{}, name, email, "1234")
+	user, err := r.Do(infrastructure.FakeContext{}, name, email, "1234")
 	if err != nil {
 		t.Error(err)
 	}
@@ -39,10 +35,7 @@ func TestSuccess(t *testing.T) {
 
 func TestInvalidName(t *testing.T) {
 
-	r := &registerUser{
-		&userRepoForTests{},
-		&infrastructure.AppLoggerForTests{},
-		&infrastructure.Sha256HashProvider{}}
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	email := "name@dd.dd"
 	names := [...]string{
@@ -56,7 +49,7 @@ func TestInvalidName(t *testing.T) {
 	for i := 0; i < len(names); i++ {
 		name := names[i]
 
-		user, err := r.Do(&contextForTests{}, name, email, "1234")
+		user, err := r.Do(infrastructure.FakeContext{}, name, email, "1234")
 		if err == nil {
 			t.Error("err is nil")
 		}
@@ -73,10 +66,7 @@ func TestInvalidName(t *testing.T) {
 
 func TestInvalidEmail(t *testing.T) {
 
-	r := &registerUser{
-		&userRepoForTests{},
-		&infrastructure.AppLoggerForTests{},
-		&infrastructure.Sha256HashProvider{}}
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "name"
 	emails := [...]string{
@@ -89,7 +79,7 @@ func TestInvalidEmail(t *testing.T) {
 	for i := 0; i < len(emails); i++ {
 		email := emails[i]
 
-		user, err := r.Do(&contextForTests{}, name, email, "1234")
+		user, err := r.Do(infrastructure.FakeContext{}, name, email, "1234")
 		if err == nil {
 			t.Errorf("err is nil: [%s]", email)
 		}
@@ -106,10 +96,7 @@ func TestInvalidEmail(t *testing.T) {
 
 func TestInvalidPassword(t *testing.T) {
 
-	r := &registerUser{
-		&userRepoForTests{},
-		&infrastructure.AppLoggerForTests{},
-		&infrastructure.Sha256HashProvider{}}
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "name"
 	email := "e@ee.ee"
@@ -124,7 +111,7 @@ func TestInvalidPassword(t *testing.T) {
 	for i := 0; i < len(passwords); i++ {
 		pass := passwords[i]
 
-		user, err := r.Do(&contextForTests{}, name, email, pass)
+		user, err := r.Do(infrastructure.FakeContext{}, name, email, pass)
 		if err == nil {
 			t.Errorf("err is nil: [%s]", pass)
 		}
@@ -141,16 +128,13 @@ func TestInvalidPassword(t *testing.T) {
 
 func TestExistsName(t *testing.T) {
 
-	r := &registerUser{
-		&userRepoForTests{},
-		&infrastructure.AppLoggerForTests{},
-		&infrastructure.Sha256HashProvider{}}
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "exists"
 	email := "e@ee.ee"
 	pass := "12345"
 
-	user, err := r.Do(&contextForTests{}, name, email, pass)
+	user, err := r.Do(infrastructure.FakeContext{}, name, email, pass)
 
 	if user != nil {
 		t.Errorf("user is not null")
@@ -162,17 +146,13 @@ func TestExistsName(t *testing.T) {
 }
 
 func TestExistsEmail(t *testing.T) {
-
-	r := &registerUser{
-		&userRepoForTests{},
-		&infrastructure.AppLoggerForTests{},
-		&infrastructure.Sha256HashProvider{}}
+	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &AppLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "name"
 	email := "exists@email.com"
 	pass := "12345"
 
-	user, err := r.Do(&contextForTests{}, name, email, pass)
+	user, err := r.Do(infrastructure.FakeContext{}, name, email, pass)
 
 	if user != nil {
 		t.Errorf("user is not null")
@@ -183,58 +163,24 @@ func TestExistsEmail(t *testing.T) {
 	}
 }
 
-/*
-	UserRepository
-*/
-type userRepoForTests struct{}
-
-func (userRepoForTests) Get(id string) *domain.User {
-	return nil
-}
-
-func (userRepoForTests) Create(user *domain.User, passHash []byte, salt []byte) bool {
-	user.Id = uuid.New().String()
-	return true
-}
-
-func (userRepoForTests) Update(user *domain.User) bool {
-	return true
-}
-
-func (userRepoForTests) CheckPass(id string, pass string) bool {
-	return true
-}
-
-func (userRepoForTests) ExistsName(name string) bool {
-	return name == "exists"
-}
-
-func (userRepoForTests) ExistsEmail(email string) bool {
-	return email == "exists@email.com"
-}
-
-func (userRepoForTests) FindByEmail(email string) *domain.User {
-	return nil
-}
-
-/*
-	Context
-*/
-
-type contextForTests struct{}
-
-func (contextForTests) Deadline() (deadline time.Time, ok bool) {
-	panic("implement me")
-}
-
-func (contextForTests) Done() <-chan struct{} {
-	panic("implement me")
-}
-
-func (contextForTests) Err() error {
-	panic("implement me")
-}
-
-func (contextForTests) Value(key interface{}) interface{} {
-	return "123"
-}
+///*
+//	Context
+//*/
+//
+//type contextForTests struct{}
+//
+//func (contextForTests) Deadline() (deadline time.Time, ok bool) {
+//	panic("implement me")
+//}
+//
+//func (contextForTests) Done() <-chan struct{} {
+//	panic("implement me")
+//}
+//
+//func (contextForTests) Err() error {
+//	panic("implement me")
+//}
+//
+//func (contextForTests) Value(key interface{}) interface{} {
+//	return "123"
+//}

@@ -14,7 +14,7 @@ type regUserReq struct {
 	pass  string `json:"pass"`
 }
 
-func RegUser(regUsr usecases.RegisterUser, log infrastructure.AppLogger, captcha Captcha) func(w http.ResponseWriter, r *http.Request) {
+func RegUser(regUsr usecases.RegisterUser, log core.AppLogger, captcha Captcha) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		if !captcha.Confirm(r) {
@@ -33,7 +33,7 @@ func RegUser(regUsr usecases.RegisterUser, log infrastructure.AppLogger, captcha
 			return
 		}
 		//ua := r.UserAgent()
-		_, err = regUsr.Do(r.Context(), data.name, data.email, data.pass)
+		_, err = regUsr.Do(infrastructure.NewContext(r.Context()), data.name, data.email, data.pass)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				statusResponse(w, &status{Code: 400, Message: err.Error()})

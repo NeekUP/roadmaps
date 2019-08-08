@@ -1,30 +1,28 @@
 package usecases
 
 import (
-	"context"
 	"roadmaps/core"
 	"roadmaps/domain"
-	"roadmaps/infrastructure"
 )
 
 type RegisterUser interface {
-	Do(ctx context.Context, name, email, password string) (*domain.User, error)
+	Do(ctx core.ReqContext, name, email, password string) (*domain.User, error)
 }
 
 type registerUser struct {
 	UserRepo core.UserRepository
-	Log      infrastructure.AppLogger
+	Log      core.AppLogger
 	Hash     core.HashProvider
 }
 
-func NewRegisterUser(userRepo core.UserRepository, log infrastructure.AppLogger, hash core.HashProvider) RegisterUser {
+func NewRegisterUser(userRepo core.UserRepository, log core.AppLogger, hash core.HashProvider) RegisterUser {
 	return &registerUser{
 		UserRepo: userRepo,
 		Log:      log,
 		Hash:     hash}
 }
 
-func (r *registerUser) Do(ctx context.Context, name string, email string, password string) (*domain.User, error) {
+func (r *registerUser) Do(ctx core.ReqContext, name string, email string, password string) (*domain.User, error) {
 
 	err := r.validate(ctx, name, email, password)
 	if err != nil {
@@ -44,11 +42,11 @@ func (r *registerUser) Do(ctx context.Context, name string, email string, passwo
 	}
 }
 
-func (r *registerUser) validate(ctx context.Context, name string, email string, password string) error {
+func (r *registerUser) validate(ctx core.ReqContext, name string, email string, password string) error {
 
 	if ok, c := core.IsValidUserName(name); !ok {
 		r.Log.Infow("Username is not valid",
-			"ReqId", infrastructure.GetReqID(ctx),
+			"ReqId", ctx.ReqId(),
 			"Email", email,
 			"Name", name)
 		return core.NewError(c)
@@ -56,7 +54,7 @@ func (r *registerUser) validate(ctx context.Context, name string, email string, 
 
 	if ok := core.IsValidEmail(email); !ok {
 		r.Log.Infow("Username is not valid",
-			"ReqId", infrastructure.GetReqID(ctx),
+			"ReqId", ctx.ReqId(),
 			"Email", email,
 			"Name", name)
 		return core.NewError(core.BadEmail)
@@ -64,7 +62,7 @@ func (r *registerUser) validate(ctx context.Context, name string, email string, 
 
 	if ok, c := core.IsValidPassword(password); !ok {
 		r.Log.Infow("Password is not valid",
-			"ReqId", infrastructure.GetReqID(ctx),
+			"ReqId", ctx.ReqId(),
 			"Email", email,
 			"Name", name)
 		return core.NewError(c)
@@ -72,7 +70,7 @@ func (r *registerUser) validate(ctx context.Context, name string, email string, 
 
 	if r.UserRepo.ExistsName(name) {
 		r.Log.Infow("User with same name already registered",
-			"ReqId", infrastructure.GetReqID(ctx),
+			"ReqId", ctx.ReqId(),
 			"Email", email,
 			"Name", name)
 		return core.NewError(core.NameAlreadyExists)
@@ -80,7 +78,7 @@ func (r *registerUser) validate(ctx context.Context, name string, email string, 
 
 	if r.UserRepo.ExistsEmail(email) {
 		r.Log.Infow("User with same email already registered",
-			"ReqId", infrastructure.GetReqID(ctx),
+			"ReqId", ctx.ReqId(),
 			"Email", email,
 			"Name", name)
 		return core.NewError(core.EmailAlreadyExists)
