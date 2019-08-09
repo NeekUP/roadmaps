@@ -6,25 +6,30 @@ import (
 	"database/sql"
 	"roadmaps/core"
 	"roadmaps/domain"
-	"strings"
+	"sync"
+)
+
+var (
+	Users = make([]domain.User, 0)
+	mux   sync.Mutex
 )
 
 type userRepoInMemory struct {
-	Conn  *sql.DB
-	Users []domain.User
+	Conn *sql.DB
 }
 
 func NewUserRepository(conn *sql.DB) core.UserRepository {
 	return &userRepoInMemory{
-		Conn:  conn,
-		Users: make([]domain.User, 0)}
+		Conn: conn}
 }
 
 func (this *userRepoInMemory) Get(id string) *domain.User {
 
-	for i := 0; i < len(this.Users); i++ {
-		if this.Users[i].Id == id {
-			return &this.Users[i]
+	mux.Lock()
+	defer mux.Unlock()
+	for i := 0; i < len(Users); i++ {
+		if Users[i].Id == id {
+			return &Users[i]
 		}
 	}
 	return nil
@@ -33,15 +38,28 @@ func (this *userRepoInMemory) Get(id string) *domain.User {
 func (this *userRepoInMemory) Create(user *domain.User, passHash []byte, salt []byte) bool {
 	user.Pass = passHash
 	user.Salt = salt
-	this.Users = append(this.Users, *user)
+
+	mux.Lock()
+	defer mux.Unlock()
+
+	for i := 0; i < len(Users); i++ {
+		if Users[i].Email == user.Email || Users[i].Name == user.Name || Users[i].Id == user.Id {
+			return false
+		}
+	}
+
+	Users = append(Users, *user)
 	return true
 }
 
 func (this *userRepoInMemory) Update(user *domain.User) bool {
-	// for general purposes
-	for i := 0; i < len(this.Users); i++ {
-		if this.Users[i].Id == user.Id {
-			this.Users[i] = *user
+
+	mux.Lock()
+	defer mux.Unlock()
+
+	for i := 0; i < len(Users); i++ {
+		if Users[i].Id == user.Id {
+			Users[i] = *user
 			return true
 		}
 	}
@@ -50,15 +68,12 @@ func (this *userRepoInMemory) Update(user *domain.User) bool {
 }
 
 func (this *userRepoInMemory) ExistsName(name string) bool {
-	// this section used for tests
-	if name == "exists" {
-		return true
-	}
 
-	// for general purposes
-	name = strings.ToLower(name)
-	for i := 0; i < len(this.Users); i++ {
-		if this.Users[i].Name == name {
+	mux.Lock()
+	defer mux.Unlock()
+
+	for i := 0; i < len(Users); i++ {
+		if Users[i].Name == name {
 			return true
 		}
 	}
@@ -67,22 +82,18 @@ func (this *userRepoInMemory) ExistsName(name string) bool {
 }
 
 func (this *userRepoInMemory) ExistsEmail(email string) bool {
-	// this section used for tests
-	if email == "exists@email.com" {
-		return true
-	}
-
 	// for general purposes
 	return this.FindByEmail(email) != nil
 }
 
 func (this *userRepoInMemory) FindByEmail(email string) *domain.User {
-	email = strings.ToLower(email)
-	for i := 0; i < len(this.Users); i++ {
-		if this.Users[i].Email == email {
-			return &this.Users[i]
+	mux.Lock()
+	defer mux.Unlock()
+
+	for i := 0; i < len(Users); i++ {
+		if Users[i].Email == email {
+			return &Users[i]
 		}
 	}
-
 	return nil
 }
