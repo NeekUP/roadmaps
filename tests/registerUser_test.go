@@ -8,12 +8,12 @@ import (
 	"testing"
 )
 
-func TestSuccess(t *testing.T) {
+func TestRegisterUserSuccess(t *testing.T) {
 
 	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
-	email := "name@dd.dd"
-	name := "name"
+	email := "TestRegisterUserSuccess@dd.dd"
+	name := "TestRegisterUserSuccess"
 
 	user, err := r.Do(infrastructure.FakeContext{}, name, email, "1234")
 	if err != nil {
@@ -22,6 +22,7 @@ func TestSuccess(t *testing.T) {
 
 	if user == nil {
 		t.Error("user is nil")
+		return
 	}
 
 	if user.Email != email {
@@ -33,11 +34,11 @@ func TestSuccess(t *testing.T) {
 	}
 }
 
-func TestInvalidName(t *testing.T) {
+func TestRegisterUserInvalidName(t *testing.T) {
 
 	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
-	email := "name@dd.dd"
+	email := "TestRegisterUserInvalidName@dd.dd"
 	names := [...]string{
 		"name@",
 		"",
@@ -64,11 +65,11 @@ func TestInvalidName(t *testing.T) {
 	}
 }
 
-func TestInvalidEmail(t *testing.T) {
+func TestRegisterUserInvalidEmail(t *testing.T) {
 
 	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
-	name := "name"
+	name := "TestRegisterUserInvalidEmail"
 	emails := [...]string{
 		"name@a",
 		"name@",
@@ -98,8 +99,8 @@ func TestInvalidPassword(t *testing.T) {
 
 	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
-	name := "name"
-	email := "e@ee.ee"
+	name := "TestInvalidPassword"
+	email := "TestInvalidPassword@ee.ee"
 	passwords := [...]string{
 		"name*",
 		"***",
@@ -126,14 +127,19 @@ func TestInvalidPassword(t *testing.T) {
 	}
 }
 
-func TestExistsName(t *testing.T) {
+func TestRegisterUserExistsName(t *testing.T) {
 
 	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
-	name := "exists"
-	email := "e@ee.ee"
+	name := "TestRegisterUserExistsName"
+	email := "TestRegisterUserExistsName@ee.ee"
 	pass := "12345"
 
+	_, err := r.Do(infrastructure.FakeContext{}, name, email, pass)
+	if err != nil {
+		t.Errorf("Fail to create user")
+		return
+	}
 	user, err := r.Do(infrastructure.FakeContext{}, name, email, pass)
 
 	if user != nil {
@@ -145,14 +151,20 @@ func TestExistsName(t *testing.T) {
 	}
 }
 
-func TestExistsEmail(t *testing.T) {
+func TestRegisterUserExistsEmail(t *testing.T) {
 	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
-	name := "name"
-	email := "exists@email.com"
+	name := "TestRegisterUserExistsEmail"
+	email := "TestRegisterUserExistsEmail@email.com"
 	pass := "12345"
 
-	user, err := r.Do(infrastructure.FakeContext{}, name, email, pass)
+	_, err := r.Do(infrastructure.FakeContext{}, name, email, pass)
+	if err != nil {
+		t.Errorf("Fail to create user")
+		return
+	}
+
+	user, err := r.Do(infrastructure.FakeContext{}, "TestRegisterUserExistsEmail_2", email, pass)
 
 	if user != nil {
 		t.Errorf("user is not null")

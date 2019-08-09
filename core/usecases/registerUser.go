@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"github.com/google/uuid"
 	"roadmaps/core"
 	"roadmaps/domain"
 )
@@ -31,6 +32,7 @@ func (r *registerUser) Do(ctx core.ReqContext, name string, email string, passwo
 
 	hash, salt := r.Hash.HashPassword(password)
 	user := &domain.User{
+		Id:     uuid.New().String(),
 		Name:   name,
 		Email:  email,
 		Rights: domain.U}
