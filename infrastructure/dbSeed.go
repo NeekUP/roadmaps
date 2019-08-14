@@ -24,7 +24,7 @@ func (this *dbSeedProd) Seed() {
 }
 
 func (this *dbSeedProd) seedUsers() {
-	context := &fakeContext{}
+	context := NewContext(nil)
 	if !this.UserRepo.ExistsEmail("nikita@popovsky.pro") {
 		this.RegUser.Do(context, "Neek", "nikita@popovsky.pro", "123456")
 	}

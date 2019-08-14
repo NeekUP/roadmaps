@@ -4,4 +4,5 @@ type Plan struct {
 	Id        string
 	TopicName string
 	OwnerId   string
+	Steps     []Step
 }

@@ -15,8 +15,8 @@ func NewDbConnection(connString string) *DbConnection {
 	//	panic(err)
 	//}
 	//
-	//dbConnection := new(DbConnection)
-	//dbConnection.Db = conn
-	//return dbConnection
-	return nil
+	dbConnection := new(DbConnection)
+	dbConnection.Db = nil
+	return dbConnection
+	//return nil
 }

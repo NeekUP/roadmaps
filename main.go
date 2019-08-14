@@ -42,28 +42,50 @@ func main() {
 
 	r := chi.NewRouter()
 
+	/*
+		Middlewares
+	*/
 	r.Use(infrastructure.RequestID)
-	r.Use(middleware.RealIP)
+	//r.Use(middleware.RealIP)
 	r.Use(httpLogger(initLogger("http")))
-	r.Use(middleware.Recoverer)
+	//r.Use(middleware.Recoverer)
+	//r.Use(contentTypeMiddleware)
 
+	/*
+		Infrastructure initialization
+	*/
 	dbConnection := db.NewDbConnection(Cfg.Db.ConnString)
 	hashProvider := infrastructure.NewSha256HashProvider()
 	userRepo := db.NewUserRepository(dbConnection.Db)
 	captcha := infrastructure.SuccessCaptcha{}
-	// tokenService := infrastructure.NewJwtTokenService(userRepo, JwtSecret)
-	// emailChecker := infrastructure.EmailChecker{}
+	tokenService := infrastructure.NewJwtTokenService(userRepo, JwtSecret)
+
+	/*
+		Usecases
+	*/
 	regUser := usecases.NewRegisterUser(userRepo, initLogger("registerUser"), hashProvider)
-	// loginUser := usecases.NewLoginUser(userRepo, initLogger("loginUser"), hashProvider, tokenService)
-	// refreshToken := usecases.NewRefreshToken(userRepo, initLogger("refreshToken"), emailChecker, tokenService, JwtSecret)
+	loginUser := usecases.NewLoginUser(userRepo, initLogger("loginUser"), hashProvider, tokenService)
+	refreshToken := usecases.NewRefreshToken(userRepo, initLogger("refreshToken"), tokenService, JwtSecret)
 
+	/*
+		Api methods
+	*/
 	apiReqUser := api.RegUser(regUser, initLogger("apiReqUser"), captcha)
+	apiLoginUser := api.Login(loginUser, initLogger("apiLogin"), captcha)
+	apiRefreshToken := api.RefreshToken(refreshToken, initLogger("apiRefreshToken"), captcha)
 
-	// Fill db if empty
+	/*
+		Database
+	*/
 	dbSeed := infrastructure.NewDbSeed(regUser, userRepo)
 	dbSeed.Seed()
 
-	r.Post("/", apiReqUser)
+	/*
+		Http server
+	*/
+	r.Post("/user/reqistration", apiReqUser)
+	r.Post("/user/login", apiLoginUser)
+	r.Post("/user/refresh", apiRefreshToken)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -133,6 +155,13 @@ func httpLogger(l core.AppLogger) func(next http.Handler) http.Handler {
 		}
 		return http.HandlerFunc(fn)
 	}
+}
+
+func contentTypeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//w.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func panicError(err error) {

@@ -3,6 +3,7 @@ package domain
 type User struct {
 	Id                string
 	Name              string
+	NormalizedName    string
 	Email             string
 	EmailConfirmed    bool
 	EmailConfirmation string
