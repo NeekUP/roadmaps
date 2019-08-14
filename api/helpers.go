@@ -16,6 +16,10 @@ func statusResponse(w http.ResponseWriter, status *status) {
 	if status.Message == "" {
 		status.Message = http.StatusText(status.Code)
 	}
+}
 
-	json.NewEncoder(w).Encode(status)
+func valueResponse(w http.ResponseWriter, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(payload)
 }

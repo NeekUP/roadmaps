@@ -8,11 +8,10 @@ type RefreshToken interface {
 	Do(ctx core.ReqContext, authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error)
 }
 
-func NewRefreshToken(ur core.UserRepository, log core.AppLogger, emailChecker core.EmailChecker, ts core.TokenService, secret string) RefreshToken {
+func NewRefreshToken(ur core.UserRepository, log core.AppLogger, ts core.TokenService, secret string) RefreshToken {
 	return &refreshToken{
 		UserRepo:     ur,
 		Log:          log,
-		EmailChecker: emailChecker,
 		Secret:       secret,
 		TokenService: ts,
 	}
@@ -21,7 +20,6 @@ func NewRefreshToken(ur core.UserRepository, log core.AppLogger, emailChecker co
 type refreshToken struct {
 	UserRepo     core.UserRepository
 	Log          core.AppLogger
-	EmailChecker core.EmailChecker
 	Secret       string
 	TokenService core.TokenService
 }
@@ -30,7 +28,7 @@ func (this *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, finge
 
 	if ok, err := this.validate(authToken, refreshToken, fingerprint, useragent); !ok {
 		this.Log.Infow("Not valid data",
-			"ReqId", ctx.ReqId(),
+			"reqId", ctx.ReqId(),
 			"authToken", authToken,
 			"refreshToken", refreshToken,
 			"fingerprint", fingerprint,
@@ -44,7 +42,7 @@ func (this *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, finge
 
 	if err != nil {
 		this.Log.Infow("Fail to refresh token",
-			"ReqId", ctx.ReqId(),
+			"reqId", ctx.ReqId(),
 			"authToken", authToken,
 			"refreshToken", refreshToken,
 			"fingerprint", fingerprint,
