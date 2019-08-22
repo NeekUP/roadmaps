@@ -8,11 +8,19 @@ import (
 type UserRepository interface {
 	Get(id string) *domain.User
 	// Should be transaction with check name and email
-	Create(user *domain.User, passHash []byte, salt []byte) bool
+	Save(user *domain.User, passHash []byte, salt []byte) bool
 	Update(user *domain.User) bool
 	ExistsName(name string) bool
 	ExistsEmail(email string) bool
 	FindByEmail(email string) *domain.User
+}
+
+type SourceRepository interface {
+	Get(id int)
+	FindByIdentifier(identifier string)
+	Save(source *domain.Source)
+	Update(source *domain.Source)
+	GetOrAddByIdentifier(source *domain.Source) *domain.Source
 }
 
 type HashProvider interface {

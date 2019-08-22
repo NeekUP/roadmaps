@@ -1,9 +1,9 @@
 package domain
 
 type Step struct {
-	Id            string
+	Id            int
 	TopicId       string
 	ReferenceId   string
-	ReferenceType string // ReferenceType string
+	ReferenceType ReferenceType
 	Position      int
 }

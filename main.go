@@ -4,11 +4,6 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,10 +11,17 @@ import (
 	"roadmaps/api"
 	"roadmaps/core"
 	"roadmaps/core/usecases"
+	"roadmaps/domain"
 	"roadmaps/infrastructure"
 	"roadmaps/infrastructure/db"
 	"runtime"
 	"time"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -32,7 +34,7 @@ func init() {
 	cfg, err := ioutil.ReadFile("conf.json")
 	panicError(err)
 	Cfg = initConfig(cfg)
-	AppLog = initLogger("app")
+	AppLog = newLogger("app")
 
 	AppLog.Infow("Inited.", "time", time.Now().String())
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -46,10 +48,10 @@ func main() {
 		Middlewares
 	*/
 	r.Use(infrastructure.RequestID)
-	//r.Use(middleware.RealIP)
-	r.Use(httpLogger(initLogger("http")))
-	//r.Use(middleware.Recoverer)
-	//r.Use(contentTypeMiddleware)
+	r.Use(middleware.RealIP)
+	r.Use(httpLogger(newLogger("http")))
+	r.Use(middleware.Recoverer)
+	r.Use(contentTypeMiddleware)
 
 	/*
 		Infrastructure initialization
@@ -57,23 +59,24 @@ func main() {
 	dbConnection := db.NewDbConnection(Cfg.Db.ConnString)
 	hashProvider := infrastructure.NewSha256HashProvider()
 	userRepo := db.NewUserRepository(dbConnection.Db)
+	sourceRepo := db.NewSourceRepository(dbConnection.Db)
 	captcha := infrastructure.SuccessCaptcha{}
 	tokenService := infrastructure.NewJwtTokenService(userRepo, JwtSecret)
 
 	/*
 		Usecases
 	*/
-	regUser := usecases.NewRegisterUser(userRepo, initLogger("registerUser"), hashProvider)
-	loginUser := usecases.NewLoginUser(userRepo, initLogger("loginUser"), hashProvider, tokenService)
-	refreshToken := usecases.NewRefreshToken(userRepo, initLogger("refreshToken"), tokenService, JwtSecret)
-
+	regUser := usecases.NewRegisterUser(userRepo, newLogger("registerUser"), hashProvider)
+	loginUser := usecases.NewLoginUser(userRepo, newLogger("loginUser"), hashProvider, tokenService)
+	refreshToken := usecases.NewRefreshToken(userRepo, newLogger("refreshToken"), tokenService, JwtSecret)
+	addSource := usecases.NewAddSource(sourceRepo, newLogger("refreshToken"))
 	/*
 		Api methods
 	*/
-	apiReqUser := api.RegUser(regUser, initLogger("apiReqUser"), captcha)
-	apiLoginUser := api.Login(loginUser, initLogger("apiLogin"), captcha)
-	apiRefreshToken := api.RefreshToken(refreshToken, initLogger("apiRefreshToken"), captcha)
-
+	apiReqUser := api.RegUser(regUser, newLogger("apiReqUser"), captcha)
+	apiLoginUser := api.Login(loginUser, newLogger("apiLogin"), captcha)
+	apiRefreshToken := api.RefreshToken(refreshToken, newLogger("apiRefreshToken"), captcha)
+	apiAddSource := api.AddSource(addSource, newLogger("apiRefreshToken"))
 	/*
 		Database
 	*/
@@ -83,9 +86,18 @@ func main() {
 	/*
 		Http server
 	*/
-	r.Post("/user/reqistration", apiReqUser)
-	r.Post("/user/login", apiLoginUser)
-	r.Post("/user/refresh", apiRefreshToken)
+	r.Group(func(r chi.Router) {
+		// public
+		r.Post("/user/reqistration", apiReqUser)
+		r.Post("/user/login", apiLoginUser)
+		r.Post("/user/refresh", apiRefreshToken)
+
+		// not public
+		r.Group(func(r chi.Router) {
+			r.Use(api.Auth(domain.U, tokenService))
+			r.Post("/source/add", apiAddSource)
+		})
+	})
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -104,7 +116,7 @@ func initConfig(dat []byte) *infrastructure.Config {
 	return &cfg
 }
 
-func initLogger(name string) core.AppLogger {
+func newLogger(name string) core.AppLogger {
 
 	mainLogger := zapcore.AddSync(&lumberjack.Logger{
 		Filename:   fmt.Sprintf("%s/%s.log", Cfg.Logger.Path, name),

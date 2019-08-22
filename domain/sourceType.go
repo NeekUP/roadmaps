@@ -1,10 +1,10 @@
 package domain
 
-type ResourceType string
+type SourceType string
 
 const(
-	Article ResourceType = "Article"
-	Book    ResourceType = "Book"
-	Video   ResourceType = "Video"
-	Audio   ResourceType = "Audio"
+	Article SourceType = "Article"
+	Book    SourceType = "Book"
+	Video   SourceType = "Video"
+	Audio   SourceType = "Audio"
 )

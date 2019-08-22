@@ -1,15 +1,20 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
 )
 
-func IsValidEmail(email string) bool {
+func IsValidEmail(email string) (bool, ErrorCode) {
 
 	re := regexp.MustCompile("^[\\w0-9.!#$%&'*+/=?^_`{|}~-]+@[\\w0-9](?:[\\w0-9-]{0,61}[\\w0-9])?(?:\\.[\\w0-9](?:[\\w0-9-]{0,61}[\\w0-9])?)*\\.[\\w]{2,15}$$")
-	return re.MatchString(email)
+	if re.MatchString(email) {
+		return true, None
+	}
+
+	return false, BadEmail
 }
 
 func IsValidPassword(pass string) (bool, ErrorCode) {
@@ -59,4 +64,20 @@ func IsValidUserAgent(useragent string) (bool, error) {
 	}
 
 	return false, fmt.Errorf("Useragent not valid [%s]", useragent)
+}
+
+func IsJson(str string) bool {
+	// TODO: add more tests
+	var js map[string]interface{}
+	return json.Unmarshal([]byte(str), &js) == nil
+}
+
+func IsValidSourceTitle(title string) (bool, error) {
+	r := regexp.MustCompile("^\\W$")
+	l := len(title)
+	if l == 0 || l > 100 || r.MatchString(title) {
+		return false, fmt.Errorf("Source title contain not valid value [%s]", title)
+	}
+
+	return true, nil
 }

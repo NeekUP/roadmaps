@@ -1,7 +1,9 @@
 package domain
 
-type ReferenceType struct {
-	Resource string "Resource"
-	Topic    string "Topic"
-	Test     string "Test"
-}
+type ReferenceType string
+
+const (
+	ResourceReference ReferenceType = "Resource"
+	TopicReference    ReferenceType = "Topic"
+	TestReference     ReferenceType = "Test"
+)

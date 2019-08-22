@@ -1,7 +1,7 @@
 package domain
 
 type Plan struct {
-	Id        string
+	Id        int
 	TopicName string
 	OwnerId   string
 	Steps     []Step
