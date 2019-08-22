@@ -14,6 +14,11 @@ const (
 	AuthenticationError   ErrorCode = "AUTHENTICATION_ERROR"
 	AuthenticationExpired ErrorCode = "AUTHENTICATION_EXPIRED"
 	InvalidRequest        ErrorCode = "INVALID_REQUEST"
+	InvalidUrl            ErrorCode = "INVALID_URL"
+	InvalidISBN           ErrorCode = "INVALID_ISBN"
+	InvalidTitle          ErrorCode = "INVALID_TITLE"
+	InvalidProperties     ErrorCode = "INVALID_PROPS"
+	InvalidSourceType     ErrorCode = "INVALID_SOURCE_TYPE"
 )
 
 func (e ErrorCode) String() string {
