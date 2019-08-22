@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	Users = make([]domain.User, 0)
-	mux   sync.Mutex
+	Users    = make([]domain.User, 0)
+	UsersMux sync.Mutex
 )
 
 type userRepoInMemory struct {
@@ -25,8 +25,8 @@ func NewUserRepository(conn *sql.DB) core.UserRepository {
 
 func (this *userRepoInMemory) Get(id string) *domain.User {
 
-	mux.Lock()
-	defer mux.Unlock()
+	UsersMux.Lock()
+	defer UsersMux.Unlock()
 	for i := 0; i < len(Users); i++ {
 		if Users[i].Id == id {
 			return &Users[i]
@@ -35,12 +35,12 @@ func (this *userRepoInMemory) Get(id string) *domain.User {
 	return nil
 }
 
-func (this *userRepoInMemory) Create(user *domain.User, passHash []byte, salt []byte) bool {
+func (this *userRepoInMemory) Save(user *domain.User, passHash []byte, salt []byte) bool {
 	user.Pass = passHash
 	user.Salt = salt
 
-	mux.Lock()
-	defer mux.Unlock()
+	UsersMux.Lock()
+	defer UsersMux.Unlock()
 
 	for i := 0; i < len(Users); i++ {
 		if Users[i].Email == user.Email || Users[i].Name == user.Name || Users[i].Id == user.Id {
@@ -54,8 +54,8 @@ func (this *userRepoInMemory) Create(user *domain.User, passHash []byte, salt []
 
 func (this *userRepoInMemory) Update(user *domain.User) bool {
 
-	mux.Lock()
-	defer mux.Unlock()
+	UsersMux.Lock()
+	defer UsersMux.Unlock()
 
 	for i := 0; i < len(Users); i++ {
 		if Users[i].Id == user.Id {
@@ -69,8 +69,8 @@ func (this *userRepoInMemory) Update(user *domain.User) bool {
 
 func (this *userRepoInMemory) ExistsName(name string) bool {
 
-	mux.Lock()
-	defer mux.Unlock()
+	UsersMux.Lock()
+	defer UsersMux.Unlock()
 
 	for i := 0; i < len(Users); i++ {
 		if Users[i].Name == name {
@@ -87,8 +87,8 @@ func (this *userRepoInMemory) ExistsEmail(email string) bool {
 }
 
 func (this *userRepoInMemory) FindByEmail(email string) *domain.User {
-	mux.Lock()
-	defer mux.Unlock()
+	UsersMux.Lock()
+	defer UsersMux.Unlock()
 
 	for i := 0; i < len(Users); i++ {
 		if Users[i].Email == email {

@@ -25,7 +25,7 @@ var (
 
 func init() {
 	userRepo := db.NewUserRepository(nil)
-	userRepo.Create(user, nil, nil)
+	userRepo.Save(user, nil, nil)
 	jwtTokens = &infrastructure.JwtTokenService{UserRepo: userRepo, Secret: secret}
 }
 
@@ -33,7 +33,7 @@ func TestCreateValidateRefreshSuccess(t *testing.T) {
 
 	a, r, err := jwtTokens.Create(user, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
 	if a == "" || r == "" || err != nil {
-		t.Errorf("Create token return error: [%s]. authToken: [%s] refreshToken: [%s]", err.Error(), a, r)
+		t.Errorf("Save token return error: [%s]. authToken: [%s] refreshToken: [%s]", err.Error(), a, r)
 	}
 
 	if user.Tokens == nil || len(user.Tokens) != 1 {
@@ -72,7 +72,7 @@ func TestCreateValidateBadToken(t *testing.T) {
 
 	a, r, err := jwtTokens.Create(user, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
 	if a == "" || r == "" || err != nil {
-		t.Errorf("Create token return error: [%s]. authToken: [%s] refreshToken: [%s]", err.Error(), a, r)
+		t.Errorf("Save token return error: [%s]. authToken: [%s] refreshToken: [%s]", err.Error(), a, r)
 	}
 
 	bytes := []byte(a)
@@ -94,7 +94,7 @@ func TestCreateRefreshByAuthToken(t *testing.T) {
 
 	a, r, err := jwtTokens.Create(user, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
 	if a == "" || r == "" || err != nil {
-		t.Errorf("Create token return error: [%s]. authToken: [%s] refreshToken: [%s]", err.Error(), a, r)
+		t.Errorf("Save token return error: [%s]. authToken: [%s] refreshToken: [%s]", err.Error(), a, r)
 	}
 
 	aa, rr, err := jwtTokens.Refresh(a, a, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")

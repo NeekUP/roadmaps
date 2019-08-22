@@ -1,9 +1,10 @@
 package usecases
 
 import (
-	"github.com/google/uuid"
 	"roadmaps/core"
 	"roadmaps/domain"
+
+	"github.com/google/uuid"
 )
 
 type RegisterUser interface {
@@ -37,7 +38,7 @@ func (r *registerUser) Do(ctx core.ReqContext, name string, email string, passwo
 		Email:  email,
 		Rights: domain.U}
 
-	if r.UserRepo.Create(user, hash, salt) {
+	if r.UserRepo.Save(user, hash, salt) {
 		return user, nil
 	} else {
 		return nil, core.NewError(core.InternalError)
@@ -54,12 +55,12 @@ func (r *registerUser) validate(ctx core.ReqContext, name string, email string, 
 		return core.NewError(c)
 	}
 
-	if ok := core.IsValidEmail(email); !ok {
-		r.Log.Infow("Username is not valid",
+	if ok, c := core.IsValidEmail(email); !ok {
+		r.Log.Infow("Email is not valid",
 			"ReqId", ctx.ReqId(),
 			"Email", email,
 			"Name", name)
-		return core.NewError(core.BadEmail)
+		return core.NewError(c)
 	}
 
 	if ok, c := core.IsValidPassword(password); !ok {

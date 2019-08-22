@@ -23,7 +23,7 @@ type loginUser struct {
 func (this *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, useragent string) (*domain.User, string, string, error) {
 	err := this.validate(ctx, email, password)
 	if err != nil {
-		return nil, "", "", err
+		return nil, "", "", core.NewError(core.AuthenticationError)
 	}
 
 	useragent = core.UserAgentFingerprint(useragent)
@@ -57,11 +57,11 @@ func (this *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, use
 
 func (r *loginUser) validate(ctx core.ReqContext, email string, password string) error {
 
-	if ok := core.IsValidEmail(email); !ok {
+	if ok, c := core.IsValidEmail(email); !ok {
 		r.Log.Infow("Username is not valid",
 			"ReqId", ctx.ReqId(),
 			"Email", email)
-		return core.NewError(core.BadEmail)
+		return core.NewError(c)
 	}
 
 	if ok, c := core.IsValidPassword(password); !ok {
