@@ -1,10 +1,10 @@
 package domain
 
-type Resource struct {
+type Source struct {
 	Id                   string
 	Title                string
 	Identifier           string
 	NormalizedIdentifier string // Identifier in uppercase
-	Type                 string // ResourceType
+	Type                 ResourceType
 	Properties           string // json
 }
