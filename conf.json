@@ -2,6 +2,10 @@
   "logger": {
     "path": "./log"
   },
+  "imgSaver":{
+    "localFolder":"img",
+    "uriPath":"/path/to/img"
+  },
   "httpserver": {
     "staticpath": "./static/dist/",
     "host": "localhost",
