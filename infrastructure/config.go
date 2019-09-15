@@ -7,12 +7,16 @@ type Config struct {
 	Db struct {
 		ConnString string `json:"connString"`
 	}
-	//HTTPServer struct {
-	//	StaticPath string `json:"staticpath"`
-	//	Host       string `json:"host"`
-	//	Schema     string `json:"schema"`
-	//	Port       string `json:"port"`
-	//}
+	ImgSaver struct {
+		LocalFolder string `json:"localFolder"`
+		UriPath     string `json:"uriPath"`
+	}
+	HTTPServer struct {
+		StaticPath string `json:"staticpath"`
+		Host       string `json:"host"`
+		Schema     string `json:"schema"`
+		Port       string `json:"port"`
+	}
 	//Cache struct {
 	//	Enable    bool   `json:"enable"`
 	//	Host      string `json:"host"`

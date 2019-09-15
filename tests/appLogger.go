@@ -33,11 +33,11 @@ func (appLoggerForTests) Infof(template string, args ...interface{}) {
 }
 
 func (appLoggerForTests) Warnf(template string, args ...interface{}) {
-	fmt.Println(template, args)
+	//fmt.Println(template, args)
 }
 
 func (appLoggerForTests) Errorf(template string, args ...interface{}) {
-	fmt.Println(template, args)
+	//fmt.Println(template, args)
 }
 
 func (appLoggerForTests) DPanicf(template string, args ...interface{}) {

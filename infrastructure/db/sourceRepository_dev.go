@@ -24,20 +24,56 @@ func NewSourceRepository(conn *sql.DB) core.SourceRepository {
 		Conn: conn}
 }
 
-func (this *sourceRepoInMemory) Get(id int) {
-	panic("not implemented")
+func (this *sourceRepoInMemory) Get(id int) *domain.Source {
+	SourcesMux.Lock()
+	defer SourcesMux.Unlock()
+
+	for i := 0; i < len(Users); i++ {
+		if Sources[i].Id == id {
+			return &Sources[i]
+		}
+	}
+	return nil
 }
 
-func (this *sourceRepoInMemory) FindByIdentifier(identifier string) {
-	panic("not implemented")
+func (this *sourceRepoInMemory) FindByIdentifier(nIdentifier string) *domain.Source {
+	SourcesMux.Lock()
+	defer SourcesMux.Unlock()
+
+	for i := 0; i < len(Sources); i++ {
+		if Sources[i].NormalizedIdentifier == nIdentifier {
+			return &Sources[i]
+		}
+	}
+	return nil
 }
 
-func (this *sourceRepoInMemory) Save(source *domain.Source) {
-	panic("not implemented")
+func (this *sourceRepoInMemory) Save(source *domain.Source) bool {
+	SourcesMux.Lock()
+	defer SourcesMux.Unlock()
+
+	for i := 0; i < len(Sources); i++ {
+		if Sources[i].NormalizedIdentifier == source.NormalizedIdentifier {
+			return false
+		}
+	}
+
+	Sources = append(Sources, *source)
+	return true
 }
 
-func (this *sourceRepoInMemory) Update(source *domain.Source) {
-	panic("not implemented")
+func (this *sourceRepoInMemory) Update(source *domain.Source) bool {
+	SourcesMux.Lock()
+	defer SourcesMux.Unlock()
+
+	for i := 0; i < len(Sources); i++ {
+		if Sources[i].Id == source.Id {
+			Sources[i] = *source
+			return true
+		}
+	}
+
+	return false
 }
 
 func (this *sourceRepoInMemory) GetOrAddByIdentifier(source *domain.Source) *domain.Source {

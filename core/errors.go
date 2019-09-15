@@ -19,6 +19,7 @@ const (
 	InvalidTitle          ErrorCode = "INVALID_TITLE"
 	InvalidProperties     ErrorCode = "INVALID_PROPS"
 	InvalidSourceType     ErrorCode = "INVALID_SOURCE_TYPE"
+	InaccessibleWebPage   ErrorCode = "INACCESSIBLE_WEBPAGE"
 )
 
 func (e ErrorCode) String() string {

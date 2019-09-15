@@ -15,7 +15,7 @@ func TestRegisterUserSuccess(t *testing.T) {
 	email := "TestRegisterUserSuccess@dd.dd"
 	name := "TestRegisterUserSuccess"
 
-	user, err := r.Do(FakeContext{}, name, email, "1234")
+	user, err := r.Do(fakeContext{}, name, email, "1234")
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,7 +50,7 @@ func TestRegisterUserInvalidName(t *testing.T) {
 	for i := 0; i < len(names); i++ {
 		name := names[i]
 
-		user, err := r.Do(FakeContext{}, name, email, "1234")
+		user, err := r.Do(fakeContext{}, name, email, "1234")
 		if err == nil {
 			t.Error("err is nil")
 		}
@@ -80,7 +80,7 @@ func TestRegisterUserInvalidEmail(t *testing.T) {
 	for i := 0; i < len(emails); i++ {
 		email := emails[i]
 
-		user, err := r.Do(FakeContext{}, name, email, "1234")
+		user, err := r.Do(fakeContext{}, name, email, "1234")
 		if err == nil {
 			t.Errorf("err is nil: [%s]", email)
 		}
@@ -112,7 +112,7 @@ func TestInvalidPassword(t *testing.T) {
 	for i := 0; i < len(passwords); i++ {
 		pass := passwords[i]
 
-		user, err := r.Do(FakeContext{}, name, email, pass)
+		user, err := r.Do(fakeContext{}, name, email, pass)
 		if err == nil {
 			t.Errorf("err is nil: [%s]", pass)
 		}
@@ -135,12 +135,12 @@ func TestRegisterUserExistsName(t *testing.T) {
 	email := "TestRegisterUserExistsName@ee.ee"
 	pass := "12345"
 
-	_, err := r.Do(FakeContext{}, name, email, pass)
+	_, err := r.Do(fakeContext{}, name, email, pass)
 	if err != nil {
 		t.Errorf("Fail to create user")
 		return
 	}
-	user, err := r.Do(FakeContext{}, name, email, pass)
+	user, err := r.Do(fakeContext{}, name, email, pass)
 
 	if user != nil {
 		t.Errorf("user is not null")
@@ -158,13 +158,13 @@ func TestRegisterUserExistsEmail(t *testing.T) {
 	email := "TestRegisterUserExistsEmail@email.com"
 	pass := "12345"
 
-	_, err := r.Do(FakeContext{}, name, email, pass)
+	_, err := r.Do(fakeContext{}, name, email, pass)
 	if err != nil {
 		t.Errorf("Fail to create user")
 		return
 	}
 
-	user, err := r.Do(FakeContext{}, "TestRegisterUserExistsEmail_2", email, pass)
+	user, err := r.Do(fakeContext{}, "TestRegisterUserExistsEmail_2", email, pass)
 
 	if user != nil {
 		t.Errorf("user is not null")

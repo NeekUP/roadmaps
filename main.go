@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"roadmaps/api"
 	"roadmaps/core"
 	"roadmaps/core/usecases"
@@ -62,6 +61,7 @@ func main() {
 	sourceRepo := db.NewSourceRepository(dbConnection.Db)
 	captcha := infrastructure.SuccessCaptcha{}
 	tokenService := infrastructure.NewJwtTokenService(userRepo, JwtSecret)
+	imageManager := infrastructure.NewImageManager(Cfg.ImgSaver.LocalFolder, Cfg.ImgSaver.UriPath)
 
 	/*
 		Usecases
@@ -69,14 +69,14 @@ func main() {
 	regUser := usecases.NewRegisterUser(userRepo, newLogger("registerUser"), hashProvider)
 	loginUser := usecases.NewLoginUser(userRepo, newLogger("loginUser"), hashProvider, tokenService)
 	refreshToken := usecases.NewRefreshToken(userRepo, newLogger("refreshToken"), tokenService, JwtSecret)
-	addSource := usecases.NewAddSource(sourceRepo, newLogger("refreshToken"))
+	addSource := usecases.NewAddSource(sourceRepo, newLogger("addSource"), imageManager)
 	/*
 		Api methods
 	*/
 	apiReqUser := api.RegUser(regUser, newLogger("apiReqUser"), captcha)
 	apiLoginUser := api.Login(loginUser, newLogger("apiLogin"), captcha)
 	apiRefreshToken := api.RefreshToken(refreshToken, newLogger("apiRefreshToken"), captcha)
-	apiAddSource := api.AddSource(addSource, newLogger("apiRefreshToken"))
+	apiAddSource := api.AddSource(addSource, newLogger("apiAddSource"))
 	/*
 		Database
 	*/
@@ -99,14 +99,22 @@ func main() {
 		})
 	})
 
-	port := os.Getenv("PORT")
+	//port := os.Getenv("PORT")
+	port := Cfg.HTTPServer.Port
 	if port == "" {
 		port = "8080"
 	}
 
 	log.Printf("Listening on port %s", port)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), r))
+	srv := &http.Server{
+		Handler:      r,
+		Addr:         Cfg.HTTPServer.Host + ":" + Cfg.HTTPServer.Port,
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	log.Fatal(srv.ListenAndServe())
 }
 
 func initConfig(dat []byte) *infrastructure.Config {

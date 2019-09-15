@@ -2,24 +2,24 @@ package tests
 
 import "time"
 
-type FakeContext struct{}
+type fakeContext struct{}
 
-func (FakeContext) Deadline() (deadline time.Time, ok bool) {
+func (fakeContext) Deadline() (deadline time.Time, ok bool) {
 	panic("implement me")
 }
 
-func (FakeContext) Done() <-chan struct{} {
+func (fakeContext) Done() <-chan struct{} {
 	panic("implement me")
 }
 
-func (FakeContext) Err() error {
+func (fakeContext) Err() error {
 	panic("implement me")
 }
 
-func (FakeContext) Value(key interface{}) interface{} {
+func (fakeContext) Value(key interface{}) interface{} {
 	return "seed"
 }
 
-func (FakeContext) ReqId() string {
+func (fakeContext) ReqId() string {
 	return ""
 }
