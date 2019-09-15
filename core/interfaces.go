@@ -16,10 +16,10 @@ type UserRepository interface {
 }
 
 type SourceRepository interface {
-	Get(id int)
-	FindByIdentifier(identifier string)
-	Save(source *domain.Source)
-	Update(source *domain.Source)
+	Get(id int) *domain.Source
+	FindByIdentifier(identifier string) *domain.Source
+	Save(source *domain.Source) bool
+	Update(source *domain.Source) bool
 	GetOrAddByIdentifier(source *domain.Source) *domain.Source
 }
 
@@ -45,4 +45,9 @@ type ReqContext interface {
 	Err() error
 	Value(key interface{}) interface{}
 	ReqId() string
+}
+
+type ImageManager interface {
+	Save(data []byte, name string) error
+	GetUrl(name string) string
 }

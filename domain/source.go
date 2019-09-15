@@ -7,4 +7,6 @@ type Source struct {
 	NormalizedIdentifier string // Identifier in uppercase
 	Type                 SourceType
 	Properties           string // json
+	Img                  string
+	Desc                 string
 }

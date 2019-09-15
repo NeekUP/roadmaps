@@ -11,8 +11,8 @@ import (
 
 func TestAddBookIsbn13(t *testing.T) {
 	isbn := "978-1-10-769989-2"
-	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log)
-	result, err := usecase.Do(infrastructure.NewContext(nil), isbn, "Book 1", "{}", domain.Book)
+	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
+	result, err := usecase.Do(infrastructure.NewContext(nil), isbn, "{}", domain.Book)
 
 	if err != nil {
 		t.Errorf("Book not saved as source using isbn %s with error %s", isbn, err.Error())
@@ -35,8 +35,8 @@ func TestAddBookIsbn10(t *testing.T) {
 	isbn10 := "3-598-21500-2"
 	isbn13 := "978-3-598-21500-1"
 
-	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log)
-	result, err := usecase.Do(infrastructure.NewContext(nil), isbn10, "Book 1", "{}", domain.Book)
+	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
+	result, err := usecase.Do(infrastructure.NewContext(nil), isbn10, "{}", domain.Book)
 
 	if err != nil {
 		t.Errorf("Book not saved as source using isbn %s with error %s", isbn10, err.Error())
@@ -57,10 +57,10 @@ func TestAddBookIsbn10(t *testing.T) {
 
 func TestAddBookTwiceWithSameResult(t *testing.T) {
 	isbn := "978-3-598-21501-8"
-	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log)
-	result1, err := usecase.Do(infrastructure.NewContext(nil), isbn, "Book 1", "{}", domain.Book)
+	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
+	result1, err := usecase.Do(infrastructure.NewContext(nil), isbn, "{}", domain.Book)
 
-	result2, err := usecase.Do(infrastructure.NewContext(nil), isbn, "Book 2", "{}", domain.Book)
+	result2, err := usecase.Do(infrastructure.NewContext(nil), isbn, "{}", domain.Book)
 
 	if err != nil {
 		t.Errorf("Book not saved as source using isbn %s with error %s", isbn, err.Error())
@@ -85,8 +85,8 @@ func TestAddBookTwiceWithSameResult(t *testing.T) {
 
 func TestAddBookBadIsbn13(t *testing.T) {
 	isbn := "978-1-10-769989-0"
-	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log)
-	result, err := usecase.Do(infrastructure.NewContext(nil), isbn, "Book 1", "{}", domain.Book)
+	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
+	result, err := usecase.Do(infrastructure.NewContext(nil), isbn, "{}", domain.Book)
 
 	if err == nil {
 		t.Errorf("Book not saved as source using isbn %s with error %s", isbn, err.Error())
@@ -98,7 +98,7 @@ func TestAddBookBadIsbn13(t *testing.T) {
 }
 
 func TestAddBookBadIsbn10(t *testing.T) {
-	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log)
+	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
 
 	isbnList := []struct {
 		x string
@@ -116,7 +116,7 @@ func TestAddBookBadIsbn10(t *testing.T) {
 	}
 
 	for _, isbn := range isbnList {
-		result, err := usecase.Do(infrastructure.NewContext(nil), isbn.x, "Book 1", "{}", domain.Book)
+		result, err := usecase.Do(infrastructure.NewContext(nil), isbn.x, "{}", domain.Book)
 
 		if err == nil {
 			t.Errorf("Book not saved as source using isbn %s with error %s", isbn.x, err.Error())
@@ -129,7 +129,7 @@ func TestAddBookBadIsbn10(t *testing.T) {
 }
 
 func TestAddLinkSuccess(t *testing.T) {
-	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log)
+	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
 
 	linkList := []struct {
 		url  string
@@ -139,13 +139,13 @@ func TestAddLinkSuccess(t *testing.T) {
 		{"https://ya.ru", "ya.ru"},
 		{"http://YA.Ru/", "ya.ru"},
 		{"http://www.ya.ru/", "ya.ru"},
-		{"http://ya.ru/path/to/article?query1=query1", "ya.ru/path/to/article?query1=query1"},
+		{"https://stackoverflow.com/jobs?so_medium=StackOverflow&so_source=SiteNav", "stackoverflow.com/jobs?so_medium=stackoverflow&so_source=sitenav"},
 		{"http://дом.рф/", "дом.рф"},
-		{"http://xn--d1acufc.xn--p1ai/", "xn--d1acufc.xn--p1ai"},
+		{"http://xn--d1aqf.xn--p1ai/", "xn--d1aqf.xn--p1ai"},
 	}
 
 	for _, link := range linkList {
-		result, err := usecase.Do(infrastructure.NewContext(nil), link.url, "Book 1", "{}", domain.Article)
+		result, err := usecase.Do(infrastructure.NewContext(nil), link.url, "{}", domain.Article)
 
 		if err != nil {
 			t.Errorf("Article not saved as source using url %s with error %s", link.url, err.Error())
@@ -157,6 +157,48 @@ func TestAddLinkSuccess(t *testing.T) {
 
 		if result.NormalizedIdentifier != link.nUrl {
 			t.Errorf("Article after saving using link %s contains not expected normalized url. Expected: %s Does: %s", link.url, link.nUrl, result.NormalizedIdentifier)
+		}
+
+		if result.Title == "" {
+			t.Errorf("Title not defined for %s", link.url)
+		}
+	}
+}
+
+func TestTwitterSummary(t *testing.T) {
+	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
+
+	linkList := []struct {
+		url   string
+		nUrl  string
+		title string
+	}{
+		{"https://github.com/golang/go/issues/23669",
+			"github.com/golang/go/issues/23669",
+			"net/url: URL.String URL encodes a valid IDN domain · Issue #23669 · golang/go"},
+	}
+
+	for _, link := range linkList {
+		result, err := usecase.Do(infrastructure.NewContext(nil), link.url, "{}", domain.Article)
+
+		if err != nil {
+			t.Errorf("Article not saved as source using url %s with error %s", link.url, err.Error())
+		}
+
+		if result == nil {
+			t.Errorf("Article is null after saving source using link %s with error", link.url)
+		}
+
+		if result.NormalizedIdentifier != link.nUrl {
+			t.Errorf("Article after saving using link %s contains not expected normalized url. Expected: %s Does: %s", link.url, link.nUrl, result.NormalizedIdentifier)
+		}
+
+		if result.Title != link.title {
+			t.Errorf("Title not expected for %s: %s", link.url, result.Title)
+		}
+
+		if result.Img == "" {
+			t.Errorf("Img not expected for %s: %s", link.url, result.Img)
 		}
 	}
 }
