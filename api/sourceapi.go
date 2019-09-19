@@ -36,8 +36,7 @@ func AddSource(addSource usecases.AddSource, log core.AppLogger) func(w http.Res
 			return
 		}
 
-		props, _ := json.Marshal(data.Props)
-		source, err := addSource.Do(infrastructure.NewContext(r.Context()), data.Identifier, string(props), data.Type)
+		source, err := addSource.Do(infrastructure.NewContext(r.Context()), data.Identifier, data.Props, data.Type)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				statusResponse(w, &status{Code: 400, Message: err.Error()})

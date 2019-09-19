@@ -12,7 +12,7 @@ import (
 func TestAddBookIsbn13(t *testing.T) {
 	isbn := "978-1-10-769989-2"
 	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
-	result, err := usecase.Do(infrastructure.NewContext(nil), isbn, "{}", domain.Book)
+	result, err := usecase.Do(infrastructure.NewContext(nil), isbn, make(map[string]string), domain.Book)
 
 	if err != nil {
 		t.Errorf("Book not saved as source using isbn %s with error %s", isbn, err.Error())
@@ -36,7 +36,7 @@ func TestAddBookIsbn10(t *testing.T) {
 	isbn13 := "978-3-598-21500-1"
 
 	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
-	result, err := usecase.Do(infrastructure.NewContext(nil), isbn10, "{}", domain.Book)
+	result, err := usecase.Do(infrastructure.NewContext(nil), isbn10, make(map[string]string), domain.Book)
 
 	if err != nil {
 		t.Errorf("Book not saved as source using isbn %s with error %s", isbn10, err.Error())
@@ -58,9 +58,9 @@ func TestAddBookIsbn10(t *testing.T) {
 func TestAddBookTwiceWithSameResult(t *testing.T) {
 	isbn := "978-3-598-21501-8"
 	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
-	result1, err := usecase.Do(infrastructure.NewContext(nil), isbn, "{}", domain.Book)
+	result1, err := usecase.Do(infrastructure.NewContext(nil), isbn, make(map[string]string), domain.Book)
 
-	result2, err := usecase.Do(infrastructure.NewContext(nil), isbn, "{}", domain.Book)
+	result2, err := usecase.Do(infrastructure.NewContext(nil), isbn, make(map[string]string), domain.Book)
 
 	if err != nil {
 		t.Errorf("Book not saved as source using isbn %s with error %s", isbn, err.Error())
@@ -86,7 +86,7 @@ func TestAddBookTwiceWithSameResult(t *testing.T) {
 func TestAddBookBadIsbn13(t *testing.T) {
 	isbn := "978-1-10-769989-0"
 	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
-	result, err := usecase.Do(infrastructure.NewContext(nil), isbn, "{}", domain.Book)
+	result, err := usecase.Do(infrastructure.NewContext(nil), isbn, make(map[string]string), domain.Book)
 
 	if err == nil {
 		t.Errorf("Book not saved as source using isbn %s with error %s", isbn, err.Error())
@@ -116,7 +116,7 @@ func TestAddBookBadIsbn10(t *testing.T) {
 	}
 
 	for _, isbn := range isbnList {
-		result, err := usecase.Do(infrastructure.NewContext(nil), isbn.x, "{}", domain.Book)
+		result, err := usecase.Do(infrastructure.NewContext(nil), isbn.x, make(map[string]string), domain.Book)
 
 		if err == nil {
 			t.Errorf("Book not saved as source using isbn %s with error %s", isbn.x, err.Error())
@@ -145,7 +145,7 @@ func TestAddLinkSuccess(t *testing.T) {
 	}
 
 	for _, link := range linkList {
-		result, err := usecase.Do(infrastructure.NewContext(nil), link.url, "{}", domain.Article)
+		result, err := usecase.Do(infrastructure.NewContext(nil), link.url, make(map[string]string), domain.Article)
 
 		if err != nil {
 			t.Errorf("Article not saved as source using url %s with error %s", link.url, err.Error())
@@ -179,7 +179,7 @@ func TestTwitterSummary(t *testing.T) {
 	}
 
 	for _, link := range linkList {
-		result, err := usecase.Do(infrastructure.NewContext(nil), link.url, "{}", domain.Article)
+		result, err := usecase.Do(infrastructure.NewContext(nil), link.url, make(map[string]string), domain.Article)
 
 		if err != nil {
 			t.Errorf("Article not saved as source using url %s with error %s", link.url, err.Error())
