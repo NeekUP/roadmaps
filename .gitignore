@@ -15,5 +15,5 @@ log
 *.log
 .idea
 .vscode
-img
+static
 roadmaps
