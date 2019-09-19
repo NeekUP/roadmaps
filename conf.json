@@ -3,7 +3,7 @@
     "path": "./log"
   },
   "imgSaver":{
-    "localFolder":"img",
+    "localFolder":"static/img",
     "uriPath":"/path/to/img"
   },
   "httpserver": {
