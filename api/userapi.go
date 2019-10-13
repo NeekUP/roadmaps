@@ -45,7 +45,7 @@ func RegUser(regUsr usecases.RegisterUser, log core.AppLogger, captcha Captcha) 
 		_, err = regUsr.Do(infrastructure.NewContext(r.Context()), data.Name, data.Email, data.Pass)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
-				statusResponse(w, &status{Code: 400, Message: err.Error()})
+				badRequest(w, err)
 			} else {
 				statusResponse(w, &status{Code: 500})
 			}

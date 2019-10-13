@@ -4,6 +4,7 @@ package db
 
 import (
 	"database/sql"
+	"roadmaps/core"
 	"roadmaps/domain"
 )
 
@@ -45,5 +46,9 @@ func (r *userRepository) ExistsEmail(email string) bool {
 }
 
 func (r *userRepository) FindByEmail(email string) *domain.User {
+	panic("implement me")
+}
+
+func (r *userRepoInMemory) Count() int {
 	panic("implement me")
 }

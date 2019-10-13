@@ -1,0 +1,56 @@
+{
+	"_comment":"Default usernames: Alen, Neek. Where entities should has a userId, we use username",
+	"resources": [
+		{
+			"Id": 0,
+			"Title": "Resource 1",
+			"Identifier": "https://www.sitepoint.com/graphql-react-native-getting-started/",
+			"NormalizedIdentifier": "sitepoint.com/graphql-react-native-getting-started",
+			"Type": "Article",
+			"Properties": "{}",
+			"Img": "https://dab1nmslvvntp.cloudfront.net/wp-content/uploads/2019/10/1570407192coffee-comparison-mock.png",
+			"Desc": "Getting Started with GraphQL and React Native"
+		}
+	],
+	"topics": [
+		{
+			"Id": 0,
+			"Name": "javascript",
+			"Title": "Javascript",
+			"Description": "Most popular programming language",
+			"Creator": "Neek"
+		}
+	],
+	"plans": [
+		{
+			"Id": 0,
+			"Title": "Javascript: from newbie to pro",
+			"TopicName": "javascript",
+			"OwnerId": "Alen",
+			"Points": 1
+		}
+	],
+	"steps": [
+		{
+			"Id": 0,
+			"PlanId": 0,
+			"ReferenceId": 0,
+			"ReferenceType": "Resource",
+			"Position": 0
+		},
+		{
+			"Id": 1,
+			"PlanId": 0,
+			"ReferenceId": 0,
+			"ReferenceType": "Resource",
+			"Position": 1
+		},
+		{
+			"Id": 2,
+			"PlanId": 0,
+			"ReferenceId": 0,
+			"ReferenceType": "Topic",
+			"Position": 2
+		}
+	]
+}

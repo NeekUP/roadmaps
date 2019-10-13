@@ -5,6 +5,7 @@ import (
 	"roadmaps/core/usecases"
 	"roadmaps/infrastructure"
 	"roadmaps/infrastructure/db"
+	"strings"
 	"testing"
 )
 
@@ -80,7 +81,9 @@ func TestLoginBadPass(t *testing.T) {
 		t.Errorf("Login with bad password ended with no error")
 	}
 
-	if err != nil && err.Error() != core.AuthenticationError.String() {
+	requestError := strings.Contains(err.Error(), core.AuthenticationError.String())
+
+	if err != nil && !requestError {
 		t.Errorf("Unexpected error: %s", err.Error())
 	}
 
