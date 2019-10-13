@@ -9,8 +9,8 @@ import (
 )
 
 type publicUser struct {
-	Id   string `json:"Id"`
-	Name string `json:"Name"`
+	Id   string `json:"id"`
+	Name string `json:"ame"`
 	Img  string `json:"img"`
 }
 
