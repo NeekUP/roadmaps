@@ -4,7 +4,12 @@ Repositories for real DB engine will be added later, when functionality will be 
 
 Use `go build -tags DEV` when developing.
 This tag enable repositories with in-memory db, what not persistence. 
-## Deplay
+
+While starts dev env:
+1. Creating default users (name: "Neek", email: "neek@neek.com", pass "123456") and (name:"Alen", email:"alen@alen.com", pass: "123456") 
+2. Server read file `dev_db.json` and store its content into inmemory database. For UsersId uses usernames created in previous step. See data example.
+
+## Deploy
 1. On the first start, app should be able to create default users. For allow this, we should need to add environment variables called `adminname{n}`,`adminemail{n}`,`adminpass{n}` where `{n}` is positive integer up to 10. It will be created only if table `users` is empty.
 
 ## User Api
@@ -22,7 +27,7 @@ Request
 ```javascript
 {
 	"name": "string",
-	"email: "string",
+	"email": "string",
 	"pass": "string"
 }
 ```
