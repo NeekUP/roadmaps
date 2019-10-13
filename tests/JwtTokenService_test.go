@@ -40,7 +40,7 @@ func TestCreateValidateRefreshSuccess(t *testing.T) {
 		t.Errorf("Refresh token id not stored into user info")
 	}
 
-	uid, rights, err := jwtTokens.Validate(a)
+	uid, _, rights, err := jwtTokens.Validate(a)
 
 	if err != nil {
 		t.Errorf("Error whilw validation token: [%s]", err.Error())
@@ -79,7 +79,7 @@ func TestCreateValidateBadToken(t *testing.T) {
 	bytes[1] = bytes[1] + 1
 	a = string(bytes)
 
-	uid, _, err := jwtTokens.Validate(a)
+	uid, _, _, err := jwtTokens.Validate(a)
 
 	if err == nil {
 		t.Errorf("Bad token has been validating")

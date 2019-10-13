@@ -61,29 +61,33 @@ type bookSummary struct {
 
 // Должен возвращать или уже созданный ранее или новый объект
 func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[string]string, sourceType domain.SourceType) (*domain.Source, error) {
-	err := this.validate(identifier, props, sourceType)
-	if err != nil {
+	appErr := this.validate(identifier, props, sourceType)
+	if props == nil {
+		props = map[string]string{}
+	}
+	if appErr != nil {
 		this.Log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
-			"Error", err.Error(),
+			"Error", appErr.Error(),
 		)
-		return nil, err
+		return nil, appErr
 	}
 
 	s := &domain.Source{
 		Identifier: identifier,
 		Type:       sourceType}
 
-	// Cast identifier to unified state
+	// Cast identifier to unified representation
 	// link without protocol and www...
 	// isbn to isbn13 format
+	var err error
 	s.NormalizedIdentifier, err = this.normalizeIdentifier(sourceType, identifier)
 	if err != nil {
 		this.Log.Errorw("Identifier contain not valid value",
 			"ReqId", ctx.ReqId(),
 			"Error", err,
 			"Identifier", identifier)
-		return nil, core.NewError(core.InvalidRequest)
+		return nil, core.ValidationError(map[string]string{"identifier": core.InvalidFormat.String()})
 	}
 
 	// Find exists source by normalized identifier
@@ -103,7 +107,7 @@ func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[stri
 				"ReqId", ctx.ReqId(),
 				"Error", err.Error(),
 				"Identifier", identifier)
-			return nil, err
+			return nil, core.ValidationError(map[string]string{"identifier": core.SourceNotFound.String()})
 		}
 
 		s.Desc = bookMeta.Desc
@@ -120,14 +124,14 @@ func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[stri
 				"ReqId", ctx.ReqId(),
 				"Error", err.Error(),
 				"Identifier", identifier)
-			return nil, err
+			return nil, core.ValidationError(map[string]string{"identifier": core.SourceNotFound.String()})
 		}
 
 		s.Title = pageMeta.Title
 		s.Desc = pageMeta.Desc
 		img = pageMeta.Img
 	default:
-		return nil, core.NewError(core.InvalidSourceType)
+		return nil, core.ValidationError(map[string]string{"type": core.InvalidSourceType.String()})
 	}
 
 	// Resize and save image
@@ -145,7 +149,7 @@ func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[stri
 
 	p, err := json.Marshal(props)
 	if err != nil {
-		return nil, core.NewError(core.InvalidProperties)
+		return nil, core.NewError(core.InvalidRequest)
 	}
 
 	s.Properties = string(p)
@@ -336,9 +340,10 @@ func (this *addSource) getBookMetaFromOpenLibrary(isbn13 string) (*bookSummary, 
 
 		if value.Cover.Large != "" {
 			summary.Img, err = this.getImage(value.Cover.Large)
-			if err == nil {
-				this.Log.Errorw("Fail to download image from",
-					"Url", value.Cover.Large)
+			if err != nil {
+				this.Log.Errorw("Fail to download image",
+					"Url", value.Cover.Large,
+					"Error", err.Error())
 			}
 		}
 		break
@@ -525,28 +530,26 @@ func (this *addSource) getBookIdentifier(identifier string) (string, error) {
 	return identifier, nil
 }
 
-func (this *addSource) validate(identifier string, props map[string]string, sourceType domain.SourceType) error {
+func (this *addSource) validate(identifier string, props map[string]string, sourceType domain.SourceType) *core.AppError {
 
+	errors := make(map[string]string)
 	if sourceType != domain.Book {
 		u, err := url.Parse(identifier)
-		if err != nil {
-			return err
+
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			errors["identifier"] = core.InvalidUrl.String()
 		}
 
-		if u.Scheme != "http" && u.Scheme != "https" {
-			return core.NewError(core.InvalidUrl)
-		}
-
-		if u.Host == "" {
-			return core.NewError(core.InvalidUrl)
-		}
 	} else {
 		b := strings.Replace(identifier, "-", "", -1)
 		if !isbn.Validate(b) {
-			return core.NewError(core.InvalidISBN)
+			errors["identifier"] = core.InvalidISBN.String()
 		}
 	}
 
+	if len(errors) > 0 {
+		return core.ValidationError(errors)
+	}
 	return nil
 }
 

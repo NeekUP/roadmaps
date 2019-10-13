@@ -21,9 +21,14 @@ type loginUser struct {
 }
 
 func (this *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, useragent string) (*domain.User, string, string, error) {
-	err := this.validate(ctx, email, password)
-	if err != nil {
-		return nil, "", "", core.NewError(core.AuthenticationError)
+	appErr := this.validate(ctx, email, password)
+	if appErr != nil {
+		this.Log.Errorw("Not valid request",
+			"reqId", ctx.ReqId(),
+			"email", email,
+			"error", appErr.Error(),
+		)
+		return nil, "", "", appErr
 	}
 
 	useragent = core.UserAgentFingerprint(useragent)
@@ -31,44 +36,43 @@ func (this *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, use
 	user := this.UserRepo.FindByEmail(email)
 	if user == nil {
 		this.Log.Infow("User not found",
-			"ReqId", ctx.ReqId(),
-			"Email", email)
+			"reqId", ctx.ReqId(),
+			"email", email)
 		return nil, "", "", core.NewError(core.AuthenticationError)
 	}
 
 	if !this.Hash.CheckPassword(password, user.Pass, user.Salt) {
 		this.Log.Infow("Password is wrong",
-			"ReqId", ctx.ReqId(),
-			"Email", email)
+			"reqId", ctx.ReqId(),
+			"email", email)
 		return nil, "", "", core.NewError(core.AuthenticationError)
 	}
 
 	aToken, rToken, err := this.TokenService.Create(user, fingerprint, useragent)
 	if err != nil {
 		this.Log.Errorw("Fail to create token pair",
-			"ReqId", ctx.ReqId(),
-			"Email", email,
-			"Error", err.Error())
+			"reqId", ctx.ReqId(),
+			"email", email,
+			"error", err.Error())
 		return nil, "", "", core.NewError(core.AuthenticationError)
 	}
 
 	return user, aToken, rToken, nil
 }
 
-func (r *loginUser) validate(ctx core.ReqContext, email string, password string) error {
+func (r *loginUser) validate(ctx core.ReqContext, email string, password string) *core.AppError {
 
-	if ok, c := core.IsValidEmail(email); !ok {
-		r.Log.Infow("Username is not valid",
-			"ReqId", ctx.ReqId(),
-			"Email", email)
-		return core.NewError(c)
+	errors := make(map[string]string)
+	if !core.IsValidEmail(email) {
+		errors["email"] = core.InvalidFormat.String()
 	}
 
-	if ok, c := core.IsValidPassword(password); !ok {
-		r.Log.Infow("Password is not valid",
-			"ReqId", ctx.ReqId(),
-			"Email", email)
-		return core.NewError(c)
+	if !core.IsValidPassword(password) {
+		errors["pass"] = core.InvalidFormat.String()
+	}
+
+	if len(errors) > 0 {
+		return core.ValidationError(errors)
 	}
 
 	return nil

@@ -2,11 +2,12 @@ package infrastructure
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/google/uuid"
 	"roadmaps/core"
 	"roadmaps/domain"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 )
 
 type JwtTokenService struct {
@@ -18,7 +19,7 @@ func NewJwtTokenService(ur core.UserRepository, secret string) core.TokenService
 	return &JwtTokenService{ur, secret}
 }
 
-func (this *JwtTokenService) Validate(authToken string) (userID string, rights int, err error) {
+func (this *JwtTokenService) Validate(authToken string) (userID string, userName string, rights int, err error) {
 	token, err := jwt.ParseWithClaims(authToken, &authClaims{}, func(token *jwt.Token) (interface{}, error) {
 
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -29,17 +30,17 @@ func (this *JwtTokenService) Validate(authToken string) (userID string, rights i
 	})
 
 	if err != nil {
-		return "", 0, err
+		return "", "", 0, err
 	}
 
 	if claims, ok := token.Claims.(*authClaims); ok && token.Valid {
 		if claims.StandardClaims.ExpiresAt < time.Now().Unix() {
-			return "", 0, core.NewError(core.AuthenticationExpired)
+			return "", "", 0, core.NewError(core.AuthenticationExpired)
 		} else {
-			return claims.Id, claims.R, nil
+			return claims.Id, claims.Name, claims.R, nil
 		}
 	} else {
-		return "", 0, core.NewError(core.AuthenticationError)
+		return "", "", 0, core.NewError(core.AuthenticationError)
 	}
 }
 
