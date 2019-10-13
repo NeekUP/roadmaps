@@ -35,10 +35,10 @@ func (this *dbSeedDev) Seed() {
 
 func (this *dbSeedDev) seedUsers() {
 	context := NewContext(nil)
-	if !this.UserRepo.ExistsEmail("nikita@popovsky.pro") {
+	if !this.UserRepo.ExistsEmail("neek@neek.com") {
 		this.RegUser.Do(context, "Neek", "neek@neek.com", "123456")
 	}
-	if !this.UserRepo.ExistsEmail("oleg@popovskiy.com") {
+	if !this.UserRepo.ExistsEmail("alen@alen.com") {
 		this.RegUser.Do(context, "Alen", "alen@alen.com", "123456")
 	}
 }
