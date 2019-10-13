@@ -5,6 +5,7 @@ import (
 	"roadmaps/core/usecases"
 	"roadmaps/infrastructure"
 	"roadmaps/infrastructure/db"
+	"strings"
 	"testing"
 )
 
@@ -15,7 +16,7 @@ func TestRegisterUserSuccess(t *testing.T) {
 	email := "TestRegisterUserSuccess@dd.dd"
 	name := "TestRegisterUserSuccess"
 
-	user, err := r.Do(fakeContext{}, name, email, "1234")
+	user, err := r.Do(infrastructure.NewContext(nil), name, email, "1234")
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,7 +51,7 @@ func TestRegisterUserInvalidName(t *testing.T) {
 	for i := 0; i < len(names); i++ {
 		name := names[i]
 
-		user, err := r.Do(fakeContext{}, name, email, "1234")
+		user, err := r.Do(infrastructure.NewContext(nil), name, email, "1234")
 		if err == nil {
 			t.Error("err is nil")
 		}
@@ -59,7 +60,10 @@ func TestRegisterUserInvalidName(t *testing.T) {
 			t.Error("user is not nil")
 		}
 
-		if err != nil && err.Error() != core.BadUserName.String() {
+		formatError := strings.Contains(err.Error(), core.InvalidFormat.String())
+		requestError := strings.Contains(err.Error(), core.InvalidRequest.String())
+
+		if err != nil && (!formatError || !requestError) {
 			t.Errorf("not expected err: [%s]", err.Error())
 		}
 	}
@@ -80,7 +84,7 @@ func TestRegisterUserInvalidEmail(t *testing.T) {
 	for i := 0; i < len(emails); i++ {
 		email := emails[i]
 
-		user, err := r.Do(fakeContext{}, name, email, "1234")
+		user, err := r.Do(infrastructure.NewContext(nil), name, email, "1234")
 		if err == nil {
 			t.Errorf("err is nil: [%s]", email)
 		}
@@ -89,7 +93,10 @@ func TestRegisterUserInvalidEmail(t *testing.T) {
 			t.Errorf("user is not nil: [%s]", email)
 		}
 
-		if err != nil && err.Error() != core.BadEmail.String() {
+		formatError := strings.Contains(err.Error(), core.InvalidFormat.String())
+		requestError := strings.Contains(err.Error(), core.InvalidRequest.String())
+
+		if err != nil && (!formatError || !requestError) {
 			t.Errorf("not expected err: [%s]", err.Error())
 		}
 	}
@@ -112,7 +119,7 @@ func TestInvalidPassword(t *testing.T) {
 	for i := 0; i < len(passwords); i++ {
 		pass := passwords[i]
 
-		user, err := r.Do(fakeContext{}, name, email, pass)
+		user, err := r.Do(infrastructure.NewContext(nil), name, email, pass)
 		if err == nil {
 			t.Errorf("err is nil: [%s]", pass)
 		}
@@ -121,8 +128,11 @@ func TestInvalidPassword(t *testing.T) {
 			t.Errorf("user is not nil: [%s]", pass)
 		}
 
-		if err != nil && err.Error() != core.BadPassword.String() {
-			t.Errorf("not expected err: [%s]", err.Error())
+		formatError := strings.Contains(err.Error(), core.InvalidFormat.String())
+		requestError := strings.Contains(err.Error(), core.InvalidRequest.String())
+
+		if err != nil && (!formatError || !requestError) {
+			t.Errorf("Unexpected error: %s", err.Error())
 		}
 	}
 }
@@ -135,18 +145,18 @@ func TestRegisterUserExistsName(t *testing.T) {
 	email := "TestRegisterUserExistsName@ee.ee"
 	pass := "12345"
 
-	_, err := r.Do(fakeContext{}, name, email, pass)
+	_, err := r.Do(infrastructure.NewContext(nil), name, email, pass)
 	if err != nil {
 		t.Errorf("Fail to create user")
 		return
 	}
-	user, err := r.Do(fakeContext{}, name, email, pass)
+	user, err := r.Do(infrastructure.NewContext(nil), name, email, pass)
 
 	if user != nil {
 		t.Errorf("user is not null")
 	}
 
-	if err != nil && err.Error() != core.NameAlreadyExists.String() {
+	if err != nil && strings.Contains(core.AlreadyExists.String(), err.Error()) {
 		t.Errorf("not expected err: [%s]", err.Error())
 	}
 }
@@ -158,19 +168,19 @@ func TestRegisterUserExistsEmail(t *testing.T) {
 	email := "TestRegisterUserExistsEmail@email.com"
 	pass := "12345"
 
-	_, err := r.Do(fakeContext{}, name, email, pass)
+	_, err := r.Do(infrastructure.NewContext(nil), name, email, pass)
 	if err != nil {
 		t.Errorf("Fail to create user")
 		return
 	}
 
-	user, err := r.Do(fakeContext{}, "TestRegisterUserExistsEmail_2", email, pass)
+	user, err := r.Do(infrastructure.NewContext(nil), "TestRegisterUserExistsEmail_2", email, pass)
 
 	if user != nil {
 		t.Errorf("user is not null")
 	}
 
-	if err != nil && err.Error() != core.EmailAlreadyExists.String() {
+	if err != nil && strings.Contains(core.AlreadyExists.String(), err.Error()) {
 		t.Errorf("not expected err: [%s]", err.Error())
 	}
 }

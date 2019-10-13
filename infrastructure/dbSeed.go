@@ -3,6 +3,8 @@
 package infrastructure
 
 import (
+	"fmt"
+	"os"
 	"roadmaps/core"
 	"roadmaps/core/usecases"
 )
@@ -24,9 +26,16 @@ func (this *dbSeedProd) Seed() {
 }
 
 func (this *dbSeedProd) seedUsers() {
-	context := NewContext(nil)
-	if !this.UserRepo.ExistsEmail("nikita@popovsky.pro") {
-		this.RegUser.Do(context, "Neek", "nikita@popovsky.pro", "123456")
-	}
+	if this.UserRepo.Count() == 0 {
+		context := NewContext(nil)
+		for i := 0; i < 10; i++ {
+			name := os.Getenv(fmt.Sprintf("adminname%d", i))
+			email := os.Getenv(fmt.Sprintf("adminemail%d", i))
+			pass := os.Getenv(fmt.Sprintf("adminpass%d", i))
 
+			if !this.UserRepo.ExistsEmail(email) && name != "" && email != "" && pass !=  {
+				this.RegUser.Do(context, name, email, pass)
+			}
+		}
+	}
 }

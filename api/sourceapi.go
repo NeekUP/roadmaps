@@ -26,6 +26,7 @@ type addSourceResponse struct {
 
 func AddSource(addSource usecases.AddSource, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		decoder := json.NewDecoder(r.Body)
 		data := new(addSourceRequest)
 		err := decoder.Decode(data)
@@ -39,7 +40,7 @@ func AddSource(addSource usecases.AddSource, log core.AppLogger) func(w http.Res
 		source, err := addSource.Do(infrastructure.NewContext(r.Context()), data.Identifier, data.Props, data.Type)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
-				statusResponse(w, &status{Code: 400, Message: err.Error()})
+				badRequest(w, err)
 			} else {
 				statusResponse(w, &status{Code: 500})
 			}

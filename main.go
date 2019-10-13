@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"roadmaps/api"
 	"roadmaps/core"
 	"roadmaps/core/usecases"
@@ -14,6 +15,7 @@ import (
 	"roadmaps/infrastructure"
 	"roadmaps/infrastructure/db"
 	"runtime"
+	"runtime/debug"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -49,7 +51,7 @@ func main() {
 	r.Use(infrastructure.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(httpLogger(newLogger("http")))
-	r.Use(middleware.Recoverer)
+	r.Use(recoverer(newLogger("recoverer")))
 	r.Use(contentTypeMiddleware)
 
 	/*
@@ -59,6 +61,8 @@ func main() {
 	hashProvider := infrastructure.NewSha256HashProvider()
 	userRepo := db.NewUserRepository(dbConnection.Db)
 	sourceRepo := db.NewSourceRepository(dbConnection.Db)
+	topicRepo := db.NewTopicRepository(dbConnection.Db)
+	planRepo := db.NewPlansRepository(dbConnection.Db)
 	captcha := infrastructure.SuccessCaptcha{}
 	tokenService := infrastructure.NewJwtTokenService(userRepo, JwtSecret)
 	imageManager := infrastructure.NewImageManager(Cfg.ImgSaver.LocalFolder, Cfg.ImgSaver.UriPath)
@@ -70,6 +74,10 @@ func main() {
 	loginUser := usecases.NewLoginUser(userRepo, newLogger("loginUser"), hashProvider, tokenService)
 	refreshToken := usecases.NewRefreshToken(userRepo, newLogger("refreshToken"), tokenService, JwtSecret)
 	addSource := usecases.NewAddSource(sourceRepo, newLogger("addSource"), imageManager)
+	addTopic := usecases.NewAddTopic(topicRepo, newLogger("addTopic"))
+	addPlan := usecases.NewAddPlan(planRepo, newLogger("addPlan"))
+	getTopic := usecases.NewGetTopic(topicRepo, planRepo, newLogger("getTopic"))
+	getPlanTree := usecases.NewGetPlanTree(planRepo, getTopic, newLogger("getPlanTree"))
 	/*
 		Api methods
 	*/
@@ -77,6 +85,9 @@ func main() {
 	apiLoginUser := api.Login(loginUser, newLogger("apiLogin"), captcha)
 	apiRefreshToken := api.RefreshToken(refreshToken, newLogger("apiRefreshToken"), captcha)
 	apiAddSource := api.AddSource(addSource, newLogger("apiAddSource"))
+	apiAddTopic := api.AddTopic(addTopic, newLogger("apiAddTopic"))
+	apiAddPlan := api.AddPlan(addPlan, newLogger("apiAddPlan"))
+	apiGetPlanTree := api.GetPlanTree(getPlanTree, newLogger("apiGetPlanTree"))
 	/*
 		Database
 	*/
@@ -86,26 +97,25 @@ func main() {
 	/*
 		Http server
 	*/
-	r.Group(func(r chi.Router) {
-		// public
-		r.Post("/user/reqistration", apiReqUser)
-		r.Post("/user/login", apiLoginUser)
-		r.Post("/user/refresh", apiRefreshToken)
 
-		// not public
-		r.Group(func(r chi.Router) {
-			r.Use(api.Auth(domain.U, tokenService))
-			r.Post("/source/add", apiAddSource)
-		})
+	// for all
+	r.Group(func(r chi.Router) {
+		r.Use(api.Auth(domain.All, tokenService))
+		r.Post("/api/user/registration", apiReqUser)
+		r.Post("/api/user/login", apiLoginUser)
+		r.Post("/api/user/refresh", apiRefreshToken)
+		r.Post("/api/plan/tree", apiGetPlanTree)
 	})
 
-	//port := os.Getenv("PORT")
-	port := Cfg.HTTPServer.Port
-	if port == "" {
-		port = "8080"
-	}
+	// for users
+	r.Group(func(r chi.Router) {
+		r.Use(api.Auth(domain.U, tokenService))
+		r.Post("/api/source/add", apiAddSource)
+		r.Post("/api/topic/add", apiAddTopic)
+		r.Post("/api/plan/add", apiAddPlan)
+	})
 
-	log.Printf("Listening on port %s", port)
+	log.Printf("Listening %s", Cfg.HTTPServer.Host+":"+Cfg.HTTPServer.Port)
 
 	srv := &http.Server{
 		Handler:      r,
@@ -173,6 +183,30 @@ func httpLogger(l core.AppLogger) func(next http.Handler) http.Handler {
 
 			next.ServeHTTP(ww, r)
 		}
+		return http.HandlerFunc(fn)
+	}
+}
+
+func recoverer(l core.AppLogger) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if rvr := recover(); rvr != nil {
+
+					if l != nil {
+						l.Panic(rvr, debug.Stack())
+					} else {
+						fmt.Fprintf(os.Stderr, "Panic: %+v\n", rvr)
+						debug.PrintStack()
+					}
+
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				}
+			}()
+
+			next.ServeHTTP(w, r)
+		}
+
 		return http.HandlerFunc(fn)
 	}
 }

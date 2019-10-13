@@ -51,3 +51,23 @@ func (this *requestContext) ReqId() string {
 	}
 	return ""
 }
+
+func (this *requestContext) UserId() string {
+	if this.ctx == nil {
+		return ""
+	}
+	if reqID, ok := this.ctx.Value(ReqUserId).(string); ok {
+		return reqID
+	}
+	return ""
+}
+
+func (this *requestContext) UserName() string {
+	if this.ctx == nil {
+		return ""
+	}
+	if reqID, ok := this.ctx.Value(ReqUserName).(string); ok {
+		return reqID
+	}
+	return ""
+}

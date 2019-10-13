@@ -13,6 +13,7 @@ type UserRepository interface {
 	ExistsName(name string) bool
 	ExistsEmail(email string) bool
 	FindByEmail(email string) *domain.User
+	Count() int
 }
 
 type SourceRepository interface {
@@ -21,6 +22,26 @@ type SourceRepository interface {
 	Save(source *domain.Source) bool
 	Update(source *domain.Source) bool
 	GetOrAddByIdentifier(source *domain.Source) *domain.Source
+}
+
+type TopicRepository interface {
+	Get(name string) *domain.Topic
+	GetById(id int) *domain.Topic
+	Save(source *domain.Topic) bool
+	Update(source *domain.Topic) bool
+}
+
+type PlanRepository interface {
+	SaveWithSteps(plan *domain.Plan) error
+	// should includes steps
+	Get(id int) *domain.Plan
+	// should includes steps
+	GetList(id []int) []domain.Plan
+	// should includes steps
+	GetTopByTopicName(topic string, count int) []domain.Plan
+}
+
+type StepRepository interface {
 }
 
 type HashProvider interface {
@@ -36,7 +57,7 @@ type EmailChecker interface {
 type TokenService interface {
 	Create(user *domain.User, fingerprint, useragent string) (auth string, refresh string, err error)
 	Refresh(authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error)
-	Validate(authToken string) (userID string, rights int, err error)
+	Validate(authToken string) (userID string, userName string, rights int, err error)
 }
 
 type ReqContext interface {
@@ -45,6 +66,8 @@ type ReqContext interface {
 	Err() error
 	Value(key interface{}) interface{}
 	ReqId() string
+	UserId() string
+	UserName() string
 }
 
 type ImageManager interface {

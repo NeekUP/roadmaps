@@ -26,9 +26,14 @@ func NewRegisterUser(userRepo core.UserRepository, log core.AppLogger, hash core
 
 func (r *registerUser) Do(ctx core.ReqContext, name string, email string, password string) (*domain.User, error) {
 
-	err := r.validate(ctx, name, email, password)
-	if err != nil {
-		return nil, err
+	appErr := r.validate(ctx, name, email, password)
+	if appErr != nil {
+		r.Log.Errorw("Not valid request",
+			"reqId", ctx.ReqId(),
+			"email", email,
+			"error", appErr.Error(),
+		)
+		return nil, appErr
 	}
 
 	hash, salt := r.Hash.HashPassword(password)
@@ -45,46 +50,32 @@ func (r *registerUser) Do(ctx core.ReqContext, name string, email string, passwo
 	}
 }
 
-func (r *registerUser) validate(ctx core.ReqContext, name string, email string, password string) error {
+func (r *registerUser) validate(ctx core.ReqContext, name string, email string, password string) *core.AppError {
 
-	if ok, c := core.IsValidUserName(name); !ok {
-		r.Log.Infow("Username is not valid",
-			"ReqId", ctx.ReqId(),
-			"Email", email,
-			"Name", name)
-		return core.NewError(c)
+	errors := make(map[string]string)
+
+	if !core.IsValidUserName(name) {
+		errors["name"] = core.InvalidFormat.String()
 	}
 
-	if ok, c := core.IsValidEmail(email); !ok {
-		r.Log.Infow("Email is not valid",
-			"ReqId", ctx.ReqId(),
-			"Email", email,
-			"Name", name)
-		return core.NewError(c)
+	if !core.IsValidEmail(email) {
+		errors["email"] = core.InvalidFormat.String()
 	}
 
-	if ok, c := core.IsValidPassword(password); !ok {
-		r.Log.Infow("Password is not valid",
-			"ReqId", ctx.ReqId(),
-			"Email", email,
-			"Name", name)
-		return core.NewError(c)
+	if !core.IsValidPassword(password) {
+		errors["pass"] = core.InvalidFormat.String()
 	}
 
 	if r.UserRepo.ExistsName(name) {
-		r.Log.Infow("User with same name already registered",
-			"ReqId", ctx.ReqId(),
-			"Email", email,
-			"Name", name)
-		return core.NewError(core.NameAlreadyExists)
+		errors["name"] = core.AlreadyExists.String()
 	}
 
 	if r.UserRepo.ExistsEmail(email) {
-		r.Log.Infow("User with same email already registered",
-			"ReqId", ctx.ReqId(),
-			"Email", email,
-			"Name", name)
-		return core.NewError(core.EmailAlreadyExists)
+		errors["email"] = core.AlreadyExists.String()
+	}
+
+	if len(errors) > 0 {
+		return core.ValidationError(errors)
 	}
 
 	return nil

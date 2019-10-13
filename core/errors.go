@@ -1,5 +1,7 @@
 package core
 
+import "encoding/json"
+
 type ErrorCode string
 
 const (
@@ -8,8 +10,7 @@ const (
 	BadEmail              ErrorCode = "INVALID_EMAIL"
 	NotExistentEmail      ErrorCode = "NONEXISTENT_EMAIL"
 	BadUserName           ErrorCode = "INVALID_USERNAME"
-	NameAlreadyExists     ErrorCode = "USERNAME_ALREADY_EXISTS"
-	EmailAlreadyExists    ErrorCode = "EMAIL_ALREADY_EXISTS"
+	AlreadyExists         ErrorCode = "ALREADY_EXISTS"
 	InternalError         ErrorCode = "INTERNAL_ERROR"
 	AuthenticationError   ErrorCode = "AUTHENTICATION_ERROR"
 	AuthenticationExpired ErrorCode = "AUTHENTICATION_EXPIRED"
@@ -20,6 +21,10 @@ const (
 	InvalidProperties     ErrorCode = "INVALID_PROPS"
 	InvalidSourceType     ErrorCode = "INVALID_SOURCE_TYPE"
 	InaccessibleWebPage   ErrorCode = "INACCESSIBLE_WEBPAGE"
+	InvalidFormat         ErrorCode = "INVALID_FORMAT"
+	SourceNotFound        ErrorCode = "SOURCE_NOT_FOUND"
+	InvalidCount          ErrorCode = "INVALID_COUNT"
+	NotExists             ErrorCode = "NOT_EXISTS"
 )
 
 func (e ErrorCode) String() string {
@@ -27,13 +32,21 @@ func (e ErrorCode) String() string {
 }
 
 type AppError struct {
-	message string
+	Message    string            `json:"error"`
+	Validation map[string]string `json:"validation"`
 }
 
 func (e *AppError) Error() string {
-	return e.message
+	msg, _ := json.Marshal(e)
+	return string(msg)
 }
 
-func NewError(msg ErrorCode) error {
-	return &AppError{message: string(msg)}
+func NewError(msg ErrorCode) *AppError {
+	return &AppError{Message: string(msg)}
+}
+
+func ValidationError(validation map[string]string) *AppError {
+	return &AppError{
+		Message:    string(InvalidRequest),
+		Validation: validation}
 }

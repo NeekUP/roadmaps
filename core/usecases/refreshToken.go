@@ -26,16 +26,18 @@ type refreshToken struct {
 
 func (this *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error) {
 
-	if ok, err := this.validate(authToken, refreshToken, fingerprint, useragent); !ok {
+	appErr := this.validate(authToken, refreshToken, fingerprint, useragent)
+	if appErr != nil {
 		this.Log.Infow("Not valid data",
 			"reqId", ctx.ReqId(),
 			"authToken", authToken,
 			"refreshToken", refreshToken,
 			"fingerprint", fingerprint,
 			"useragent", useragent,
-			"error", err)
+			"error", err.Error())
 		return "", "", core.NewError(core.InvalidRequest)
 	}
+
 	useragent = core.UserAgentFingerprint(useragent)
 
 	auth, refresh, err := this.TokenService.Refresh(authToken, refreshToken, fingerprint, useragent)
@@ -53,23 +55,28 @@ func (this *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, finge
 	return auth, refresh, err
 }
 
-func (this *refreshToken) validate(aToken, rToken, fingerprint, useragent string) (bool, error) {
+func (this *refreshToken) validate(aToken, rToken, fingerprint, useragent string) *core.AppError {
 
-	if ok, c := core.IsValidTokenFormat(aToken); !ok {
-		return false, c
+	errors := make(map[string]string)
+	if !core.IsValidTokenFormat(aToken) {
+		errors["atoken"] = core.InvalidFormat.String()
 	}
 
-	if ok, c := core.IsValidTokenFormat(rToken); !ok {
-		return false, c
+	if !core.IsValidTokenFormat(rToken) {
+		errors["rtoken"] = core.InvalidFormat.String()
 	}
 
-	if ok, c := core.IsValidFingerprint(fingerprint); !ok {
-		return false, c
+	if !core.IsValidFingerprint(fingerprint) {
+		errors["fp"] = core.InvalidFormat.String()
 	}
 
-	if ok, c := core.IsValidUserAgent(useragent); !ok {
-		return false, c
+	if !core.IsValidUserAgent(useragent) {
+		errors["useragent"] = core.InvalidFormat.String()
 	}
 
-	return true, nil
+	if len(errors) > 0 {
+		return core.ValidationError(errors)
+	}
+
+	return nil
 }
