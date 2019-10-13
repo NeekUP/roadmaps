@@ -68,7 +68,7 @@ func AddPlan(addPlan usecases.AddPlan, log core.AppLogger) func(w http.ResponseW
 }
 
 type getPlanTreeRequest struct {
-	Id string
+	Id string `json:"id"`
 }
 
 type getPlanTreeResponse struct {
