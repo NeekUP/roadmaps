@@ -95,13 +95,13 @@ func (this *getPlanTree) validate(identifiers []int) *core.AppError {
 	errors := make(map[string]string)
 
 	if identifiers == nil {
-		errors["ids"] = core.InvalidFormat.String()
+		errors["id"] = core.InvalidFormat.String()
 		return core.ValidationError(errors)
 	}
 
 	l := len(identifiers)
 	if l == 0 || l > 5 {
-		errors["ids"] = core.InvalidFormat.String()
+		errors["id"] = core.InvalidFormat.String()
 	}
 
 	if len(errors) > 0 {
