@@ -83,7 +83,7 @@ type treeNode struct {
 	Child      []treeNode `json:"child"`
 }
 
-func GetPlanTree(addPlan usecases.GetPlanTree, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+func GetPlanTree(getPlanTree usecases.GetPlanTree, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		data := new(getPlanTreeRequest)
@@ -94,7 +94,7 @@ func GetPlanTree(addPlan usecases.GetPlanTree, log core.AppLogger) func(w http.R
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		// TODO: Remove this
 		id, err := strconv.Atoi(data.Id)
 		if err != nil {
 			id, err = core.DecodeStringToNum(data.Id)
@@ -104,7 +104,7 @@ func GetPlanTree(addPlan usecases.GetPlanTree, log core.AppLogger) func(w http.R
 			}
 		}
 
-		trees, err := addPlan.Do(infrastructure.NewContext(r.Context()), []int{id})
+		trees, err := getPlanTree.Do(infrastructure.NewContext(r.Context()), []int{id})
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
