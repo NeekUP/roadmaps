@@ -15,6 +15,7 @@ type TreeNode struct {
 
 type GetPlanTree interface {
 	Do(ctx core.ReqContext, identifiers []int) ([]TreeNode, error)
+	DoByTopic(ctx core.ReqContext, name string) ([]TreeNode, error)
 }
 
 type getPlanTree struct {
@@ -89,6 +90,22 @@ func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) 
 	}
 
 	return result, nil
+}
+
+func (this *getPlanTree) DoByTopic(ctx core.ReqContext, name string) ([]TreeNode, error) {
+	topic, err := this.GetTopic.Do(ctx, name, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(topic.Plans) == 0 {
+		return []TreeNode{TreeNode{
+			TopicName:  topic.Name,
+			TopicTitle: topic.Title,
+		}}, nil
+	}
+
+	return this.Do(ctx, []int{topic.Plans[0].Id})
 }
 
 func (this *getPlanTree) validate(identifiers []int) *core.AppError {

@@ -88,6 +88,8 @@ func main() {
 	apiAddTopic := api.AddTopic(addTopic, newLogger("apiAddTopic"))
 	apiAddPlan := api.AddPlan(addPlan, newLogger("apiAddPlan"))
 	apiGetPlanTree := api.GetPlanTree(getPlanTree, newLogger("apiGetPlanTree"))
+	apiGetTopicTree := api.GetTopicTree(getPlanTree, newLogger("apiGetPlanTree"))
+
 	/*
 		Database
 	*/
@@ -105,6 +107,7 @@ func main() {
 		r.Post("/api/user/login", apiLoginUser)
 		r.Post("/api/user/refresh", apiRefreshToken)
 		r.Post("/api/plan/tree", apiGetPlanTree)
+		r.Post("/api/topic/tree", apiGetTopicTree)
 	})
 
 	// for users
