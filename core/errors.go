@@ -25,6 +25,7 @@ const (
 	SourceNotFound        ErrorCode = "SOURCE_NOT_FOUND"
 	InvalidCount          ErrorCode = "INVALID_COUNT"
 	NotExists             ErrorCode = "NOT_EXISTS"
+	
 )
 
 func (e ErrorCode) String() string {
