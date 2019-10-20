@@ -63,6 +63,7 @@ func main() {
 	sourceRepo := db.NewSourceRepository(dbConnection.Db)
 	topicRepo := db.NewTopicRepository(dbConnection.Db)
 	planRepo := db.NewPlansRepository(dbConnection.Db)
+	usersPlanRepo := db.NewUsersPlanRepository(dbConnection.Db)
 	captcha := infrastructure.SuccessCaptcha{}
 	tokenService := infrastructure.NewJwtTokenService(userRepo, JwtSecret)
 	imageManager := infrastructure.NewImageManager(Cfg.ImgSaver.LocalFolder, Cfg.ImgSaver.UriPath)
@@ -78,6 +79,9 @@ func main() {
 	addPlan := usecases.NewAddPlan(planRepo, newLogger("addPlan"))
 	getTopic := usecases.NewGetTopic(topicRepo, planRepo, newLogger("getTopic"))
 	getPlanTree := usecases.NewGetPlanTree(planRepo, getTopic, newLogger("getPlanTree"))
+	addUserPlan := usecases.NewAddUserPlan(planRepo, usersPlanRepo, newLogger("addUserPlan"))
+	removeUserPlan := usecases.NewRemoveUserPlan(usersPlanRepo, newLogger("removeUserPlan"))
+
 	/*
 		Api methods
 	*/
@@ -89,6 +93,8 @@ func main() {
 	apiAddPlan := api.AddPlan(addPlan, newLogger("apiAddPlan"))
 	apiGetPlanTree := api.GetPlanTree(getPlanTree, newLogger("apiGetPlanTree"))
 	apiGetTopicTree := api.GetTopicTree(getPlanTree, newLogger("apiGetPlanTree"))
+	apiAddUserPlan := api.AddUserPlan(addUserPlan, newLogger("apiAddUserPlanTree"))
+	apiRemoveAddUserPlan := api.RemoveUserPlan(removeUserPlan, newLogger("apiRemoveUserPlanTree"))
 
 	/*
 		Database
@@ -116,6 +122,8 @@ func main() {
 		r.Post("/api/source/add", apiAddSource)
 		r.Post("/api/topic/add", apiAddTopic)
 		r.Post("/api/plan/add", apiAddPlan)
+		r.Post("/api/user/addplan", apiAddUserPlan)
+		r.Post("/api/user/removeplan", apiRemoveAddUserPlan)
 	})
 
 	log.Printf("Listening %s", Cfg.HTTPServer.Host+":"+Cfg.HTTPServer.Port)

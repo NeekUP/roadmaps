@@ -44,6 +44,15 @@ type PlanRepository interface {
 type StepRepository interface {
 }
 
+type UsersPlanRepository interface {
+	// true - if already exists and when added new row
+	// if same topic exists for user, delete exists and add new
+	// false only if db error
+	Add(userId string, topicName string, planId int) bool
+	Remove(userId string, planId int) bool
+	GetByTopic(userId, topicName string) (planId int, exists bool)
+}
+
 type HashProvider interface {
 	HashPassword(pass string) (hash []byte, salt []byte)
 	CheckPassword(pass string, hash []byte, salt []byte) bool
