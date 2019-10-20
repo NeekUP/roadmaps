@@ -17,6 +17,9 @@ type Config struct {
 		Schema     string `json:"schema"`
 		Port       string `json:"port"`
 	}
+	Client struct {
+		Host string `json:"host"`
+	}
 	//Cache struct {
 	//	Enable    bool   `json:"enable"`
 	//	Host      string `json:"host"`
