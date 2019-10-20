@@ -159,3 +159,90 @@ func RefreshToken(refreshToken usecases.RefreshToken, log core.AppLogger, captch
 /*
 	TODO: Validate email
 ******************************************************************/
+
+type userPlanReq struct {
+	PlanId string `json:"planId"`
+}
+
+func AddUserPlan(addUserPlan usecases.AddUserPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		if !captcha.Confirm(r) {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		decoder := json.NewDecoder(r.Body)
+		data := new(userPlanReq)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		if err != nil {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		ctx := infrastructure.NewContext(r.Context());
+		planId,err := core.DecodeStringToNum(data.PlanId)
+		if err != nil{
+			log.Errorw("Bad request", "UserId",ctx.UserId(), "Error", err.Error())
+			statusResponse(w, &status{Code: 400}, Message: core.InvalidRequest.String())
+			return
+		}
+
+		ok,err := addUserPlan.Do(ctx, planId )
+
+		if err != nil {
+			if err.Error() != core.InternalError.String() {
+				statusResponse(w, &status{Code: 400, Message: err.Error()})
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+		statusResponse(w, &status{Code: 200})
+
+	}
+}
+
+
+func RemoveUserPlan(removeUserPlan usecases.RemoveUserPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		if !captcha.Confirm(r) {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		decoder := json.NewDecoder(r.Body)
+		data := new(userPlanReq)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		if err != nil {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		ctx := infrastructure.NewContext(r.Context());
+		planId,err := core.DecodeStringToNum(data.PlanId)
+		if err != nil{
+			log.Errorw("Bad request", "UserId",ctx.UserId(), "Error", err.Error())
+			statusResponse(w, &status{Code: 400}, Message: core.InvalidRequest.String())
+			return
+		}
+
+		ok,err := removeUserPlan.Do(ctx, planId )
+
+		if err != nil {
+			if err.Error() != core.InternalError.String() {
+				statusResponse(w, &status{Code: 400, Message: err.Error()})
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+		statusResponse(w, &status{Code: 200})
+
+	}
+}
