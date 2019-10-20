@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/chi/middleware"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -44,7 +45,15 @@ func init() {
 func main() {
 
 	r := chi.NewRouter()
-
+	cors := cors.New(cors.Options{
+		AllowOriginFunc:  AllowOriginFunc,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	})
+	r.Use(cors.Handler)
 	/*
 		Middlewares
 	*/
@@ -225,4 +234,10 @@ func panicError(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+func AllowOriginFunc(r *http.Request, origin string) bool {
+	if origin == Cfg.Client.Host { 
+		return true
+	} 
+	return false
 }
