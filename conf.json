@@ -12,5 +12,8 @@
     "port": "8080",
     "schema": "http",
     "usecache": "true"
+  },
+  "client":{
+    "host":"http://localhost:3000"
   }
 }
