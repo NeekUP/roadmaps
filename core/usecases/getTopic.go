@@ -13,11 +13,12 @@ type GetTopic interface {
 type getTopic struct {
 	TopicRepo core.TopicRepository
 	PlanRepo  core.PlanRepository
+	UsersPlan core.UsersPlanRepository
 	Log       core.AppLogger
 }
 
-func NewGetTopic(topicRepo core.TopicRepository, planRepo core.PlanRepository, log core.AppLogger) GetTopic {
-	return &getTopic{TopicRepo: topicRepo, PlanRepo: planRepo, Log: log}
+func NewGetTopic(topicRepo core.TopicRepository, planRepo core.PlanRepository, userPlans core.UsersPlanRepository, log core.AppLogger) GetTopic {
+	return &getTopic{TopicRepo: topicRepo, PlanRepo: planRepo, UsersPlan: userPlans, Log: log}
 }
 
 func (this *getTopic) Do(ctx core.ReqContext, name string, planCount int) (*domain.Topic, error) {
@@ -35,14 +36,11 @@ func (this *getTopic) Do(ctx core.ReqContext, name string, planCount int) (*doma
 		return nil, core.NewError(core.NotExists)
 	}
 
-	// TODO: Find user selected plan. if exists
-
-	//
 	if len(topic.Plans) >= planCount {
 		return topic, nil
 	}
 
-	topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, planCount)
+	this.AttachePlans(ctx, topic, planCount)
 	return topic, nil
 }
 
@@ -53,15 +51,34 @@ func (this *getTopic) DoById(ctx core.ReqContext, id int, planCount int) (*domai
 		return nil, core.NewError(core.NotExists)
 	}
 
-	// TODO: Find user selected plan. if exists
-
-	//
 	if len(topic.Plans) >= planCount {
 		return topic, nil
 	}
 
-	topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, planCount)
+	this.AttachePlans(ctx, topic, planCount)
 	return topic, nil
+}
+
+func (this *getTopic) AttachePlans(ctx core.ReqContext, topic *domain.Topic, planCount int) {
+	if ctx.UserId() != "" {
+		upId := this.UsersPlan.GetByTopic(ctx.UserId(), topic.Name)
+		if upId != nil {
+			userSelectedPlan := this.PlanRepo.Get(upId.PlanId)
+			if userSelectedPlan != nil {
+				topic.Plans = append(topic.Plans, *userSelectedPlan)
+			}
+		}
+	}
+
+	if len(topic.Plans) == 0 {
+		topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, planCount)
+	} else if planCount-len(topic.Plans) == 0 {
+		return
+	} else {
+		u := topic.Plans[0]
+		topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, planCount-len(topic.Plans), topic.Plans[0].Id)
+		topic.Plans = append(topic.Plans, u)
+	}
 }
 
 func (this *getTopic) validate(name string, planCount int) *core.AppError {

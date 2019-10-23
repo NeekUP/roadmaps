@@ -19,6 +19,13 @@
 			"Title": "Javascript",
 			"Description": "Most popular programming language",
 			"Creator": "Neek"
+		},
+		{
+			"Id": 1,
+			"Name": "csharp",
+			"Title": "C#",
+			"Description": "bla bla bla",
+			"Creator": "Neek"
 		}
 	],
 	"plans": [
@@ -26,6 +33,27 @@
 			"Id": 0,
 			"Title": "Javascript: from newbie to pro",
 			"TopicName": "javascript",
+			"OwnerId": "Alen",
+			"Points": 2
+		},
+		{
+			"Id": 1,
+			"Title": "Javascript: for pro",
+			"TopicName": "javascript",
+			"OwnerId": "Alen",
+			"Points": 1
+		},
+		{
+			"Id": 2,
+			"Title": "C#: from newbie for pro",
+			"TopicName": "csharp",
+			"OwnerId": "Alen",
+			"Points": 2
+		},
+		{
+			"Id": 3,
+			"Title": "C#: for pro",
+			"TopicName": "csharp",
 			"OwnerId": "Alen",
 			"Points": 1
 		}
@@ -51,6 +79,13 @@
 			"ReferenceId": 0,
 			"ReferenceType": "Topic",
 			"Position": 2
+		}
+	],
+	"usersPlans":[
+		{
+			"UserId":"Neek",
+			"TopicName":"javascript",
+			"PlanId":1
 		}
 	]
 }
