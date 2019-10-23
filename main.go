@@ -132,8 +132,8 @@ func main() {
 		r.Post("/api/source/add", apiAddSource)
 		r.Post("/api/topic/add", apiAddTopic)
 		r.Post("/api/plan/add", apiAddPlan)
-		r.Post("/api/user/markplan", apiAddUserPlan)
-		r.Post("/api/user/unmarkplan", apiRemoveAddUserPlan)
+		r.Post("/api/user/plan/favorite", apiAddUserPlan)
+		r.Post("/api/user/plan/unfavorite", apiRemoveAddUserPlan)
 	})
 
 	log.Printf("Listening %s", Cfg.HTTPServer.Host+":"+Cfg.HTTPServer.Port)
