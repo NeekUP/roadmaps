@@ -72,7 +72,8 @@ func (this *planRepoInMemory) Get(id int) *domain.Plan {
 				}
 			}
 
-			return &result
+			copy := result
+			return &copy
 		}
 	}
 
@@ -84,14 +85,15 @@ func (this *planRepoInMemory) GetList(id []int) []domain.Plan {
 	for i := 0; i < len(id); i++ {
 		p := this.Get(id[i])
 		if p != nil {
-			list = append(list, *p)
+			copy := *p
+			list = append(list, copy)
 		}
 	}
 
 	return list
 }
 
-func (this *planRepoInMemory) GetTopByTopicName(topic string, count int) []domain.Plan {
+func (this *planRepoInMemory) GetTopByTopicName(topic string, count int, exclude ...int) []domain.Plan {
 
 	PlansMux.Lock()
 	defer PlansMux.Unlock()

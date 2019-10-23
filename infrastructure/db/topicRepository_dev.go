@@ -30,7 +30,8 @@ func (this *topicRepoInMemory) Get(name string) *domain.Topic {
 
 	for i := 0; i < len(Topics); i++ {
 		if Topics[i].Name == name {
-			return &Topics[i]
+			copy := Topics[i]
+			return &copy
 		}
 	}
 	return nil
@@ -42,7 +43,8 @@ func (this *topicRepoInMemory) GetById(id int) *domain.Topic {
 
 	for i := 0; i < len(Topics); i++ {
 		if Topics[i].Id == id {
-			return &Topics[i]
+			copy := Topics[i]
+			return &copy
 		}
 	}
 	return nil

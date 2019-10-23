@@ -56,8 +56,8 @@ func (this *requestContext) UserId() string {
 	if this.ctx == nil {
 		return ""
 	}
-	if reqID, ok := this.ctx.Value(ReqUserId).(string); ok {
-		return reqID
+	if userId, ok := this.ctx.Value(ReqUserId).(string); ok {
+		return userId
 	}
 	return ""
 }
@@ -66,8 +66,8 @@ func (this *requestContext) UserName() string {
 	if this.ctx == nil {
 		return ""
 	}
-	if reqID, ok := this.ctx.Value(ReqUserName).(string); ok {
-		return reqID
+	if userName, ok := this.ctx.Value(ReqUserName).(string); ok {
+		return userName
 	}
 	return ""
 }
