@@ -136,8 +136,8 @@ No Body
 
 ---
 
-### Mark plan as favorite within topic
-#### /api/user/unmarkplan
+### Choose plan as favorite within topic
+#### /api/user/plan/favorite
 Request
 ```javascript
 {
@@ -156,7 +156,7 @@ No Body
 ---
 
 ### Remove plan from favorite within topic
-#### /api/user/markplan
+#### /api/user/plan/unfavorite
 Request
 ```javascript
 {
