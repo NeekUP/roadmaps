@@ -88,11 +88,18 @@ func (this *dbSeedDev) seedEntities() {
 	for i, v := range devdb.Steps {
 		db.Steps[i] = v
 	}
+
+	db.UsersPlans = make([]domain.UsersPlan, len(devdb.UsersPlans))
+	for i, v := range devdb.UsersPlans {
+		v.UserId = users[v.UserId].Id
+		db.UsersPlans[i] = v
+	}
 }
 
 type DevDB struct {
-	Resources []domain.Source `json:"resources"`
-	Topics    []domain.Topic  `json:"topics"`
-	Plans     []domain.Plan   `json:"plans"`
-	Steps     []domain.Step   `json:"steps"`
+	Resources  []domain.Source    `json:"resources"`
+	Topics     []domain.Topic     `json:"topics"`
+	Plans      []domain.Plan      `json:"plans"`
+	Steps      []domain.Step      `json:"steps"`
+	UsersPlans []domain.UsersPlan `json:"usersPlans"`
 }

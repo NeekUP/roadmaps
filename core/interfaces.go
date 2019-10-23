@@ -38,7 +38,7 @@ type PlanRepository interface {
 	// should includes steps
 	GetList(id []int) []domain.Plan
 	// should includes steps
-	GetTopByTopicName(topic string, count int) []domain.Plan
+	GetTopByTopicName(topic string, count int, exclude ...int) []domain.Plan
 }
 
 type StepRepository interface {
@@ -50,7 +50,7 @@ type UsersPlanRepository interface {
 	// false only if db error
 	Add(userId string, topicName string, planId int) bool
 	Remove(userId string, planId int) bool
-	GetByTopic(userId, topicName string) (planId int, exists bool)
+	GetByTopic(userId, topicName string) *domain.UsersPlan
 }
 
 type HashProvider interface {
