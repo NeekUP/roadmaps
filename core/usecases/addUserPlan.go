@@ -30,9 +30,6 @@ func (this *addUserPlan) Do(ctx core.ReqContext, planId int) (bool, error) {
 
 	userId := ctx.UserId()
 	success := this.UsersPlanRepo.Add(userId, plan.TopicName, planId)
-	if !success {
-		return false, core.NewError(core.InternalError)
-	}
 
-	return true, nil
+	return success, nil
 }

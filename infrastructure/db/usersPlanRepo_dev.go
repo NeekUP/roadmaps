@@ -5,19 +5,14 @@ package db
 import (
 	"database/sql"
 	"roadmaps/core"
+	"roadmaps/domain"
 	"sync"
 )
 
 var (
-	UsersPlans    = make([]usersPlanRecord, 0)
+	UsersPlans    = make([]domain.UsersPlan, 0)
 	UsersPlansMux sync.Mutex
 )
-
-type usersPlanRecord struct {
-	UserId    string
-	PlanId    int
-	TopicName string
-}
 
 type usersPlanRepoInMemory struct {
 	Conn *sql.DB
@@ -35,12 +30,15 @@ func (this *usersPlanRepoInMemory) Add(userId string, topicName string, planId i
 	for i := 0; i < len(UsersPlans); i++ {
 		if UsersPlans[i].UserId == userId &&
 			UsersPlans[i].TopicName == topicName {
-			UsersPlans[i].PlanId = planId
-			return true
+			if i == len(UsersPlans)-1 {
+				UsersPlans = UsersPlans[:len(UsersPlans)-1]
+			} else {
+				UsersPlans = append(UsersPlans[:i], UsersPlans[i+1:]...)
+			}
 		}
 	}
 
-	UsersPlans = append(UsersPlans, usersPlanRecord{userId, planId, topicName})
+	UsersPlans = append(UsersPlans, domain.UsersPlan{UserId: userId, TopicName: topicName, PlanId: planId})
 	return true
 }
 
@@ -63,7 +61,7 @@ func (this *usersPlanRepoInMemory) Remove(userId string, planId int) bool {
 	return true
 }
 
-func (this *usersPlanRepoInMemory) GetByTopic(userId, topicName string) (planId int, exists bool) {
+func (this *usersPlanRepoInMemory) GetByTopic(userId, topicName string) *domain.UsersPlan {
 	UsersPlansMux.Lock()
 	defer UsersPlansMux.Unlock()
 
@@ -71,8 +69,24 @@ func (this *usersPlanRepoInMemory) GetByTopic(userId, topicName string) (planId 
 	for i := 0; i < l; i++ {
 		if UsersPlans[i].UserId == userId &&
 			UsersPlans[i].TopicName == topicName {
-			return UsersPlans[i].PlanId, true
+			copy := UsersPlans[i]
+			return &copy
 		}
 	}
-	return 0, false
+	return nil
+}
+
+func (this *usersPlanRepoInMemory) GetByUser(userId string) []domain.UsersPlan {
+	UsersPlansMux.Lock()
+	defer UsersPlansMux.Unlock()
+
+	usersPlans := []domain.UsersPlan{}
+
+	l := len(UsersPlans)
+	for i := 0; i < l; i++ {
+		if UsersPlans[i].UserId == userId {
+			usersPlans = append(usersPlans, UsersPlans[i])
+		}
+	}
+	return usersPlans
 }

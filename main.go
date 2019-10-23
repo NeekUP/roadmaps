@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/cors"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -53,10 +53,11 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	})
-	r.Use(cors.Handler)
+
 	/*
 		Middlewares
 	*/
+	r.Use(cors.Handler)
 	r.Use(infrastructure.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(httpLogger(newLogger("http")))
@@ -86,7 +87,7 @@ func main() {
 	addSource := usecases.NewAddSource(sourceRepo, newLogger("addSource"), imageManager)
 	addTopic := usecases.NewAddTopic(topicRepo, newLogger("addTopic"))
 	addPlan := usecases.NewAddPlan(planRepo, newLogger("addPlan"))
-	getTopic := usecases.NewGetTopic(topicRepo, planRepo, newLogger("getTopic"))
+	getTopic := usecases.NewGetTopic(topicRepo, planRepo, usersPlanRepo, newLogger("getTopic"))
 	getPlanTree := usecases.NewGetPlanTree(planRepo, getTopic, newLogger("getPlanTree"))
 	addUserPlan := usecases.NewAddUserPlan(planRepo, usersPlanRepo, newLogger("addUserPlan"))
 	removeUserPlan := usecases.NewRemoveUserPlan(usersPlanRepo, newLogger("removeUserPlan"))
@@ -131,8 +132,8 @@ func main() {
 		r.Post("/api/source/add", apiAddSource)
 		r.Post("/api/topic/add", apiAddTopic)
 		r.Post("/api/plan/add", apiAddPlan)
-		r.Post("/api/user/addplan", apiAddUserPlan)
-		r.Post("/api/user/removeplan", apiRemoveAddUserPlan)
+		r.Post("/api/user/markplan", apiAddUserPlan)
+		r.Post("/api/user/unmarkplan", apiRemoveAddUserPlan)
 	})
 
 	log.Printf("Listening %s", Cfg.HTTPServer.Host+":"+Cfg.HTTPServer.Port)
@@ -244,8 +245,8 @@ func panicError(err error) {
 	}
 }
 func AllowOriginFunc(r *http.Request, origin string) bool {
-	if origin == Cfg.Client.Host { 
+	if origin == Cfg.Client.Host {
 		return true
-	} 
+	}
 	return false
 }

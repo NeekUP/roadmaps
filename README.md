@@ -136,6 +136,45 @@ No Body
 
 ---
 
+### Mark plan as favorite within topic
+#### /api/user/unmarkplan
+Request
+```javascript
+{
+	"planId": "string"
+}
+```
+### 200 - OK
+No Body
+
+### 400 - BadRequest
+No Body
+
+### 500 - Internal Error
+No Body
+
+---
+
+### Remove plan from favorite within topic
+#### /api/user/markplan
+Request
+```javascript
+{
+	"planId": "string"
+}
+```
+### 200 - OK
+No Body
+
+### 400 - BadRequest
+No Body
+
+### 500 - Internal Error
+No Body
+
+---
+
+
 ## Resources
 ### App resource
 #### /api/source/add

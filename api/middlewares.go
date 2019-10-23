@@ -12,7 +12,7 @@ func Auth(rights domain.Rights, ts core.TokenService) func(next http.Handler) ht
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
-
+			ctx := r.Context()
 			if len(authHeader) > 0 {
 				userId, userName, userRights, err := ts.Validate(authHeader[7:])
 				if userId == "" || err != nil {
@@ -25,7 +25,6 @@ func Auth(rights domain.Rights, ts core.TokenService) func(next http.Handler) ht
 					return
 				}
 
-				ctx := r.Context()
 				ctx = context.WithValue(ctx, infrastructure.ReqRights, userRights)
 				ctx = context.WithValue(ctx, infrastructure.ReqUserId, userId)
 				ctx = context.WithValue(ctx, infrastructure.ReqUserName, userName)
@@ -35,9 +34,8 @@ func Auth(rights domain.Rights, ts core.TokenService) func(next http.Handler) ht
 				return
 			}
 
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 		return http.HandlerFunc(fn)
 	}
 }
-
