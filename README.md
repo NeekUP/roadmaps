@@ -144,11 +144,21 @@ Request
 	"planId": "string"
 }
 ```
+
+Response
 ### 200 - OK
-No Body
+```javascript
+{
+    "success": bool
+}
+```
 
 ### 400 - BadRequest
-No Body
+```javascript
+{
+    "error": "INVALID_REQUEST"
+}
+```
 
 ### 500 - Internal Error
 No Body
@@ -163,11 +173,14 @@ Request
 	"planId": "string"
 }
 ```
-### 200 - OK
-No Body
 
-### 400 - BadRequest
-No Body
+Response
+### 200 - OK
+```javascript
+{
+    "success": bool
+}
+```
 
 ### 500 - Internal Error
 No Body
