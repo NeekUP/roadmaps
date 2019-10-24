@@ -94,7 +94,7 @@ func Login(loginUsr usecases.LoginUser, log core.AppLogger, captcha Captcha) fun
 
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
-				statusResponse(w, &status{Code: 400, Message: err.Error()})
+				badRequest(w, err)
 			} else {
 				statusResponse(w, &status{Code: 500})
 			}
@@ -143,7 +143,7 @@ func RefreshToken(refreshToken usecases.RefreshToken, log core.AppLogger, captch
 
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
-				statusResponse(w, &status{Code: 400, Message: err.Error()})
+				badRequest(w, err)
 			} else {
 				statusResponse(w, &status{Code: 500})
 			}
@@ -162,6 +162,10 @@ func RefreshToken(refreshToken usecases.RefreshToken, log core.AppLogger, captch
 
 type userPlanReq struct {
 	PlanId string `json:"planId"`
+}
+
+type userPlanRes struct {
+	Success bool `json:"success"`
 }
 
 func AddUserPlan(addUserPlan usecases.AddUserPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
@@ -185,18 +189,18 @@ func AddUserPlan(addUserPlan usecases.AddUserPlan, log core.AppLogger) func(w ht
 			return
 		}
 
-		_, err = addUserPlan.Do(ctx, planId)
+		success, err := addUserPlan.Do(ctx, planId)
 
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
-				statusResponse(w, &status{Code: 400, Message: err.Error()})
+				badRequest(w, err)
 			} else {
 				statusResponse(w, &status{Code: 500})
 			}
 			return
 		}
 
-		statusResponse(w, &status{Code: 200})
+		valueResponse(w, &userPlanRes{Success: success})
 	}
 }
 
@@ -221,17 +225,16 @@ func RemoveUserPlan(removeUserPlan usecases.RemoveUserPlan, log core.AppLogger) 
 			return
 		}
 
-		_, err = removeUserPlan.Do(ctx, planId)
+		success, err := removeUserPlan.Do(ctx, planId)
 
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
-				statusResponse(w, &status{Code: 400, Message: err.Error()})
+				badRequest(w, err)
 			} else {
 				statusResponse(w, &status{Code: 500})
 			}
 			return
 		}
-		statusResponse(w, &status{Code: 200})
-
+		valueResponse(w, &userPlanRes{Success: success})
 	}
 }
