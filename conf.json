@@ -11,7 +11,10 @@
     "host": "localhost",
     "port": "8080",
     "schema": "http",
-    "usecache": "true"
+    "usecache": "true",
+    "readTimeoutSec": 10,
+    "writeTimeoutSec": 10,
+    "readHeadersTimeoutSec": 10
   },
   "client":{
     "host":"http://localhost:3000"
