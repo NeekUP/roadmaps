@@ -36,11 +36,6 @@ func (this *getTopic) Do(ctx core.ReqContext, name string, planCount int) (*doma
 		return nil, core.NewError(core.NotExists)
 	}
 
-	if len(topic.Plans) >= planCount {
-		return topic, nil
-	}
-
-	this.AttachePlans(ctx, topic, planCount)
 	return topic, nil
 }
 
@@ -55,31 +50,30 @@ func (this *getTopic) DoById(ctx core.ReqContext, id int, planCount int) (*domai
 		return topic, nil
 	}
 
-	this.AttachePlans(ctx, topic, planCount)
 	return topic, nil
 }
 
-func (this *getTopic) AttachePlans(ctx core.ReqContext, topic *domain.Topic, planCount int) {
-	if ctx.UserId() != "" {
-		upId := this.UsersPlan.GetByTopic(ctx.UserId(), topic.Name)
-		if upId != nil {
-			userSelectedPlan := this.PlanRepo.Get(upId.PlanId)
-			if userSelectedPlan != nil {
-				topic.Plans = append(topic.Plans, *userSelectedPlan)
-			}
-		}
-	}
+// func (this *getTopic) AttachePlans(ctx core.ReqContext, topic *domain.Topic, planCount int, includeSteps bool) {
+// 	if ctx.UserId() != "" {
+// 		upId := this.UsersPlan.GetByTopic(ctx.UserId(), topic.Name)
+// 		if upId != nil {
+// 			userSelectedPlan := this.PlanRepo.Get(upId.PlanId)
+// 			if userSelectedPlan != nil {
+// 				topic.Plans = append(topic.Plans, *userSelectedPlan)
+// 			}
+// 		}
+// 	}
 
-	if len(topic.Plans) == 0 {
-		topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, planCount)
-	} else if planCount-len(topic.Plans) == 0 {
-		return
-	} else {
-		u := topic.Plans[0]
-		topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, planCount-len(topic.Plans), topic.Plans[0].Id)
-		topic.Plans = append(topic.Plans, u)
-	}
-}
+// 	if len(topic.Plans) == 0 {
+// 		topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, planCount, includeSteps)
+// 	} else if planCount-len(topic.Plans) == 0 {
+// 		return
+// 	} else {
+// 		u := topic.Plans[0]
+// 		topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, planCount-len(topic.Plans), includeSteps, topic.Plans[0].Id)
+// 		topic.Plans = append(topic.Plans, u)
+// 	}
+// }
 
 func (this *getTopic) validate(name string, planCount int) *core.AppError {
 	errors := make(map[string]string)

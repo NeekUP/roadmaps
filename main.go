@@ -88,10 +88,12 @@ func main() {
 	addTopic := usecases.NewAddTopic(topicRepo, newLogger("addTopic"))
 	addPlan := usecases.NewAddPlan(planRepo, newLogger("addPlan"))
 	getTopic := usecases.NewGetTopic(topicRepo, planRepo, usersPlanRepo, newLogger("getTopic"))
-	getPlanTree := usecases.NewGetPlanTree(planRepo, getTopic, newLogger("getPlanTree"))
+	getPlanTree := usecases.NewGetPlanTree(planRepo, topicRepo, usersPlanRepo, newLogger("getPlanTree"))
 	addUserPlan := usecases.NewAddUserPlan(planRepo, usersPlanRepo, newLogger("addUserPlan"))
 	removeUserPlan := usecases.NewRemoveUserPlan(usersPlanRepo, newLogger("removeUserPlan"))
-
+	getPlan := usecases.NewGetPlan(planRepo, userRepo, newLogger("getPlan"))
+	getPlanList := usecases.NewGetPlanList(planRepo, userRepo, newLogger("getPlanList"))
+	getUsersPlans := usecases.NewGetUsersPlans(planRepo, usersPlanRepo, newLogger("getUsersPlans"))
 	/*
 		Api methods
 	*/
@@ -102,10 +104,12 @@ func main() {
 	apiAddTopic := api.AddTopic(addTopic, newLogger("apiAddTopic"))
 	apiAddPlan := api.AddPlan(addPlan, newLogger("apiAddPlan"))
 	apiGetPlanTree := api.GetPlanTree(getPlanTree, newLogger("apiGetPlanTree"))
-	apiGetTopicTree := api.GetTopicTree(getPlanTree, newLogger("apiGetPlanTree"))
+	apiGetTopicTree := api.GetTopicTree(getPlanTree, newLogger("apiGetTopicTree"))
 	apiAddUserPlan := api.AddUserPlan(addUserPlan, newLogger("apiAddUserPlanTree"))
 	apiRemoveAddUserPlan := api.RemoveUserPlan(removeUserPlan, newLogger("apiRemoveUserPlanTree"))
-
+	apiGetTopic := api.GetTopic(getTopic, newLogger("apiGetTopic"))
+	apiGetPlan := api.GetPlan(getPlan, newLogger("apiGetPlan"))
+	apiGetPlanList := api.GetPlanList(getPlanList, getUsersPlans, newLogger("getPlanList"))
 	/*
 		Database
 	*/
@@ -122,8 +126,11 @@ func main() {
 		r.Post("/api/user/registration", apiReqUser)
 		r.Post("/api/user/login", apiLoginUser)
 		r.Post("/api/user/refresh", apiRefreshToken)
+		r.Post("/api/plan/get", apiGetPlan)
+		r.Post("/api/plan/list", apiGetPlanList)
 		r.Post("/api/plan/tree", apiGetPlanTree)
 		r.Post("/api/topic/tree", apiGetTopicTree)
+		r.Post("/api/topic/get", apiGetTopic)
 	})
 
 	// for users
@@ -139,10 +146,11 @@ func main() {
 	log.Printf("Listening %s", Cfg.HTTPServer.Host+":"+Cfg.HTTPServer.Port)
 
 	srv := &http.Server{
-		Handler:      r,
-		Addr:         Cfg.HTTPServer.Host + ":" + Cfg.HTTPServer.Port,
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
+		Handler:           r,
+		Addr:              Cfg.HTTPServer.Host + ":" + Cfg.HTTPServer.Port,
+		WriteTimeout:      time.Duration(Cfg.HTTPServer.WriteTimeoutSec) * time.Second,
+		ReadTimeout:       time.Duration(Cfg.HTTPServer.ReadTimeoutSec) * time.Second,
+		ReadHeaderTimeout: time.Duration(Cfg.HTTPServer.ReadHeadersTimeoutSec) * time.Second,
 	}
 
 	log.Fatal(srv.ListenAndServe())
@@ -217,7 +225,7 @@ func recoverer(l core.AppLogger) func(next http.Handler) http.Handler {
 					if l != nil {
 						l.Panic(rvr, debug.Stack())
 					} else {
-						fmt.Fprintf(os.Stderr, "Panic: %+v\n", rvr)
+						fmt.Fprintf(os.Stderr, "Panic:%v \r\n%s", rvr, string(debug.Stack()))
 						debug.PrintStack()
 					}
 

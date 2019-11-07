@@ -35,10 +35,8 @@ type PlanRepository interface {
 	SaveWithSteps(plan *domain.Plan) error
 	// should includes steps
 	Get(id int) *domain.Plan
-	// should includes steps
 	GetList(id []int) []domain.Plan
-	// should includes steps
-	GetTopByTopicName(topic string, count int, exclude ...int) []domain.Plan
+	GetTopByTopicName(topic string, count int) []domain.Plan
 }
 
 type StepRepository interface {
@@ -51,6 +49,7 @@ type UsersPlanRepository interface {
 	Add(userId string, topicName string, planId int) bool
 	Remove(userId string, planId int) bool
 	GetByTopic(userId, topicName string) *domain.UsersPlan
+	GetByUser(userId string) []domain.UsersPlan
 }
 
 type HashProvider interface {

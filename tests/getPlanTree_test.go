@@ -40,8 +40,7 @@ func TestGetPlanTreeSuccess(t *testing.T) {
 		plans[i] = *plan
 	}
 
-	getTopic := usecases.NewGetTopic(db.NewTopicRepository(nil), db.NewPlansRepository(nil), log)
-	getPlanTree := usecases.NewGetPlanTree(db.NewPlansRepository(nil), getTopic, log)
+	getPlanTree := usecases.NewGetPlanTree(db.NewPlansRepository(nil), db.NewTopicRepository(nil), db.NewUsersPlanRepository(nil), log)
 	result, err := getPlanTree.Do(infrastructure.NewContext(nil), []int{plans[0].Id})
 	if err != nil {
 		t.Errorf("Error while getting plan tree: %s", err.Error())
