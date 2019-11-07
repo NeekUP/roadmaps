@@ -12,10 +12,13 @@ type Config struct {
 		UriPath     string `json:"uriPath"`
 	}
 	HTTPServer struct {
-		StaticPath string `json:"staticpath"`
-		Host       string `json:"host"`
-		Schema     string `json:"schema"`
-		Port       string `json:"port"`
+		StaticPath            string `json:"staticpath"`
+		Host                  string `json:"host"`
+		Schema                string `json:"schema"`
+		Port                  string `json:"port"`
+		ReadTimeoutSec        int    `json:"readTimeoutSec"`
+		WriteTimeoutSec       int    `json:"writeTimeoutSec"`
+		ReadHeadersTimeoutSec int    `json:"readHeadersTimeoutSec"`
 	}
 	Client struct {
 		Host string `json:"host"`

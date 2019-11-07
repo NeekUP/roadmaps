@@ -136,6 +136,88 @@ No Body
 
 ---
 
+## Plans
+
+Plans identifies by id(string). This is a short interpretation of int. 
+0 -> "a"
+1 -> "b"
+9999 -> "cLr"
+
+### Add plan
+#### /api/plan/add
+Request
+```javascript
+{
+	"topic": "string (topic name)",
+	"title": "string",
+	"steps": [{
+		"referenceId": "int",
+		"referenceType":"Resource | Topic | Test"
+	}]
+}
+```
+### 400 - BadRequest
+```javascript
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR ",
+    "validation": {
+		"topic": "INVALID_FORMAT"
+        "title": "INVALID_FORMAT",
+		"steps": "INVALID_COUNT"
+    }
+}
+```
+### 500 - Internal Error
+No Body
+
+---
+
+### Topic tree
+#### /api/topic/tree
+Request
+```javascript
+{
+	"name": "string"
+}
+```
+
+Response
+### 200 - OK
+```javascript
+{
+    "nodes": [
+        {
+            "topicName": "string",
+            "topicTitle": "string",
+            "planId": "string",
+            "planTitle": "string",
+            "child": [
+                {
+                    "topicName": "string",
+                    "topicTitle": "string",
+                    "planId": "string",
+                    "planTitle": "string"
+                }
+            ]
+        }
+    ]
+}
+```
+
+### 400 - BadRequest
+```javascript
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
+    "validation": {
+		"name": "INVALID_FORMAT"
+    }
+}
+```
+### 500 - Internal Error
+No Body
+
+---
+
 ### Choose plan as favorite within topic
 #### /api/user/plan/favorite
 Request
@@ -187,15 +269,172 @@ No Body
 
 ---
 
+### Get plan with steps
+#### /api/plan/get
+Request
+```javascript
+{
+	"id": "string"
+}
+```
+Responses
+### 200 - OK
+```javascript
+{
+    "id": "string",
+    "title": "string",
+    "topicName": "string",
+    "owner": {
+        "id": "string",
+        "name": "string",
+        "img": "string(relative url)"
+    },
+    "points": int,
+    "inFavorites": bool,
+    "steps": [
+        {
+            "id": int,
+            "type": "Resource | Test | Topic",
+            "position": int,
+            "source": {
+                "id": int,
+                "title": "string1",
+                "type": "Article | Video | Audio | Book",
+                "props": "string json",
+                "img": "string url",
+                "desc": "string"
+            }
+        },
+        {
+            "id": 0,
+            "type": "Topic",
+            "position": 2,
+            "source": {
+                "id": "javascript",
+                "title": "Javascript",
+                "desc": "Most popular programming language"
+            }
+        }
+    ]
+}
+```
+inFavorites: if this plan user select as favorite within topic
+For steps.type == Topic fields:
+    steps.source.type, steps.source.props, steps.source.img will be omitted. But img in future should be used.  
+    id - string
+
+### 400 - BadRequest
+```javascript
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
+    "validation": {
+        "id": "INVALID_FORMAT",
+    }
+}
+```
+
+### 500 - Internal Error
+No Body
+
+---
+
+### Plan List
+#### /api/plan/list
+List of plan by topic name
+Request
+```javascript
+{
+	"topicName": "string"
+}
+```
+Response
+### 200 - OK
+```javascript
+[
+    {
+        "id": "string",
+        "title": "string",
+        "topicName": "string",
+        "owner": {
+            "id": "string",
+            "name": "string",
+            "img": "string"
+        },
+        "points": int,
+        "inFavorites": bool
+    }
+]
+```
+inFavorites: if this plan user select as favorite within topic
+
+### 400 - BadRequest
+```javascript
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
+    "validation": {
+        "topicName": "INVALID_FORMAT"
+    }
+}
+```
+
+### 500 - Internal Error
+No Body
+
+---
+### Plan tree
+#### /api/plan/tree
+Request
+```javascript
+{
+
+	"id": "string"
+}
+```
+
+Response
+### 200 - OK
+```javascript
+{
+    "nodes": [
+        {
+            "topicName": "string",
+            "topicTitle": "string",
+            "planId": "string",
+            "planTitle": "string",
+            "child": [
+                {
+                    "topicName": "string",
+                    "topicTitle": "string",
+                    "planId": "string",
+                    "planTitle": "string"
+                }
+            ]
+        }
+    ]
+}
+```
+
+### 400 - BadRequest
+```javascript
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR ",
+    "validation": {
+		"id": "INVALID_FORMAT"
+    }
+}
+```
+### 500 - Internal Error
+No Body
+
+---
 
 ## Resources
 ### App resource
 #### /api/source/add
 ```javascript
 {
-	"identifier": "URL | ISBN-13 | ISBN-10",
-	"type": "Article | Book | Video | Audio",
-	"props": {}
+	"identifier":"string (absolute url / isbn)",
+	"type":"Article | Vidoe | Audio | Books"
 }
 ```
 
@@ -262,42 +501,12 @@ No Body
 
 ---
 
-## Plans
-### Add plan
-#### /api/plan/add
-Request
-```javascript
-{
-	"topic": "string (topic name)",
-	"title": "string",
-	"steps": [{
-		"referenceId": "int",
-		"referenceType":"Resource | Topic | Test"
-	}]
-}
-```
-### 400 - BadRequest
-```javascript
-{
-    "error": "INVALID_REQUEST | INTERNAL_ERROR ",
-    "validation": {
-		"topic": "INVALID_FORMAT"
-        "title": "INVALID_FORMAT",
-		"steps": "INVALID_COUNT"
-    }
-}
-```
-### 500 - Internal Error
-No Body
 
----
-
-### Topic tree
-#### /api/topic/tree
-Request
+### Topic get
+#### /api/topic/get
 ```javascript
 {
-	"name": "string"
+	"name":"string"
 }
 ```
 
@@ -305,31 +514,20 @@ Response
 ### 200 - OK
 ```javascript
 {
-    "nodes": [
-        {
-            "topicName": "string",
-            "topicTitle": "string",
-            "planId": "string",
-            "planTitle": "string",
-            "child": [
-                {
-                    "topicName": "string",
-                    "topicTitle": "string",
-                    "planId": "string",
-                    "planTitle": "string"
-                }
-            ]
-        }
-    ]
+    "topic": {
+        "name": "string",
+        "title": "string",
+        "desc": "string"
+    }
 }
 ```
 
 ### 400 - BadRequest
 ```javascript
 {
-    "error": "INVALID_REQUEST | INTERNAL_ERROR ",
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
     "validation": {
-		"name": "INVALID_FORMAT"
+        "name": "INVALID_FORMAT"
     }
 }
 ```
@@ -337,53 +535,6 @@ Response
 No Body
 
 ---
-
-### Plan tree
-#### /api/plan/tree
-Request
-```javascript
-{
-	"id": "string"
-}
-```
-
-Response
-### 200 - OK
-```javascript
-{
-    "nodes": [
-        {
-            "topicName": "string",
-            "topicTitle": "string",
-            "planId": "string",
-            "planTitle": "string",
-            "child": [
-                {
-                    "topicName": "string",
-                    "topicTitle": "string",
-                    "planId": "string",
-                    "planTitle": "string"
-                }
-            ]
-        }
-    ]
-}
-```
-
-### 400 - BadRequest
-```javascript
-{
-    "error": "INVALID_REQUEST | INTERNAL_ERROR ",
-    "validation": {
-		"id": "INVALID_FORMAT"
-    }
-}
-```
-### 500 - Internal Error
-No Body
-
----
-
 
 ## Errors
 | Error                    | Description |

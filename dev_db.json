@@ -67,14 +67,14 @@
 			"Position": 0
 		},
 		{
-			"Id": 1,
+			"Id": 0,
 			"PlanId": 0,
 			"ReferenceId": 0,
 			"ReferenceType": "Resource",
 			"Position": 1
 		},
 		{
-			"Id": 2,
+			"Id": 0,
 			"PlanId": 0,
 			"ReferenceId": 0,
 			"ReferenceType": "Topic",

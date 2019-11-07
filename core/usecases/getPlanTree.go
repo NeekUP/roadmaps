@@ -19,13 +19,14 @@ type GetPlanTree interface {
 }
 
 type getPlanTree struct {
-	PlanRepo core.PlanRepository
-	GetTopic GetTopic
-	Log      core.AppLogger
+	PlanRepo   core.PlanRepository
+	TopicRepo  core.TopicRepository
+	UsersPlans core.UsersPlanRepository
+	Log        core.AppLogger
 }
 
-func NewGetPlanTree(planRepo core.PlanRepository, getTopic GetTopic, log core.AppLogger) GetPlanTree {
-	return &getPlanTree{PlanRepo: planRepo, GetTopic: getTopic, Log: log}
+func NewGetPlanTree(planRepo core.PlanRepository, topics core.TopicRepository, uplans core.UsersPlanRepository, log core.AppLogger) GetPlanTree {
+	return &getPlanTree{PlanRepo: planRepo, TopicRepo: topics, UsersPlans: uplans, Log: log}
 }
 
 func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) {
@@ -49,8 +50,8 @@ func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) 
 	// for every plan
 	for i := 0; i < len(plans); i++ {
 		// get topic
-		t, err := this.GetTopic.Do(ctx, plans[i].TopicName, 1)
-		if err != nil {
+		t := this.TopicRepo.Get(plans[i].TopicName)
+		if t == nil {
 			return nil, core.NewError(core.InvalidRequest)
 		}
 		// create tree node
@@ -61,16 +62,25 @@ func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) 
 			PlanTitle:  plans[i].Title,
 		}
 
+		userId := ctx.UserId()
+		userFavorits := this.getUserFavoritsPlans(userId)
+
 		// for every plan step with topic
 		for j := 0; j < len(plans[i].Steps); j++ {
 			if plans[i].Steps[j].ReferenceType == domain.TopicReference {
 				// get topic
-				t, _ := this.GetTopic.DoById(ctx, plans[i].Steps[j].ReferenceId, 1)
+				t := this.TopicRepo.GetById(plans[i].Steps[j].ReferenceId)
 				if t != nil {
+					if userFavorits[t.Name] != 0 {
+						plan := this.PlanRepo.Get(userFavorits[t.Name])
+						t.Plans = []domain.Plan{*plan}
+					} else {
+						t.Plans = this.PlanRepo.GetTopByTopicName(t.Name, 1)
+					}
 					chPlanId := -1
 					chPlanTitle := ""
 
-					if len(t.Plans) > 0 {
+					if len(t.Plans) >= 1 {
 						chPlanId = t.Plans[0].Id
 						chPlanTitle = t.Plans[0].Title
 					}
@@ -92,10 +102,35 @@ func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) 
 	return result, nil
 }
 
+func (this *getPlanTree) getUserFavoritsPlans(userid string) map[string]int {
+	userFavorits := make(map[string]int)
+	if userid == "" {
+		return userFavorits
+	}
+
+	userId := userid
+	if userId != "" {
+		uplans := this.UsersPlans.GetByUser(userId)
+		for i := 0; i < len(uplans); i++ {
+			userFavorits[uplans[i].TopicName] = uplans[i].PlanId
+		}
+	}
+
+	return userFavorits
+}
+
 func (this *getPlanTree) DoByTopic(ctx core.ReqContext, name string) ([]TreeNode, error) {
-	topic, err := this.GetTopic.Do(ctx, name, 1)
-	if err != nil {
-		return nil, err
+	topic := this.TopicRepo.Get(name)
+	if topic == nil {
+		return nil, core.NewError(core.InvalidRequest)
+	}
+
+	up := this.UsersPlans.GetByTopic(ctx.UserId(), topic.Name)
+	if up != nil {
+		p := this.PlanRepo.Get(up.PlanId)
+		topic.Plans = []domain.Plan{*p}
+	} else {
+		topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, 1)
 	}
 
 	if len(topic.Plans) == 0 {
