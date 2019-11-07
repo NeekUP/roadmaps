@@ -21,11 +21,11 @@ const (
 	InvalidProperties     ErrorCode = "INVALID_PROPS"
 	InvalidSourceType     ErrorCode = "INVALID_SOURCE_TYPE"
 	InaccessibleWebPage   ErrorCode = "INACCESSIBLE_WEBPAGE"
+	InvalidValue          ErrorCode = "INVALID_VALUE"
 	InvalidFormat         ErrorCode = "INVALID_FORMAT"
 	SourceNotFound        ErrorCode = "SOURCE_NOT_FOUND"
 	InvalidCount          ErrorCode = "INVALID_COUNT"
 	NotExists             ErrorCode = "NOT_EXISTS"
-	
 )
 
 func (e ErrorCode) String() string {
@@ -34,7 +34,7 @@ func (e ErrorCode) String() string {
 
 type AppError struct {
 	Message    string            `json:"error"`
-	Validation map[string]string `json:"validation"`
+	Validation map[string]string `json:"validation,omitempty"`
 }
 
 func (e *AppError) Error() string {

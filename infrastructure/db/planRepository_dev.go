@@ -64,15 +64,14 @@ func (this *planRepoInMemory) Get(id int) *domain.Plan {
 
 	for _, v := range Plans {
 		if v.Id == id {
-			result := v
+			// for _, s := range Steps {
+			// 	if s.PlanId == id {
+			// 		result.Steps = append(result.Steps, s)
+			// 	}
+			// }
 
-			for _, s := range Steps {
-				if s.PlanId == id {
-					result.Steps = append(result.Steps, s)
-				}
-			}
-
-			copy := result
+			copy := v
+			this.AttacheSteps(&copy)
 			return &copy
 		}
 	}
@@ -93,7 +92,7 @@ func (this *planRepoInMemory) GetList(id []int) []domain.Plan {
 	return list
 }
 
-func (this *planRepoInMemory) GetTopByTopicName(topic string, count int, exclude ...int) []domain.Plan {
+func (this *planRepoInMemory) GetTopByTopicName(topic string, count int) []domain.Plan {
 
 	PlansMux.Lock()
 	defer PlansMux.Unlock()
@@ -114,7 +113,44 @@ func (this *planRepoInMemory) GetTopByTopicName(topic string, count int, exclude
 		count = len(topicPlans)
 	}
 
-	return topicPlans[:count]
+	result := topicPlans[:count]
+
+	return result
+}
+
+func (this *planRepoInMemory) AttacheSteps(plans *domain.Plan) {
+	StepsMux.Lock()
+	defer StepsMux.Unlock()
+
+	for s := 0; s < len(Steps); s++ {
+		if Steps[s].PlanId != plans.Id {
+			continue
+		}
+
+		step := Steps[s]
+		if step.ReferenceType == domain.ResourceReference {
+			for r := 0; r < len(Sources); r++ {
+				if Sources[r].Id == step.Id {
+					sourceCopy := Sources[r]
+					step.Source = &sourceCopy
+					break
+				}
+			}
+		} else if step.ReferenceType == domain.TopicReference {
+			for t := 0; t < len(Topics); t++ {
+				if step.ReferenceId == Topics[t].Id {
+					topicCopy := Topics[t]
+					step.Source = &domain.Source{
+						Id:         -1,
+						Title:      topicCopy.Title,
+						Identifier: topicCopy.Name,
+						Desc:       topicCopy.Description,
+					}
+				}
+			}
+		}
+		plans.Steps = append(plans.Steps, step)
+	}
 }
 
 func (this *planRepoInMemory) Save(plan *domain.Plan) bool {

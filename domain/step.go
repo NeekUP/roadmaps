@@ -6,4 +6,5 @@ type Step struct {
 	ReferenceId   int
 	ReferenceType ReferenceType
 	Position      int
+	Source        *Source
 }
