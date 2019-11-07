@@ -172,52 +172,6 @@ No Body
 
 ---
 
-### Topic tree
-#### /api/topic/tree
-Request
-```javascript
-{
-	"name": "string"
-}
-```
-
-Response
-### 200 - OK
-```javascript
-{
-    "nodes": [
-        {
-            "topicName": "string",
-            "topicTitle": "string",
-            "planId": "string",
-            "planTitle": "string",
-            "child": [
-                {
-                    "topicName": "string",
-                    "topicTitle": "string",
-                    "planId": "string",
-                    "planTitle": "string"
-                }
-            ]
-        }
-    ]
-}
-```
-
-### 400 - BadRequest
-```javascript
-{
-    "error": "INVALID_REQUEST | INTERNAL_ERROR",
-    "validation": {
-		"name": "INVALID_FORMAT"
-    }
-}
-```
-### 500 - Internal Error
-No Body
-
----
-
 ### Choose plan as favorite within topic
 #### /api/user/plan/favorite
 Request
@@ -528,6 +482,52 @@ Response
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
     "validation": {
         "name": "INVALID_FORMAT"
+    }
+}
+```
+### 500 - Internal Error
+No Body
+
+---
+
+### Topic tree
+#### /api/topic/tree
+Request
+```javascript
+{
+	"name": "string"
+}
+```
+
+Response
+### 200 - OK
+```javascript
+{
+    "nodes": [
+        {
+            "topicName": "string",
+            "topicTitle": "string",
+            "planId": "string",
+            "planTitle": "string",
+            "child": [
+                {
+                    "topicName": "string",
+                    "topicTitle": "string",
+                    "planId": "string",
+                    "planTitle": "string"
+                }
+            ]
+        }
+    ]
+}
+```
+
+### 400 - BadRequest
+```javascript
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
+    "validation": {
+		"name": "INVALID_FORMAT"
     }
 }
 ```
