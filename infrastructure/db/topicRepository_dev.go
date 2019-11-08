@@ -55,7 +55,7 @@ func (this *topicRepoInMemory) Save(topic *domain.Topic) bool {
 	defer TopicsMux.Unlock()
 
 	for i := 0; i < len(Topics); i++ {
-		if Topics[i].Id == topic.Id {
+		if Topics[i].Name == topic.Name {
 			return false
 		}
 	}
