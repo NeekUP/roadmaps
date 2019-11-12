@@ -23,3 +23,7 @@ func NewStepsRepository(conn *sql.DB) core.StepRepository {
 	return &stepRepoInMemory{
 		Conn: conn}
 }
+
+func (this stepRepoInMemory) All() []domain.Step {
+	return Steps
+}

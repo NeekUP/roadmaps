@@ -14,6 +14,9 @@ type UserRepository interface {
 	ExistsEmail(email string) bool
 	FindByEmail(email string) *domain.User
 	Count() int
+
+	//dev
+	All() []domain.User
 }
 
 type SourceRepository interface {
@@ -22,6 +25,9 @@ type SourceRepository interface {
 	Save(source *domain.Source) bool
 	Update(source *domain.Source) bool
 	GetOrAddByIdentifier(source *domain.Source) *domain.Source
+
+	//dev
+	All() []domain.Source
 }
 
 type TopicRepository interface {
@@ -29,6 +35,9 @@ type TopicRepository interface {
 	GetById(id int) *domain.Topic
 	Save(source *domain.Topic) bool
 	Update(source *domain.Topic) bool
+
+	//dev
+	All() []domain.Topic
 }
 
 type PlanRepository interface {
@@ -37,9 +46,14 @@ type PlanRepository interface {
 	Get(id int) *domain.Plan
 	GetList(id []int) []domain.Plan
 	GetTopByTopicName(topic string, count int) []domain.Plan
+
+	//dev
+	All() []domain.Plan
 }
 
 type StepRepository interface {
+	//dev
+	All() []domain.Step
 }
 
 type UsersPlanRepository interface {
