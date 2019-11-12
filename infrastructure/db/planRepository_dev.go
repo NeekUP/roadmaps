@@ -167,3 +167,7 @@ func (this *planRepoInMemory) Save(plan *domain.Plan) bool {
 	Plans = append(Plans, *plan)
 	return true
 }
+
+func (this *planRepoInMemory) All() []domain.Plan {
+	return Plans
+}

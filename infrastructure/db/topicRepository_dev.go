@@ -78,3 +78,7 @@ func (this *topicRepoInMemory) Update(topic *domain.Topic) bool {
 	}
 	return false
 }
+
+func (this *topicRepoInMemory) All() []domain.Topic {
+	return Topics
+}
