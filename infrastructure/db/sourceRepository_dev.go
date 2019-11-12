@@ -92,3 +92,7 @@ func (this *sourceRepoInMemory) GetOrAddByIdentifier(source *domain.Source) *dom
 	Sources = append(Sources, *source)
 	return source
 }
+
+func (this *sourceRepoInMemory) All() []domain.Source {
+	return Sources
+}
