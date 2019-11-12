@@ -101,3 +101,7 @@ func (this *userRepoInMemory) FindByEmail(email string) *domain.User {
 func (r *userRepoInMemory) Count() int {
 	return len(Users)
 }
+
+func (this *userRepoInMemory) All() []domain.User {
+	return Users
+}
