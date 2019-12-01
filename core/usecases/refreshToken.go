@@ -1,7 +1,7 @@
 package usecases
 
 import (
-	"roadmaps/core"
+	"github.com/NeekUP/roadmaps/core"
 )
 
 type RefreshToken interface {

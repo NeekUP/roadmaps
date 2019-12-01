@@ -2,8 +2,8 @@ package infrastructure
 
 import (
 	"fmt"
-	"roadmaps/core"
-	"roadmaps/domain"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -58,7 +58,9 @@ func (this *JwtTokenService) Create(user *domain.User, fingerprint, useragent st
 		Fingerprint: fingerprint,
 		UserAgent:   useragent})
 
-	this.UserRepo.Update(user)
+	if ok, err := this.UserRepo.Update(user); !ok || err != nil {
+		return "", "", err
+	}
 	return
 }
 

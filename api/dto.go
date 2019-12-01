@@ -1,8 +1,8 @@
 package api
 
 import (
-	"roadmaps/core"
-	"roadmaps/domain"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
 )
 
 type topic struct {
@@ -56,7 +56,7 @@ func NewPlanDto(p *domain.Plan, inFavorites bool) *plan {
 }
 
 type step struct {
-	Id            int                  `json:"id"`
+	Id            int64                `json:"id"`
 	ReferenceType domain.ReferenceType `json:"type"`
 	Position      int                  `json:"position"`
 	Source        *source              `json:"source"`

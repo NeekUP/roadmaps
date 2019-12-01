@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	"context"
-	"roadmaps/core"
+	"github.com/NeekUP/roadmaps/core"
 	"time"
 )
 

@@ -1,13 +1,17 @@
-// +build PROD
-
 package infrastructure
 
 import (
+	"context"
 	"fmt"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/core/usecases"
 	"os"
-	"roadmaps/core"
-	"roadmaps/core/usecases"
+	"strings"
 )
+
+type DbSeed interface {
+	Seed()
+}
 
 func NewDbSeed(regUser usecases.RegisterUser, userRepo core.UserRepository) DbSeed {
 	return &dbSeedProd{
@@ -26,15 +30,19 @@ func (this *dbSeedProd) Seed() {
 }
 
 func (this *dbSeedProd) seedUsers() {
-	if this.UserRepo.Count() == 0 {
-		context := NewContext(nil)
+	if count, ok := this.UserRepo.Count(); ok && count == 0 {
+		for _, e := range os.Environ() {
+			pair := strings.SplitN(e, "=", 2)
+			fmt.Println(pair[0])
+		}
 		for i := 0; i < 10; i++ {
 			name := os.Getenv(fmt.Sprintf("adminname%d", i))
 			email := os.Getenv(fmt.Sprintf("adminemail%d", i))
 			pass := os.Getenv(fmt.Sprintf("adminpass%d", i))
 
-			if !this.UserRepo.ExistsEmail(email) && name != "" && email != "" && pass !=  {
-				this.RegUser.Do(context, name, email, pass)
+			exists, ok := this.UserRepo.ExistsEmail(email)
+			if !exists && ok && name != "" && email != "" && pass != "" {
+				this.RegUser.Do(NewContext(context.Background()), name, email, pass)
 			}
 		}
 	}

@@ -1,8 +1,8 @@
 package usecases
 
 import (
-	"roadmaps/core"
-	"roadmaps/domain"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
 )
 
 type AddPlan interface {
@@ -21,7 +21,7 @@ type AddPlanReq struct {
 }
 
 type PlanStep struct {
-	ReferenceId   int
+	ReferenceId   int64
 	ReferenceType domain.ReferenceType
 }
 
@@ -64,10 +64,16 @@ func (this *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, erro
 		Сохранить в транзакции в базу все
 		В базе должны быть проверки уникальности и вторичные ключи
 	*/
-	err := this.PlanRepo.SaveWithSteps(plan)
-	if err != nil {
-		return nil, core.NewError(core.InvalidRequest)
+	if ok, err := this.PlanRepo.SaveWithSteps(plan); !ok {
+		if err != nil {
+			this.Log.Errorw("Invalid request",
+				"ReqId", ctx.ReqId(),
+				"Error", err.Error(),
+			)
+		}
+		return nil, err
 	}
+
 	return plan, nil
 }
 

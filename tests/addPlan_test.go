@@ -1,16 +1,24 @@
 package tests
 
 import (
-	"roadmaps/core/usecases"
-	"roadmaps/domain"
-	"roadmaps/infrastructure"
-	"roadmaps/infrastructure/db"
+	"github.com/NeekUP/roadmaps/core/usecases"
+	"github.com/NeekUP/roadmaps/domain"
+	"github.com/NeekUP/roadmaps/infrastructure/db"
 	"testing"
 )
 
 func TestAddPlanSuccess(t *testing.T) {
-	newTopicUsecase := usecases.NewAddTopic(db.NewTopicRepository(nil), log)
-	topic1, _ := newTopicUsecase.Do(infrastructure.NewContext(nil), "Add Plan", "")
+	u := registerUser("TestAddTopicSuccess", "TestAddTopicSuccess@w.ww", "TestAddTopicSuccess")
+	if u != nil {
+		defer DeleteUser(u.Id)
+	}
+	newTopicUsecase := usecases.NewAddTopic(db.NewTopicRepository(DB), log)
+	topic1, err := newTopicUsecase.Do(newContext(u), "Add Plan", "")
+	if err != nil {
+		t.Errorf("Topic not created: %s", err.Error())
+		return
+	}
+	defer DeleteTopic(topic1.Id)
 
 	plans := []usecases.AddPlanReq{
 		usecases.AddPlanReq{
@@ -18,24 +26,26 @@ func TestAddPlanSuccess(t *testing.T) {
 			TopicName: topic1.Name,
 			Steps: []usecases.PlanStep{
 				usecases.PlanStep{
-					ReferenceId:   topic1.Id,
+					ReferenceId:   int64(topic1.Id),
 					ReferenceType: domain.TopicReference,
 				},
 				usecases.PlanStep{
-					ReferenceId:   topic1.Id,
+					ReferenceId:   int64(topic1.Id),
 					ReferenceType: domain.TopicReference,
 				},
 			},
 		},
 	}
 
-	usecase := usecases.NewAddPlan(db.NewPlansRepository(nil), &appLoggerForTests{})
+	usecase := usecases.NewAddPlan(db.NewPlansRepository(DB), &appLoggerForTests{})
 	for _, v := range plans {
-		plan, err := usecase.Do(infrastructure.NewContext(nil), v)
+		plan, err := usecase.Do(newContext(u), v)
 
 		if err != nil {
 			t.Errorf("Plan not saved: %s", err.Error())
 			return
+		} else {
+			defer DeletePlan(plan.Id)
 		}
 
 		if plan.Title != v.Title {
@@ -51,6 +61,7 @@ func TestAddPlanSuccess(t *testing.T) {
 		}
 
 		for pos, step := range plan.Steps {
+			defer DeleteStep(step.Id)
 			if step.Position != pos {
 				t.Errorf("Step has wrong position: %d", step.Position)
 			}

@@ -1,9 +1,8 @@
 package tests
 
 import (
-	"roadmaps/core/usecases"
-	"roadmaps/infrastructure"
-	"roadmaps/infrastructure/db"
+	"github.com/NeekUP/roadmaps/core/usecases"
+	"github.com/NeekUP/roadmaps/infrastructure/db"
 	"testing"
 
 	"github.com/google/uuid"
@@ -11,6 +10,10 @@ import (
 
 func TestAddTopicSuccess(t *testing.T) {
 
+	u := registerUser("TestAddTopicSuccess", "TestAddTopicSuccess@w.ww", "TestAddTopicSuccess")
+	if u != nil {
+		defer DeleteUser(u.Id)
+	}
 	values := []struct {
 		Title, Desc, UserId string
 	}{
@@ -18,12 +21,14 @@ func TestAddTopicSuccess(t *testing.T) {
 		{"HTML and CSS: Design and Build Websites", "A full-color introduction to the basics of HTML and CSS from the publishers of Wrox! Every day, more and more people want to learn some HTML and CSS. Joining the professional web designers and programmers are new audiences who need to know a little bit of code at work (update a content management system or e-commerce store) and those who want to make their personal blogs more attractive. Many books teaching HTML and CSS are dry and only written for those who want to become programmers, which is why this", uuid.New().String()},
 	}
 
-	usecase := usecases.NewAddTopic(db.NewTopicRepository(nil), log)
+	usecase := usecases.NewAddTopic(db.NewTopicRepository(DB), log)
 
 	for _, v := range values {
-		result, err := usecase.Do(infrastructure.NewContext(nil), v.Title, v.Desc)
+		result, err := usecase.Do(newContext(u), v.Title, v.Desc)
 		if err != nil {
 			t.Errorf("Request with title [%s] return err: %s", v.Title, err.Error())
+		} else {
+			defer DeleteTopic(result.Id)
 		}
 
 		if result.Id == 0 {
