@@ -1,8 +1,8 @@
 package usecases
 
 import (
-	"roadmaps/core"
-	"roadmaps/domain"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
 )
 
 type GetPlanList interface {
@@ -33,7 +33,7 @@ func (this *getPlanList) Do(ctx core.ReqContext, topicName string, count int) ([
 		return nil, appErr
 	}
 
-	list := this.PlanRepo.GetTopByTopicName(topicName, count)
+	list := this.PlanRepo.GetPopularByTopic(topicName, count)
 
 	for i := 0; i < len(list); i++ {
 		list[i].Owner = this.UserRepo.Get(list[i].OwnerId)

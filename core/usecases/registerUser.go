@@ -1,8 +1,9 @@
 package usecases
 
 import (
-	"roadmaps/core"
-	"roadmaps/domain"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -38,16 +39,22 @@ func (r *registerUser) Do(ctx core.ReqContext, name string, email string, passwo
 
 	hash, salt := r.Hash.HashPassword(password)
 	user := &domain.User{
-		Id:     uuid.New().String(),
-		Name:   name,
-		Email:  email,
-		Rights: domain.U}
+		Id:             uuid.New().String(),
+		Name:           name,
+		NormalizedName: strings.ToUpper(name),
+		Email:          email,
+		Rights:         domain.U}
 
-	if r.UserRepo.Save(user, hash, salt) {
-		return user, nil
-	} else {
-		return nil, core.NewError(core.InternalError)
+	user.Pass = hash
+	user.Salt = salt
+	if _, err := r.UserRepo.Save(user); err != nil {
+		r.Log.Errorw("Not valid request",
+			"ReqId", ctx.ReqId(),
+			"Error", err.Error(),
+		)
+		return nil, err
 	}
+	return user, nil
 }
 
 func (r *registerUser) validate(ctx core.ReqContext, name string, email string, password string) *core.AppError {
@@ -66,11 +73,11 @@ func (r *registerUser) validate(ctx core.ReqContext, name string, email string, 
 		errors["pass"] = core.InvalidFormat.String()
 	}
 
-	if r.UserRepo.ExistsName(name) {
+	if exists, ok := r.UserRepo.ExistsName(name); ok && exists {
 		errors["name"] = core.AlreadyExists.String()
 	}
 
-	if r.UserRepo.ExistsEmail(email) {
+	if exists, ok := r.UserRepo.ExistsEmail(email); ok && exists {
 		errors["email"] = core.AlreadyExists.String()
 	}
 

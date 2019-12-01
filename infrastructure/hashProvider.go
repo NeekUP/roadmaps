@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/sha256"
-	"roadmaps/core"
+	"github.com/NeekUP/roadmaps/core"
 )
 
 type Sha256HashProvider struct {

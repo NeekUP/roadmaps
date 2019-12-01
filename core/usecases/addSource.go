@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
 	"image"
 	"net/http"
 	"net/url"
-	"roadmaps/core"
-	"roadmaps/domain"
 	"strings"
 
 	"golang.org/x/net/idna"
@@ -275,8 +275,9 @@ func (this *addSource) getBookMetaFromGoogle(isbn13 string) (*bookSummary, error
 
 					if item.VolumeInfo.ImageLinks.Thumbnail != "" {
 						summary.Img, err = this.getImage(item.VolumeInfo.ImageLinks.Thumbnail)
-						if err == nil {
+						if err != nil {
 							this.Log.Errorw("Fail to download image from",
+								"Error", err.Error(),
 								"Url", item.VolumeInfo.ImageLinks.Thumbnail)
 						}
 					}

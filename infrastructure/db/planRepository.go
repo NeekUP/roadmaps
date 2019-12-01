@@ -1,0 +1,180 @@
+package db
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
+	"log"
+	"strings"
+)
+
+type planRepo struct {
+	Db *DbConnection
+}
+
+func NewPlansRepository(db *DbConnection) core.PlanRepository {
+	return &planRepo{
+		Db: db}
+}
+
+func (r *planRepo) SaveWithSteps(plan *domain.Plan) (bool, *core.AppError) {
+
+	if len(plan.Steps) == 0 {
+		return false, core.NewError(core.InvalidRequest)
+	}
+	tx, err := r.Db.Conn.BeginTx(context.Background(), pgx.TxOptions{
+		IsoLevel:       pgx.ReadCommitted,
+		AccessMode:     pgx.ReadWrite,
+		DeferrableMode: pgx.NotDeferrable,
+	})
+	insertPlanQuery := "INSERT INTO plans(title, topic, owner, points) VALUES ($1, $2, $3, $4) RETURNING id;"
+	err = r.Db.Conn.QueryRow(context.Background(), insertPlanQuery, plan.Title, plan.TopicName, plan.OwnerId, plan.Points).Scan(&plan.Id)
+	if err != nil {
+		if e := tx.Rollback(context.Background()); e != nil {
+			r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
+		}
+		if pgerr, ok := err.(*pgconn.PgError); ok {
+			if pgerr.Code == "23505" {
+				return false, core.NewError(core.AlreadyExists)
+			}
+		}
+		return false, core.NewError(core.InternalError)
+	}
+
+	for i := 0; i < len(plan.Steps); i++ {
+		plan.Steps[i].PlanId = plan.Id
+		query := "INSERT INTO steps( planid, referenceid, referencetype, position) VALUES ($1, $2, $3, $4) RETURNING id;"
+		err := r.Db.Conn.QueryRow(context.Background(), query, plan.Steps[i].PlanId, plan.Steps[i].ReferenceId, plan.Steps[i].ReferenceType, plan.Steps[i].Position).Scan(&plan.Steps[i].Id)
+		if err != nil {
+			if e := tx.Rollback(context.Background()); e != nil {
+				r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
+			}
+			if pgerr, ok := err.(*pgconn.PgError); ok {
+				if pgerr.Code == "23505" {
+					return false, core.NewError(core.AlreadyExists)
+				}
+			}
+			return false, core.NewError(core.InternalError)
+		}
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return false, core.NewError(core.InternalError)
+	}
+	return true, nil
+}
+
+func (r *planRepo) Get(id int) *domain.Plan {
+	query := `SELECT id, title, topic, owner, points WHERE p.id=$1;`
+	row := r.Db.Conn.QueryRow(context.Background(), query, id)
+	p, err := r.scanRow(row)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err == sql.ErrNoRows {
+		return nil
+	}
+
+	return p.ToPlan()
+}
+
+/*
+// TODO: maybe decompose for every repos
+func (r *planRepo) Get(id int) *domain.Plan {
+	query:= `SELECT
+	p.id, p.title, p.topic, p.owner, p.points,
+	s.id, s.planid, s.referenceid, s.referencetype, s.position,
+	sr.id, sr.title, sr.identifier, sr.normalizedidentifier, sr.type, sr.properties, sr.img, sr.description
+FROM plans p
+	INNER JOIN steps s ON p.id = s.planid
+	INNER JOIN sources sr ON sr.id = s.referenceid
+WHERE p.id=$1
+	AND (s.referencetype = 'Article' OR s.referencetype = 'Video' OR s.referencetype = 'Audio' )`
+
+	rows,err:=r.Db.Conn.Query(context.Background(), query,id)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	p:=&PlanDBO{}
+	srs:=make(map[int64]SourceDBO)
+	sts:=make(map[int64]StepDBO)
+	for rows.Next() {
+		st:=StepDBO{}
+		sr:=SourceDBO{}
+		err := rows.Scan(&p.Id, &p.Title, &p.TopicName, &p.OwnerId, &p.Points,
+			&st.Id, &st.PlanId, &st.ReferenceId, &st.ReferenceType, &st.Position,
+			&sr.Id, &sr.Title, &sr.Identifier, &sr.NormalizedIdentifier, &sr.Type, &sr.Properties, &sr.Img, &sr.Desc)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		sts[st.Id]=st
+		srs[sr.Id]=sr
+	}
+
+	sources:=make([]domain.Source,len(srs))
+	steps:=make([]domain.Step,len(sts))
+	for k,v := range sts{
+		st:= v.ToStep()
+		if st.ReferenceType == domain.Article || st.ReferenceType == domain.Video || st.ReferenceType == domain.Audio
+	}
+
+	return p.ToPlan()
+}
+*/
+
+func (r *planRepo) GetList(id []int) []domain.Plan {
+	query := "SELECT id, title, topic, owner, points FROM plans WHERE id IN (%s);"
+	query = fmt.Sprintf(query, strings.Trim(strings.Join(strings.Fields(fmt.Sprint(id)), ","), "[]"))
+	rows, err := r.Db.Conn.Query(context.Background(), query)
+	if err != nil {
+		return []domain.Plan{}
+	}
+	defer rows.Close()
+	return r.scanRows(rows)
+}
+
+func (r *planRepo) GetPopularByTopic(topic string, count int) []domain.Plan {
+	query := "SELECT id, title, topic, owner, points FROM plans WHERE topic=$1 ORDER BY points DESC LIMIT $2"
+	rows, err := r.Db.Conn.Query(context.Background(), query, topic, count)
+	if err != nil {
+		return []domain.Plan{}
+	}
+	defer rows.Close()
+	return r.scanRows(rows)
+}
+
+func (r *planRepo) scanRows(rows pgx.Rows) []domain.Plan {
+	plans := make([]domain.Plan, 0)
+	for rows.Next() {
+		dbo, err := r.scanRow(rows)
+		if err != nil {
+			log.Fatal(err)
+		}
+		plans = append(plans, *dbo.ToPlan())
+	}
+	return plans
+}
+
+func (r *planRepo) All() []domain.Plan {
+	query := "SELECT id, title, topic, owner, points FROM plans"
+	rows, err := r.Db.Conn.Query(context.Background(), query)
+	if err != nil {
+		return []domain.Plan{}
+	}
+	defer rows.Close()
+	return r.scanRows(rows)
+}
+
+func (r *planRepo) scanRow(row pgx.Row) (*PlanDBO, error) {
+	dbo := PlanDBO{}
+	err := row.Scan(&dbo.Id, &dbo.Title, &dbo.TopicName, &dbo.OwnerId, &dbo.Points)
+	return &dbo, err
+}

@@ -1,8 +1,8 @@
 package usecases
 
 import (
-	"roadmaps/core"
-	"roadmaps/domain"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
 )
 
 type TreeNode struct {
@@ -69,13 +69,13 @@ func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) 
 		for j := 0; j < len(plans[i].Steps); j++ {
 			if plans[i].Steps[j].ReferenceType == domain.TopicReference {
 				// get topic
-				t := this.TopicRepo.GetById(plans[i].Steps[j].ReferenceId)
+				t := this.TopicRepo.GetById(int(plans[i].Steps[j].ReferenceId))
 				if t != nil {
 					if userFavorits[t.Name] != 0 {
 						plan := this.PlanRepo.Get(userFavorits[t.Name])
 						t.Plans = []domain.Plan{*plan}
 					} else {
-						t.Plans = this.PlanRepo.GetTopByTopicName(t.Name, 1)
+						t.Plans = this.PlanRepo.GetPopularByTopic(t.Name, 1)
 					}
 					chPlanId := -1
 					chPlanTitle := ""
@@ -130,7 +130,7 @@ func (this *getPlanTree) DoByTopic(ctx core.ReqContext, name string) ([]TreeNode
 		p := this.PlanRepo.Get(up.PlanId)
 		topic.Plans = []domain.Plan{*p}
 	} else {
-		topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, 1)
+		topic.Plans = this.PlanRepo.GetPopularByTopic(topic.Name, 1)
 	}
 
 	if len(topic.Plans) == 0 {
