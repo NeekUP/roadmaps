@@ -1,8 +1,8 @@
 package usecases
 
 import (
-	"roadmaps/core"
-	"roadmaps/domain"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
 )
 
 type AddTopic interface {
@@ -31,13 +31,20 @@ func (this *addTopic) Do(ctx core.ReqContext, title, desc string) (*domain.Topic
 	userId := ctx.UserId()
 	topic := domain.NewTopic(title, desc, userId)
 
-	// check retrictions in db
-	saved := this.TopicRepo.Save(topic)
+	saved, err := this.TopicRepo.Save(topic)
+	if err != nil {
+		this.Log.Errorw("Not valid request",
+			"ReqId", ctx.ReqId(),
+			"Error", err.Error(),
+		)
+		return nil, err
+	}
+
 	if saved {
 		return topic, nil
 	}
 
-	return nil, core.NewError(core.AlreadyExists)
+	return nil, nil
 }
 
 func (this *addTopic) validate(title, desc string) *core.AppError {

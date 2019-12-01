@@ -2,11 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/core/usecases"
+	"github.com/NeekUP/roadmaps/domain"
+	"github.com/NeekUP/roadmaps/infrastructure"
 	"net/http"
-	"roadmaps/core"
-	"roadmaps/core/usecases"
-	"roadmaps/domain"
-	"roadmaps/infrastructure"
 )
 
 type addSourceRequest struct {
@@ -16,7 +16,7 @@ type addSourceRequest struct {
 }
 
 type addSourceResponse struct {
-	Id         int               `json:"id"`
+	Id         int64             `json:"id"`
 	Title      string            `json:"title"`
 	Identifier string            `json:"identifier"`
 	Type       domain.SourceType `json:"type"`

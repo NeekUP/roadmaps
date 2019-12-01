@@ -1,7 +1,7 @@
 package domain
 
 type Source struct {
-	Id                   int
+	Id                   int64
 	Title                string
 	Identifier           string
 	NormalizedIdentifier string // Identifier in uppercase

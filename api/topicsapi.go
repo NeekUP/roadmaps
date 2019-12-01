@@ -2,10 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/core/usecases"
+	"github.com/NeekUP/roadmaps/infrastructure"
 	"net/http"
-	"roadmaps/core"
-	"roadmaps/core/usecases"
-	"roadmaps/infrastructure"
 )
 
 type addTopicRequest struct {

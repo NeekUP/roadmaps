@@ -2,11 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/core/usecases"
+	"github.com/NeekUP/roadmaps/domain"
+	"github.com/NeekUP/roadmaps/infrastructure"
 	"net/http"
-	"roadmaps/core"
-	"roadmaps/core/usecases"
-	"roadmaps/domain"
-	"roadmaps/infrastructure"
 	"strconv"
 )
 
@@ -17,7 +17,7 @@ type addPlanRequest struct {
 }
 
 type addPlanstep struct {
-	ReferenceId   int                  `json:"referenceId"`
+	ReferenceId   int64                `json:"referenceId"`
 	ReferenceType domain.ReferenceType `json:"referenceType"`
 }
 

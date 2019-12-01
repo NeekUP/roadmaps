@@ -1,16 +1,22 @@
 package tests
 
 import (
-	"roadmaps/core/usecases"
-	"roadmaps/domain"
-	"roadmaps/infrastructure"
-	"roadmaps/infrastructure/db"
+	"github.com/NeekUP/roadmaps/core/usecases"
+	"github.com/NeekUP/roadmaps/domain"
+	"github.com/NeekUP/roadmaps/infrastructure/db"
 	"testing"
 )
 
 func TestGetPlanTreeSuccess(t *testing.T) {
-	newTopicUsecase := usecases.NewAddTopic(db.NewTopicRepository(nil), log)
-	topic1, _ := newTopicUsecase.Do(infrastructure.NewContext(nil), "Topic1", "")
+	u := registerUser("TestAddTopicSuccess", "TestAddTopicSuccess@w.ww", "TestAddTopicSuccess")
+	if u != nil {
+		defer DeleteUser(u.Id)
+	}
+	newTopicUsecase := usecases.NewAddTopic(db.NewTopicRepository(DB), log)
+	topic1, _ := newTopicUsecase.Do(newContext(u), "Topic1", "")
+	if topic1 != nil {
+		defer DeleteTopic(topic1.Id)
+	}
 
 	addPlansReq := []usecases.AddPlanReq{
 		usecases.AddPlanReq{
@@ -18,11 +24,11 @@ func TestGetPlanTreeSuccess(t *testing.T) {
 			TopicName: topic1.Name,
 			Steps: []usecases.PlanStep{
 				usecases.PlanStep{
-					ReferenceId:   topic1.Id,
+					ReferenceId:   int64(topic1.Id),
 					ReferenceType: domain.TopicReference,
 				},
 				usecases.PlanStep{
-					ReferenceId:   topic1.Id,
+					ReferenceId:   int64(topic1.Id),
 					ReferenceType: domain.TopicReference,
 				},
 			},
@@ -30,18 +36,20 @@ func TestGetPlanTreeSuccess(t *testing.T) {
 	}
 
 	plans := make([]domain.Plan, len(addPlansReq), len(addPlansReq))
-	usecase := usecases.NewAddPlan(db.NewPlansRepository(nil), &appLoggerForTests{})
+	usecase := usecases.NewAddPlan(db.NewPlansRepository(DB), &appLoggerForTests{})
 	for i, v := range addPlansReq {
-		plan, err := usecase.Do(infrastructure.NewContext(nil), v)
+		plan, err := usecase.Do(newContext(u), v)
 		if err != nil {
 			t.Error("Fail to create plan")
 			return
+		} else {
+			defer DeletePlan(plan.Id)
 		}
 		plans[i] = *plan
 	}
 
-	getPlanTree := usecases.NewGetPlanTree(db.NewPlansRepository(nil), db.NewTopicRepository(nil), db.NewUsersPlanRepository(nil), log)
-	result, err := getPlanTree.Do(infrastructure.NewContext(nil), []int{plans[0].Id})
+	getPlanTree := usecases.NewGetPlanTree(db.NewPlansRepository(DB), db.NewTopicRepository(DB), db.NewUsersPlanRepository(DB), log)
+	result, err := getPlanTree.Do(newContext(u), []int{plans[0].Id})
 	if err != nil {
 		t.Errorf("Error while getting plan tree: %s", err.Error())
 		return
@@ -58,7 +66,7 @@ func TestGetPlanTreeSuccess(t *testing.T) {
 		}
 
 		if v.TopicTitle != topic1.Title {
-			t.Errorf("Topic title not expected: %s, expected: %s", v.TopicTitle, plans[i].Title)
+			t.Errorf("TopicName title not expected: %s, expected: %s", v.TopicTitle, plans[i].Title)
 		}
 
 		if v.PlanTitle != plans[i].Title {
@@ -66,7 +74,7 @@ func TestGetPlanTreeSuccess(t *testing.T) {
 		}
 
 		if v.TopicName != topic1.Name {
-			t.Errorf("Topic name for main plan not excpected: %s", v.TopicName)
+			t.Errorf("TopicName name for main plan not excpected: %s", v.TopicName)
 		}
 
 		if len(v.Child) == 0 {
@@ -79,7 +87,7 @@ func TestGetPlanTreeSuccess(t *testing.T) {
 			}
 
 			if s.TopicTitle != topic1.Title {
-				t.Errorf("Topic title not expected: %s, expected: %s", s.TopicTitle, plans[j].Title)
+				t.Errorf("TopicName title not expected: %s, expected: %s", s.TopicTitle, plans[j].Title)
 			}
 
 			if s.PlanTitle != plans[i].Title {
@@ -87,7 +95,7 @@ func TestGetPlanTreeSuccess(t *testing.T) {
 			}
 
 			if s.TopicName != topic1.Name {
-				t.Errorf("Topic name for main plan not excpected: %s", s.TopicName)
+				t.Errorf("TopicName name for main plan not excpected: %s", s.TopicName)
 			}
 		}
 	}

@@ -1,22 +1,26 @@
 package tests
 
 import (
-	"roadmaps/core"
-	"roadmaps/core/usecases"
-	"roadmaps/infrastructure"
-	"roadmaps/infrastructure/db"
+	"fmt"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/core/usecases"
+	"github.com/NeekUP/roadmaps/infrastructure"
+	"github.com/NeekUP/roadmaps/infrastructure/db"
 	"strings"
 	"testing"
 )
 
 func TestRegisterUserSuccess(t *testing.T) {
 
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(DB), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
-	email := "TestRegisterUserSuccess@dd.dd"
-	name := "TestRegisterUserSuccess"
+	name := RandString(10)
+	email := fmt.Sprintf("%s@dd.dd", name)
+	pass := RandString(10)
 
-	user, err := r.Do(infrastructure.NewContext(nil), name, email, "1234")
+	user, err := r.Do(infrastructure.NewContext(nil), name, email, pass)
+	defer DeleteUser(user.Id)
+
 	if err != nil {
 		t.Error(err)
 	}
@@ -37,7 +41,7 @@ func TestRegisterUserSuccess(t *testing.T) {
 
 func TestRegisterUserInvalidName(t *testing.T) {
 
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(DB), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	email := "TestRegisterUserInvalidName@dd.dd"
 	names := [...]string{
@@ -52,6 +56,9 @@ func TestRegisterUserInvalidName(t *testing.T) {
 		name := names[i]
 
 		user, err := r.Do(infrastructure.NewContext(nil), name, email, "1234")
+		if user != nil {
+			defer DeleteUser(user.Id)
+		}
 		if err == nil {
 			t.Error("err is nil")
 		}
@@ -71,7 +78,7 @@ func TestRegisterUserInvalidName(t *testing.T) {
 
 func TestRegisterUserInvalidEmail(t *testing.T) {
 
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(DB), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "TestRegisterUserInvalidEmail"
 	emails := [...]string{
@@ -85,6 +92,9 @@ func TestRegisterUserInvalidEmail(t *testing.T) {
 		email := emails[i]
 
 		user, err := r.Do(infrastructure.NewContext(nil), name, email, "1234")
+		if user != nil {
+			defer DeleteUser(user.Id)
+		}
 		if err == nil {
 			t.Errorf("err is nil: [%s]", email)
 		}
@@ -104,7 +114,7 @@ func TestRegisterUserInvalidEmail(t *testing.T) {
 
 func TestInvalidPassword(t *testing.T) {
 
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(DB), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "TestInvalidPassword"
 	email := "TestInvalidPassword@ee.ee"
@@ -120,6 +130,9 @@ func TestInvalidPassword(t *testing.T) {
 		pass := passwords[i]
 
 		user, err := r.Do(infrastructure.NewContext(nil), name, email, pass)
+		if user != nil {
+			defer DeleteUser(user.Id)
+		}
 		if err == nil {
 			t.Errorf("err is nil: [%s]", pass)
 		}
@@ -139,13 +152,16 @@ func TestInvalidPassword(t *testing.T) {
 
 func TestRegisterUserExistsName(t *testing.T) {
 
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(DB), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "TestRegisterUserExistsName"
 	email := "TestRegisterUserExistsName@ee.ee"
 	pass := "12345"
 
-	_, err := r.Do(infrastructure.NewContext(nil), name, email, pass)
+	u, err := r.Do(infrastructure.NewContext(nil), name, email, pass)
+	if u != nil {
+		defer DeleteUser(u.Id)
+	}
 	if err != nil {
 		t.Errorf("Fail to create user")
 		return
@@ -162,13 +178,17 @@ func TestRegisterUserExistsName(t *testing.T) {
 }
 
 func TestRegisterUserExistsEmail(t *testing.T) {
-	r := usecases.NewRegisterUser(db.NewUserRepository(nil), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	r := usecases.NewRegisterUser(db.NewUserRepository(DB), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
 
 	name := "TestRegisterUserExistsEmail"
 	email := "TestRegisterUserExistsEmail@email.com"
 	pass := "12345"
 
-	_, err := r.Do(infrastructure.NewContext(nil), name, email, pass)
+	u, err := r.Do(infrastructure.NewContext(nil), name, email, pass)
+	if u != nil {
+		defer DeleteUser(u.Id)
+	}
+
 	if err != nil {
 		t.Errorf("Fail to create user")
 		return
