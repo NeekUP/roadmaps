@@ -4,16 +4,16 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/NeekUP/roadmaps/api"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/core/usecases"
+	"github.com/NeekUP/roadmaps/domain"
+	"github.com/NeekUP/roadmaps/infrastructure"
+	"github.com/NeekUP/roadmaps/infrastructure/db"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"roadmaps/api"
-	"roadmaps/core"
-	"roadmaps/core/usecases"
-	"roadmaps/domain"
-	"roadmaps/infrastructure"
-	"roadmaps/infrastructure/db"
 	"runtime"
 	"runtime/debug"
 	"time"
@@ -67,18 +67,18 @@ func main() {
 	/*
 		Infrastructure initialization
 	*/
-	dbConnection := db.NewDbConnection(Cfg.Db.ConnString)
+	dbConnection := db.NewDbConnection(Cfg.Db.ConnString, newLogger("database"))
 	hashProvider := infrastructure.NewSha256HashProvider()
-	userRepo := db.NewUserRepository(dbConnection.Db)
-	sourceRepo := db.NewSourceRepository(dbConnection.Db)
-	topicRepo := db.NewTopicRepository(dbConnection.Db)
-	planRepo := db.NewPlansRepository(dbConnection.Db)
-	usersPlanRepo := db.NewUsersPlanRepository(dbConnection.Db)
+	userRepo := db.NewUserRepository(dbConnection)
+	sourceRepo := db.NewSourceRepository(dbConnection)
+	topicRepo := db.NewTopicRepository(dbConnection)
+	planRepo := db.NewPlansRepository(dbConnection)
+	usersPlanRepo := db.NewUsersPlanRepository(dbConnection)
 	captcha := infrastructure.SuccessCaptcha{}
 	tokenService := infrastructure.NewJwtTokenService(userRepo, JwtSecret)
 	imageManager := infrastructure.NewImageManager(Cfg.ImgSaver.LocalFolder, Cfg.ImgSaver.UriPath)
 
-	stepRepo := db.NewStepsRepository(dbConnection.Db)
+	//stepRepo := db.NewStepsRepository(dbConnection.Conn)
 
 	/*
 		Usecases
@@ -145,27 +145,27 @@ func main() {
 		r.Post("/api/user/plan/unfavorite", apiRemoveAddUserPlan)
 	})
 
-	// for development only
-	listTopicsDev := usecases.NewListTopicsDev(topicRepo)
-	listPlansDev := usecases.NewListPlansDev(planRepo)
-	listStepsDev := usecases.NewListStepsDev(stepRepo)
-	listSourcesDev := usecases.NewListSourcesDev(sourceRepo)
-	listUsersDev := usecases.NewListUsersDev(userRepo)
+	// // for development only
+	// listTopicsDev := usecases.NewListTopicsDev(topicRepo)
+	// listPlansDev := usecases.NewListPlansDev(planRepo)
+	// listStepsDev := usecases.NewListStepsDev(stepRepo)
+	// listSourcesDev := usecases.NewListSourcesDev(sourceRepo)
+	// listUsersDev := usecases.NewListUsersDev(userRepo)
 
-	apiListTopicsDev := api.ListTopics(listTopicsDev)
-	apiListPlansDev := api.ListPlans(listPlansDev)
-	apiListStepsDev := api.ListSteps(listStepsDev)
-	apiListSourcesDev := api.ListSources(listSourcesDev)
-	apiListUsersDev := api.ListUsers(listUsersDev)
+	// apiListTopicsDev := api.ListTopics(listTopicsDev)
+	// apiListPlansDev := api.ListPlans(listPlansDev)
+	// apiListStepsDev := api.ListSteps(listStepsDev)
+	// apiListSourcesDev := api.ListSources(listSourcesDev)
+	// apiListUsersDev := api.ListUsers(listUsersDev)
 
-	r.Group(func(r chi.Router) {
-		r.Use(api.Auth(domain.All, tokenService))
-		r.Post("/api/dev/list/topics", apiListTopicsDev)
-		r.Post("/api/dev/list/plans", apiListPlansDev)
-		r.Post("/api/dev/list/steps", apiListStepsDev)
-		r.Post("/api/dev/list/source", apiListSourcesDev)
-		r.Post("/api/dev/list/users", apiListUsersDev)
-	})
+	// r.Group(func(r chi.Router) {
+	// 	r.Use(api.Auth(domain.All, tokenService))
+	// 	r.Post("/api/dev/list/topics", apiListTopicsDev)
+	// 	r.Post("/api/dev/list/plans", apiListPlansDev)
+	// 	r.Post("/api/dev/list/steps", apiListStepsDev)
+	// 	r.Post("/api/dev/list/source", apiListSourcesDev)
+	// 	r.Post("/api/dev/list/users", apiListUsersDev)
+	// })
 
 	log.Printf("Listening %s", Cfg.HTTPServer.Host+":"+Cfg.HTTPServer.Port)
 

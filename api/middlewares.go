@@ -2,10 +2,10 @@ package api
 
 import (
 	"context"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
+	"github.com/NeekUP/roadmaps/infrastructure"
 	"net/http"
-	"roadmaps/core"
-	"roadmaps/domain"
-	"roadmaps/infrastructure"
 )
 
 func Auth(rights domain.Rights, ts core.TokenService) func(next http.Handler) http.Handler {

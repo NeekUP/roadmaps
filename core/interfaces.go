@@ -1,29 +1,28 @@
 package core
 
 import (
-	"roadmaps/domain"
+	"github.com/NeekUP/roadmaps/domain"
 	"time"
 )
 
 type UserRepository interface {
 	Get(id string) *domain.User
-	// Should be transaction with check name and email
-	Save(user *domain.User, passHash []byte, salt []byte) bool
-	Update(user *domain.User) bool
-	ExistsName(name string) bool
-	ExistsEmail(email string) bool
+	Save(user *domain.User) (bool, *AppError)
+	Update(user *domain.User) (bool, *AppError)
+	ExistsName(name string) (exists bool, ok bool)
+	ExistsEmail(email string) (exists bool, ok bool)
 	FindByEmail(email string) *domain.User
-	Count() int
+	Count() (count int, ok bool)
 
 	//dev
 	All() []domain.User
 }
 
 type SourceRepository interface {
-	Get(id int) *domain.Source
+	Get(id int64) *domain.Source
 	FindByIdentifier(identifier string) *domain.Source
-	Save(source *domain.Source) bool
-	Update(source *domain.Source) bool
+	Save(source *domain.Source) (bool, *AppError)
+	Update(source *domain.Source) (bool, *AppError)
 	GetOrAddByIdentifier(source *domain.Source) *domain.Source
 
 	//dev
@@ -33,25 +32,26 @@ type SourceRepository interface {
 type TopicRepository interface {
 	Get(name string) *domain.Topic
 	GetById(id int) *domain.Topic
-	Save(source *domain.Topic) bool
-	Update(source *domain.Topic) bool
+	Save(source *domain.Topic) (bool, *AppError)
+	Update(source *domain.Topic) (bool, *AppError)
 
 	//dev
 	All() []domain.Topic
 }
 
 type PlanRepository interface {
-	SaveWithSteps(plan *domain.Plan) error
+	SaveWithSteps(plan *domain.Plan) (bool, *AppError)
 	// should includes steps
 	Get(id int) *domain.Plan
 	GetList(id []int) []domain.Plan
-	GetTopByTopicName(topic string, count int) []domain.Plan
+	GetPopularByTopic(topic string, count int) []domain.Plan
 
 	//dev
 	All() []domain.Plan
 }
 
 type StepRepository interface {
+	GetByPlan(planid int) []domain.Step
 	//dev
 	All() []domain.Step
 }
@@ -60,8 +60,8 @@ type UsersPlanRepository interface {
 	// true - if already exists and when added new row
 	// if same topic exists for user, delete exists and add new
 	// false only if db error
-	Add(userId string, topicName string, planId int) bool
-	Remove(userId string, planId int) bool
+	Add(userId string, topicName string, planId int) (bool, *AppError)
+	Remove(userId string, planId int) (bool, *AppError)
 	GetByTopic(userId, topicName string) *domain.UsersPlan
 	GetByUser(userId string) []domain.UsersPlan
 }

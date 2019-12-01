@@ -1,9 +1,9 @@
 package infrastructure
 
 import (
+	"github.com/NeekUP/roadmaps/core"
 	"os"
 	"path"
-	"roadmaps/core"
 )
 
 type imageManager struct {

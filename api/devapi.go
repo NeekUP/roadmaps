@@ -1,10 +1,8 @@
-// +build DEV
-
 package api
 
 import (
+	"github.com/NeekUP/roadmaps/core/usecases"
 	"net/http"
-	"roadmaps/core/usecases"
 )
 
 func ListTopics(usecase usecases.ListTopicsDev) func(w http.ResponseWriter, r *http.Request) {

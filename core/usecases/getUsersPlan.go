@@ -1,8 +1,8 @@
 package usecases
 
 import (
-	"roadmaps/core"
-	"roadmaps/domain"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
 )
 
 type GetUsersPlan interface {

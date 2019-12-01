@@ -1,36 +1,26 @@
 package tests
 
 import (
-	"roadmaps/core"
-	"roadmaps/domain"
-	"roadmaps/infrastructure"
-	"roadmaps/infrastructure/db"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/core/usecases"
+	"github.com/NeekUP/roadmaps/infrastructure"
+	"github.com/NeekUP/roadmaps/infrastructure/db"
 	"testing"
 )
 
 var (
-	userId    string = "92382cd6-2acd-431b-b2b4-3500eaa9e342"
 	secret    string = "ih7Cp1aB0exNXzsHjV9Z66qBczoG8g15_bBBW7iK1L-szDYVIbhWDZv6R-d_PD_TOjriomFr44UYMky2snKInO_7UL23uBmsH6hFlaqGJv12SQl4LC_1D7DW1iNLWSB22u1f3YowVH8YS_odqsUs5klaR7BlsvnQxucJcqSom6JuuZynz3j8p-8MevBDWTPAD7QeD4NUjTp55JftBEEg8J3Qf0ZrFOxkP2ULKvX-VbTwBN2U3YnNHJsdQ5aleUH-62NiG9EUiEDrLuEWw73oHaSCDPLVhIM1zCHW25Nmy8oxzW7rBVPwyLHC9v63QBSH7JXVhBOfDm-F55eOG0zlBw"
 	jwtTokens core.TokenService
-	user      *domain.User = &domain.User{Id: userId,
-		Name:           "name",
-		Email:          "email@email.ru",
-		EmailConfirmed: true,
-		Img:            "",
-		Tokens:         nil,
-		Rights:         1,
-		Pass:           nil,
-		Salt:           nil}
 )
 
 func init() {
-	userRepo := db.NewUserRepository(nil)
-	userRepo.Save(user, nil, nil)
-	jwtTokens = &infrastructure.JwtTokenService{UserRepo: userRepo, Secret: secret}
+	jwtTokens = &infrastructure.JwtTokenService{UserRepo: db.NewUserRepository(DB), Secret: secret}
 }
 
 func TestCreateValidateRefreshSuccess(t *testing.T) {
-
+	regUser := usecases.NewRegisterUser(db.NewUserRepository(DB), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	email := RandString(10) + "@test.com"
+	user, _ := regUser.Do(infrastructure.NewContext(nil), RandString(10), email, pass)
 	a, r, err := jwtTokens.Create(user, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
 	if a == "" || r == "" || err != nil {
 		t.Errorf("Save token return error: [%s]. authToken: [%s] refreshToken: [%s]", err.Error(), a, r)
@@ -46,12 +36,8 @@ func TestCreateValidateRefreshSuccess(t *testing.T) {
 		t.Errorf("Error whilw validation token: [%s]", err.Error())
 	}
 
-	if uid != userId {
-		t.Errorf("User Id from auth token invalid: [%s]", uid)
-	}
-
 	if rights != 1 {
-		t.Errorf("Rights from auth token invalid: [%s]", uid)
+		t.Errorf("Rights from auth token invalid: [%s].Rights:%d but expected:%d", uid, rights, 1)
 	}
 
 	aa, rr, err := jwtTokens.Refresh(a, r, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
@@ -69,7 +55,9 @@ func TestCreateValidateRefreshSuccess(t *testing.T) {
 }
 
 func TestCreateValidateBadToken(t *testing.T) {
-
+	regUser := usecases.NewRegisterUser(db.NewUserRepository(DB), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	email := RandString(10) + "@test.com"
+	user, _ := regUser.Do(infrastructure.NewContext(nil), RandString(10), email, pass)
 	a, r, err := jwtTokens.Create(user, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
 	if a == "" || r == "" || err != nil {
 		t.Errorf("Save token return error: [%s]. authToken: [%s] refreshToken: [%s]", err.Error(), a, r)
@@ -91,7 +79,9 @@ func TestCreateValidateBadToken(t *testing.T) {
 }
 
 func TestCreateRefreshByAuthToken(t *testing.T) {
-
+	regUser := usecases.NewRegisterUser(db.NewUserRepository(DB), &appLoggerForTests{}, &infrastructure.Sha256HashProvider{})
+	email := RandString(10) + "@test.com"
+	user, _ := regUser.Do(infrastructure.NewContext(nil), RandString(10), email, pass)
 	a, r, err := jwtTokens.Create(user, "fingerprint", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
 	if a == "" || r == "" || err != nil {
 		t.Errorf("Save token return error: [%s]. authToken: [%s] refreshToken: [%s]", err.Error(), a, r)

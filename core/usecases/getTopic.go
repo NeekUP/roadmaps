@@ -1,8 +1,8 @@
 package usecases
 
 import (
-	"roadmaps/core"
-	"roadmaps/domain"
+	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
 )
 
 type GetTopic interface {
@@ -53,7 +53,7 @@ func (this *getTopic) DoById(ctx core.ReqContext, id int, planCount int) (*domai
 	return topic, nil
 }
 
-// func (this *getTopic) AttachePlans(ctx core.ReqContext, topic *domain.Topic, planCount int, includeSteps bool) {
+// func (this *getTopic) AttachePlans(ctx core.ReqContext, topic *domain.TopicName, planCount int, includeSteps bool) {
 // 	if ctx.UserId() != "" {
 // 		upId := this.UsersPlan.GetByTopic(ctx.UserId(), topic.Name)
 // 		if upId != nil {
@@ -65,12 +65,12 @@ func (this *getTopic) DoById(ctx core.ReqContext, id int, planCount int) (*domai
 // 	}
 
 // 	if len(topic.Plans) == 0 {
-// 		topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, planCount, includeSteps)
+// 		topic.Plans = this.PlanRepo.GetPopularByTopic(topic.Name, planCount, includeSteps)
 // 	} else if planCount-len(topic.Plans) == 0 {
 // 		return
 // 	} else {
 // 		u := topic.Plans[0]
-// 		topic.Plans = this.PlanRepo.GetTopByTopicName(topic.Name, planCount-len(topic.Plans), includeSteps, topic.Plans[0].Id)
+// 		topic.Plans = this.PlanRepo.GetPopularByTopic(topic.Name, planCount-len(topic.Plans), includeSteps, topic.Plans[0].Id)
 // 		topic.Plans = append(topic.Plans, u)
 // 	}
 // }

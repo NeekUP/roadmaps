@@ -1,7 +1,7 @@
 package usecases
 
 import (
-	"roadmaps/core"
+	"github.com/NeekUP/roadmaps/core"
 )
 
 type AddUserPlan interface {
@@ -29,7 +29,14 @@ func (this *addUserPlan) Do(ctx core.ReqContext, planId int) (bool, error) {
 	}
 
 	userId := ctx.UserId()
-	success := this.UsersPlanRepo.Add(userId, plan.TopicName, planId)
+	success, err := this.UsersPlanRepo.Add(userId, plan.TopicName, planId)
+	if err != nil {
+		this.Log.Errorw("Invalid request",
+			"ReqId", ctx.ReqId(),
+			"Error", err.Error(),
+		)
+		return false, err
+	}
 
 	return success, nil
 }
