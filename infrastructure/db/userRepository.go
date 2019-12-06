@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
-	"log"
 )
 
 type userRepository struct {
@@ -23,10 +22,11 @@ func (r *userRepository) Get(id string) *domain.User {
 	row := r.Db.Conn.QueryRow(context.Background(), "SELECT id, name, normalizedname, email, emailconfirmed, emailconfirmation, img, tokens, rights, password, salt "+
 		"FROM users where id=$1", id)
 	dbo, err := r.scanRow(row)
-	if err != nil {
-		log.Fatal(err)
-	}
 	if err == sql.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		r.Db.Log.Errorw("", "error", err.Error())
 		return nil
 	}
 	return dbo.ToUser()
@@ -75,7 +75,7 @@ func (r *userRepository) ExistsName(name string) (exists bool, ok bool) {
 	query := "select exists(select 1 from users where normalizedname=$1)"
 	err := r.Db.Conn.QueryRow(context.Background(), query, name).Scan(&exists)
 	if err != nil {
-		return false, false
+		return false, err == sql.ErrNoRows
 	}
 	return exists, true
 }
@@ -84,7 +84,7 @@ func (r *userRepository) ExistsEmail(email string) (exists bool, ok bool) {
 	query := "select exists(select 1 from users where email=$1)"
 	err := r.Db.Conn.QueryRow(context.Background(), query, email).Scan(&exists)
 	if err != nil {
-		return false, false
+		return false, err == sql.ErrNoRows
 	}
 	return exists, true
 }
@@ -95,10 +95,11 @@ func (r *userRepository) FindByEmail(email string) *domain.User {
 
 	row := r.Db.Conn.QueryRow(context.Background(), query, email)
 	dbo, err := r.scanRow(row)
-	if err != nil {
-		log.Fatal(err)
-	}
 	if err == sql.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		r.Db.Log.Errorw("", "error", err.Error())
 		return nil
 	}
 	return dbo.ToUser()
@@ -124,8 +125,12 @@ func (r *userRepository) All() []domain.User {
 	users := make([]domain.User, 0)
 	for rows.Next() {
 		dbo, err := r.scanRow(rows)
+		if err == sql.ErrNoRows {
+			return []domain.User{}
+		}
 		if err != nil {
-			log.Fatal(err)
+			r.Db.Log.Errorw("", "error", err.Error())
+			return []domain.User{}
 		}
 		users = append(users, *dbo.ToUser())
 	}

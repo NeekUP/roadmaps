@@ -7,7 +7,6 @@ import (
 	"github.com/NeekUP/roadmaps/domain"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
-	"log"
 )
 
 type sourceRepo struct {
@@ -23,10 +22,11 @@ func (repo *sourceRepo) Get(id int64) *domain.Source {
 	query := "SELECT id, title, identifier, normalizedidentifier, type, properties, img, description FROM sources WHERE id=$1;"
 	row := repo.Db.Conn.QueryRow(context.Background(), query, id)
 	dbo, err := repo.scanRow(row)
-	if err != nil {
-		log.Fatal(err)
-	}
 	if err == sql.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		repo.Db.Log.Errorw("", "error", err.Error())
 		return nil
 	}
 	return dbo.ToSource()
@@ -37,10 +37,13 @@ func (repo *sourceRepo) FindByIdentifier(nIdentifier string) *domain.Source {
 	row := repo.Db.Conn.QueryRow(context.Background(), query, nIdentifier)
 	dbo, err := repo.scanRow(row)
 
-	if err != nil {
+	if err == sql.ErrNoRows {
 		return nil
 	}
-
+	if err != nil {
+		repo.Db.Log.Errorw("", "error", err.Error())
+		return nil
+	}
 	return dbo.ToSource()
 }
 
@@ -102,8 +105,12 @@ func (repo *sourceRepo) All() []domain.Source {
 	sources := make([]domain.Source, 0)
 	for rows.Next() {
 		dbo, err := repo.scanRow(rows)
+		if err == sql.ErrNoRows {
+			return nil
+		}
 		if err != nil {
-			log.Fatal(err)
+			repo.Db.Log.Errorw("", "error", err.Error())
+			return nil
 		}
 		sources = append(sources, *dbo.ToSource())
 	}
