@@ -182,6 +182,26 @@ func (dbo *UserDBO) FromUser(u *domain.User) {
 	dbo.Salt = u.Salt
 }
 
+type UsersPlanDBO struct {
+	UserId    string
+	TopicName string
+	PlanId    int
+}
+
+func (dbo *UsersPlanDBO) ToUsersPlan() *domain.UsersPlan {
+	return &domain.UsersPlan{
+		UserId:    dbo.UserId,
+		TopicName: dbo.TopicName,
+		PlanId:    dbo.PlanId,
+	}
+}
+
+func (dbo *UsersPlanDBO) FromUsersPlan(up *domain.UsersPlan) {
+	dbo.PlanId = up.PlanId
+	dbo.UserId = up.UserId
+	dbo.TopicName = up.TopicName
+}
+
 func ToNullString(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: s != ""}
 }

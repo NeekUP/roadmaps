@@ -8,7 +8,6 @@ import (
 	"github.com/NeekUP/roadmaps/domain"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
-	"log"
 	"strings"
 )
 
@@ -73,62 +72,15 @@ func (r *planRepo) Get(id int) *domain.Plan {
 	query := `SELECT id, title, topic, owner, points WHERE p.id=$1;`
 	row := r.Db.Conn.QueryRow(context.Background(), query, id)
 	p, err := r.scanRow(row)
-	if err != nil {
-		log.Fatal(err)
-	}
 	if err == sql.ErrNoRows {
 		return nil
 	}
-
-	return p.ToPlan()
-}
-
-/*
-// TODO: maybe decompose for every repos
-func (r *planRepo) Get(id int) *domain.Plan {
-	query:= `SELECT
-	p.id, p.title, p.topic, p.owner, p.points,
-	s.id, s.planid, s.referenceid, s.referencetype, s.position,
-	sr.id, sr.title, sr.identifier, sr.normalizedidentifier, sr.type, sr.properties, sr.img, sr.description
-FROM plans p
-	INNER JOIN steps s ON p.id = s.planid
-	INNER JOIN sources sr ON sr.id = s.referenceid
-WHERE p.id=$1
-	AND (s.referencetype = 'Article' OR s.referencetype = 'Video' OR s.referencetype = 'Audio' )`
-
-	rows,err:=r.Db.Conn.Query(context.Background(), query,id)
 	if err != nil {
+		r.Db.Log.Errorw("", "error", err.Error())
 		return nil
 	}
-	defer rows.Close()
-	p:=&PlanDBO{}
-	srs:=make(map[int64]SourceDBO)
-	sts:=make(map[int64]StepDBO)
-	for rows.Next() {
-		st:=StepDBO{}
-		sr:=SourceDBO{}
-		err := rows.Scan(&p.Id, &p.Title, &p.TopicName, &p.OwnerId, &p.Points,
-			&st.Id, &st.PlanId, &st.ReferenceId, &st.ReferenceType, &st.Position,
-			&sr.Id, &sr.Title, &sr.Identifier, &sr.NormalizedIdentifier, &sr.Type, &sr.Properties, &sr.Img, &sr.Desc)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		sts[st.Id]=st
-		srs[sr.Id]=sr
-	}
-
-	sources:=make([]domain.Source,len(srs))
-	steps:=make([]domain.Step,len(sts))
-	for k,v := range sts{
-		st:= v.ToStep()
-		if st.ReferenceType == domain.Article || st.ReferenceType == domain.Video || st.ReferenceType == domain.Audio
-	}
-
 	return p.ToPlan()
 }
-*/
 
 func (r *planRepo) GetList(id []int) []domain.Plan {
 	query := "SELECT id, title, topic, owner, points FROM plans WHERE id IN (%s);"
@@ -156,7 +108,7 @@ func (r *planRepo) scanRows(rows pgx.Rows) []domain.Plan {
 	for rows.Next() {
 		dbo, err := r.scanRow(rows)
 		if err != nil {
-			log.Fatal(err)
+			return []domain.Plan{}
 		}
 		plans = append(plans, *dbo.ToPlan())
 	}
