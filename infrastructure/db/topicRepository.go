@@ -7,7 +7,6 @@ import (
 	"github.com/NeekUP/roadmaps/domain"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
-	"log"
 )
 
 type topicRepo struct {
@@ -21,11 +20,11 @@ func NewTopicRepository(db *DbConnection) core.TopicRepository {
 func (repo *topicRepo) Get(name string) *domain.Topic {
 	row := repo.Db.Conn.QueryRow(context.Background(), "SELECT id, name, title, description, creator FROM topics WHERE name=$1", name)
 	dbo, err := repo.scanRow(row)
-	if err != nil {
-		log.Fatal(err)
-	}
 	if err == sql.ErrNoRows {
 		return nil
+	}
+	if err != nil {
+		repo.Db.Log.Errorw("", "error", err.Error())
 	}
 	return dbo.ToTopic()
 }
@@ -33,10 +32,12 @@ func (repo *topicRepo) Get(name string) *domain.Topic {
 func (repo *topicRepo) GetById(id int) *domain.Topic {
 	row := repo.Db.Conn.QueryRow(context.Background(), "SELECT id, name, title, description, creator FROM topics WHERE id=$1", id)
 	dbo, err := repo.scanRow(row)
-	if err != nil {
-		log.Fatal(err)
-	}
+
 	if err == sql.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		repo.Db.Log.Errorw("", "error", err.Error())
 		return nil
 	}
 	return dbo.ToTopic()
@@ -82,7 +83,7 @@ func (repo *topicRepo) All() []domain.Topic {
 	for rows.Next() {
 		dbo, err := repo.scanRow(rows)
 		if err != nil {
-			log.Fatal(err)
+			return []domain.Topic{}
 		}
 		users = append(users, *dbo.ToTopic())
 	}

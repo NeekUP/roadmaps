@@ -77,8 +77,7 @@ func main() {
 	captcha := infrastructure.SuccessCaptcha{}
 	tokenService := infrastructure.NewJwtTokenService(userRepo, JwtSecret)
 	imageManager := infrastructure.NewImageManager(Cfg.ImgSaver.LocalFolder, Cfg.ImgSaver.UriPath)
-
-	//stepRepo := db.NewStepsRepository(dbConnection.Conn)
+	stepRepo := db.NewStepsRepository(dbConnection)
 
 	/*
 		Usecases
@@ -146,26 +145,26 @@ func main() {
 	})
 
 	// // for development only
-	// listTopicsDev := usecases.NewListTopicsDev(topicRepo)
-	// listPlansDev := usecases.NewListPlansDev(planRepo)
-	// listStepsDev := usecases.NewListStepsDev(stepRepo)
-	// listSourcesDev := usecases.NewListSourcesDev(sourceRepo)
-	// listUsersDev := usecases.NewListUsersDev(userRepo)
+	listTopicsDev := usecases.NewListTopicsDev(topicRepo)
+	listPlansDev := usecases.NewListPlansDev(planRepo)
+	listStepsDev := usecases.NewListStepsDev(stepRepo)
+	listSourcesDev := usecases.NewListSourcesDev(sourceRepo)
+	listUsersDev := usecases.NewListUsersDev(userRepo)
 
-	// apiListTopicsDev := api.ListTopics(listTopicsDev)
-	// apiListPlansDev := api.ListPlans(listPlansDev)
-	// apiListStepsDev := api.ListSteps(listStepsDev)
-	// apiListSourcesDev := api.ListSources(listSourcesDev)
-	// apiListUsersDev := api.ListUsers(listUsersDev)
+	apiListTopicsDev := api.ListTopics(listTopicsDev)
+	apiListPlansDev := api.ListPlans(listPlansDev)
+	apiListStepsDev := api.ListSteps(listStepsDev)
+	apiListSourcesDev := api.ListSources(listSourcesDev)
+	apiListUsersDev := api.ListUsers(listUsersDev)
 
-	// r.Group(func(r chi.Router) {
-	// 	r.Use(api.Auth(domain.All, tokenService))
-	// 	r.Post("/api/dev/list/topics", apiListTopicsDev)
-	// 	r.Post("/api/dev/list/plans", apiListPlansDev)
-	// 	r.Post("/api/dev/list/steps", apiListStepsDev)
-	// 	r.Post("/api/dev/list/source", apiListSourcesDev)
-	// 	r.Post("/api/dev/list/users", apiListUsersDev)
-	// })
+	r.Group(func(r chi.Router) {
+		r.Use(api.Auth(domain.All, tokenService))
+		r.Post("/api/dev/list/topics", apiListTopicsDev)
+		r.Post("/api/dev/list/plans", apiListPlansDev)
+		r.Post("/api/dev/list/steps", apiListStepsDev)
+		r.Post("/api/dev/list/source", apiListSourcesDev)
+		r.Post("/api/dev/list/users", apiListUsersDev)
+	})
 
 	log.Printf("Listening %s", Cfg.HTTPServer.Host+":"+Cfg.HTTPServer.Port)
 

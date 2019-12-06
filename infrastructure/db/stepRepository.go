@@ -5,7 +5,6 @@ import (
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/domain"
 	"github.com/jackc/pgx/v4"
-	"log"
 )
 
 type stepRepo struct {
@@ -28,7 +27,7 @@ func (r stepRepo) All() []domain.Step {
 	for rows.Next() {
 		dbo, err := r.scanRow(rows)
 		if err != nil {
-			log.Fatal(err)
+			return []domain.Step{}
 		}
 		steps = append(steps, *dbo.ToStep())
 	}
@@ -47,7 +46,7 @@ func (r stepRepo) GetByPlan(planid int) []domain.Step {
 	for rows.Next() {
 		dbo, err := r.scanRow(rows)
 		if err != nil {
-			log.Fatal(err)
+			return []domain.Step{}
 		}
 		steps = append(steps, *dbo.ToStep())
 	}
