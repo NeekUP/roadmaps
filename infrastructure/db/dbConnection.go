@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/infrastructure"
 	"os"
 
 	"github.com/jackc/pgx/v4"
@@ -14,8 +15,8 @@ type DbConnection struct {
 	Log  core.AppLogger
 }
 
-func NewDbConnection(connString string, log core.AppLogger) *DbConnection {
-	pgdb, err := pgx.ConnectConfig(context.Background(), configure(connString, log))
+func NewDbConnection(config infrastructure.DbConf, log core.AppLogger) *DbConnection {
+	pgdb, err := pgx.ConnectConfig(context.Background(), configure(config, log))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connection to database: %v\n", err)
 		os.Exit(1)
@@ -33,34 +34,54 @@ func NewDbConnection(connString string, log core.AppLogger) *DbConnection {
 	}
 }
 
-func configure(cfg string, log core.AppLogger) *pgx.ConnConfig {
-	config, _ := pgx.ParseConfig(cfg)
-	config.Logger = &DbLogger{Logger: log}
+func configure(conf infrastructure.DbConf, log core.AppLogger) *pgx.ConnConfig {
+	config, _ := pgx.ParseConfig(conf.ConnString)
+	logLevel, err := pgx.LogLevelFromString(conf.LogLevel)
+	if err != nil {
+		log.Errorw("LogLevel value is invalid, default level: error")
+		logLevel = pgx.LogLevelError
+	}
+	config.Logger = &logger{Logger: log, Level: logLevel}
 	return config
 }
 
-type DbLogger struct {
+type logger struct {
 	Logger core.AppLogger
+	Level  pgx.LogLevel
 }
 
-func (driver *DbLogger) Log(ctx context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
+func (driver *logger) Log(ctx context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
 	arr := make([]string, len(data)*2)
 	for k, v := range data {
 		arr = append(arr, k, fmt.Sprintf("%v", v))
+	}
+
+	if driver.Level == 0 {
+		return
 	}
 
 	switch level {
 	case pgx.LogLevelNone:
 		return
 	case pgx.LogLevelError:
-		driver.Logger.Errorw(msg, arr)
+		if driver.Level >= 2 {
+			driver.Logger.Errorw(msg, arr)
+		}
 	case pgx.LogLevelWarn:
-		driver.Logger.Warnw(msg, arr)
+		if driver.Level >= 3 {
+			driver.Logger.Warnw(msg, arr)
+		}
 	case pgx.LogLevelInfo:
-		driver.Logger.Infow(msg, arr)
+		if driver.Level >= 4 {
+			driver.Logger.Infow(msg, arr)
+		}
 	case pgx.LogLevelDebug:
-		driver.Logger.Debugw(msg, arr)
+		if driver.Level >= 5 {
+			driver.Logger.Debugw(msg, arr)
+		}
 	case pgx.LogLevelTrace:
-		driver.Logger.Debugw(msg, arr)
+		if driver.Level >= 6 {
+			driver.Logger.Debugw(msg, arr)
+		}
 	}
 }
