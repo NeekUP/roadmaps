@@ -115,7 +115,7 @@ func (r *userRepository) Count() (count int, ok bool) {
 }
 
 func (r *userRepository) All() []domain.User {
-	query := "select id, name, normalizedname, email, emailconfirmed, emailconfirmation, img, tokens, rights, password, salt" +
+	query := "select id, name, normalizedname, email, emailconfirmed, emailconfirmation, img, tokens, rights, password, salt " +
 		"FROM users"
 	rows, err := r.Db.Conn.Query(context.Background(), query)
 	if err != nil {
