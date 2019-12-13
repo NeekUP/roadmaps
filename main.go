@@ -67,7 +67,7 @@ func main() {
 	/*
 		Infrastructure initialization
 	*/
-	dbConnection := db.NewDbConnection(Cfg.Db.ConnString, newLogger("database"))
+	dbConnection := db.NewDbConnection(Cfg.Db, newLogger("database"))
 	hashProvider := infrastructure.NewSha256HashProvider()
 	userRepo := db.NewUserRepository(dbConnection)
 	sourceRepo := db.NewSourceRepository(dbConnection)
