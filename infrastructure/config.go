@@ -1,11 +1,9 @@
 package infrastructure
 
 type Config struct {
+	Db     DbConf
 	Logger struct {
 		Path string `json:"path"`
-	}
-	Db struct {
-		ConnString string `json:"connString"`
 	}
 	ImgSaver struct {
 		LocalFolder string `json:"localFolder"`
@@ -40,4 +38,16 @@ type Config struct {
 	//		Tag        int `json:"tag"`
 	//	}
 	//}
+}
+
+type DbConf struct {
+	ConnString string `json:"connString"`
+	// Valid levels:
+	//	trace
+	//	debug
+	//	info
+	//	warn
+	//	error
+	//	none
+	LogLevel string `json:"logLevel"`
 }
