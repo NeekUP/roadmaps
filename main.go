@@ -95,6 +95,7 @@ func main() {
 	getPlan := usecases.NewGetPlan(planRepo, userRepo, newLogger("getPlan"))
 	getPlanList := usecases.NewGetPlanList(planRepo, userRepo, newLogger("getPlanList"))
 	getUsersPlans := usecases.NewGetUsersPlans(planRepo, usersPlanRepo, newLogger("getUsersPlans"))
+	searchTopic := usecases.NewSearchTopic(topicRepo, newLogger("getUsersPlans"))
 	/*
 		Api methods
 	*/
@@ -111,6 +112,7 @@ func main() {
 	apiGetTopic := api.GetTopic(getTopic, newLogger("apiGetTopic"))
 	apiGetPlan := api.GetPlan(getPlan, newLogger("apiGetPlan"))
 	apiGetPlanList := api.GetPlanList(getPlanList, getUsersPlans, newLogger("getPlanList"))
+	apiSearchTopic := api.SearchTopic(searchTopic, newLogger("searchTopic"))
 	/*
 		Database
 	*/
@@ -132,6 +134,7 @@ func main() {
 		r.Post("/api/plan/tree", apiGetPlanTree)
 		r.Post("/api/topic/tree", apiGetTopicTree)
 		r.Post("/api/topic/get", apiGetTopic)
+		r.Post("/api/topic/search", apiSearchTopic)
 	})
 
 	// for users

@@ -6,10 +6,11 @@ import (
 )
 
 type topic struct {
-	Name        string `json:"name"`
-	Title       string `json:"title"`
-	Description string `json:"desc,omitempty"`
-	Plans       []plan `json:"plans,omitempty"`
+	Name        string   `json:"name"`
+	Title       string   `json:"title"`
+	Description string   `json:"desc,omitempty"`
+	Tags        []string `json:"tags"`
+	Plans       []plan   `json:"plans,omitempty"`
 }
 
 func NewTopicDto(t *domain.Topic) *topic {
@@ -17,6 +18,7 @@ func NewTopicDto(t *domain.Topic) *topic {
 		Name:        t.Name,
 		Title:       t.Title,
 		Description: t.Description,
+		Tags:        t.Tags,
 		Plans:       make([]plan, len(t.Plans)),
 	}
 
