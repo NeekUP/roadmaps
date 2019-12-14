@@ -428,7 +428,8 @@ Response
 {
 	"name": "string (Id)",
 	"title": "string",
-	"desc": "string"
+	"desc": "string",
+    "tags": [string]
 }
 ```
 
@@ -462,7 +463,8 @@ Response
     "topic": {
         "name": "string",
         "title": "string",
-        "desc": "string"
+        "desc": "string",
+        "tags": [string]
     }
 }
 ```
@@ -526,6 +528,28 @@ Response
 No Body
 
 ---
+
+### Topic search
+#### /api/topic/search
+Request
+```javascript
+{
+	"query": "string"
+}
+```
+Response
+### 200 - OK
+```javascript
+{
+    "query": "string"
+    "topic": {
+        "name": "string",
+        "title": "string",
+        "desc": "string",
+        "tags": [string]
+    }
+}
+```
 
 ## Errors
 | Error                    | Description |

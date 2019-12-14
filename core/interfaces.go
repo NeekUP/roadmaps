@@ -34,7 +34,7 @@ type TopicRepository interface {
 	GetById(id int) *domain.Topic
 	Save(source *domain.Topic) (bool, *AppError)
 	Update(source *domain.Topic) (bool, *AppError)
-
+	TitleLike(str string, count int) []domain.Topic
 	//dev
 	All() []domain.Topic
 }
