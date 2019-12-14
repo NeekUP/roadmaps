@@ -8,6 +8,7 @@ type Topic struct {
 	Title       string
 	Description string
 	Creator     string
+	Tags        []string
 	Plans       []Plan
 }
 

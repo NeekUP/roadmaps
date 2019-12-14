@@ -18,7 +18,7 @@ func NewTopicRepository(db *DbConnection) core.TopicRepository {
 }
 
 func (repo *topicRepo) Get(name string) *domain.Topic {
-	row := repo.Db.Conn.QueryRow(context.Background(), "SELECT id, name, title, description, creator FROM topics WHERE name=$1", name)
+	row := repo.Db.Conn.QueryRow(context.Background(), "SELECT id, name, title, description, creator, tags FROM topics WHERE name=$1", name)
 	dbo, err := repo.scanRow(row)
 	if err == sql.ErrNoRows {
 		return nil
@@ -30,7 +30,7 @@ func (repo *topicRepo) Get(name string) *domain.Topic {
 }
 
 func (repo *topicRepo) GetById(id int) *domain.Topic {
-	row := repo.Db.Conn.QueryRow(context.Background(), "SELECT id, name, title, description, creator FROM topics WHERE id=$1", id)
+	row := repo.Db.Conn.QueryRow(context.Background(), "SELECT id, name, title, description, creator, tags FROM topics WHERE id=$1", id)
 	dbo, err := repo.scanRow(row)
 
 	if err == sql.ErrNoRows {
@@ -46,8 +46,8 @@ func (repo *topicRepo) GetById(id int) *domain.Topic {
 func (repo *topicRepo) Save(topic *domain.Topic) (bool, *core.AppError) {
 	dbo := TopicDBO{}
 	dbo.FromTopic(topic)
-	query := "INSERT INTO topics( name, title, description, creator) VALUES ($1, $2, $3, $4) RETURNING id;"
-	row := repo.Db.Conn.QueryRow(context.Background(), query, dbo.Name, dbo.Title, dbo.Description, dbo.Creator)
+	query := "INSERT INTO topics( name, title, description, creator, tags) VALUES ($1, $2, $3, $4, $5) RETURNING id;"
+	row := repo.Db.Conn.QueryRow(context.Background(), query, dbo.Name, dbo.Title, dbo.Description, dbo.Creator, dbo.Tags)
 	err := row.Scan(&topic.Id)
 	if err != nil {
 		if pgerr, ok := err.(*pgconn.PgError); ok {
@@ -73,26 +73,45 @@ func (repo *topicRepo) Update(topic *domain.Topic) (bool, *core.AppError) {
 }
 
 func (repo *topicRepo) All() []domain.Topic {
-	query := "SELECT id, name, title, description, creator FROM topics"
+	query := "SELECT id, name, title, description, creator, tags FROM topics"
 	rows, err := repo.Db.Conn.Query(context.Background(), query)
 	if err != nil {
 		return []domain.Topic{}
 	}
 	defer rows.Close()
-	users := make([]domain.Topic, 0)
+	topics := make([]domain.Topic, 0)
 	for rows.Next() {
 		dbo, err := repo.scanRow(rows)
 		if err != nil {
 			return []domain.Topic{}
 		}
-		users = append(users, *dbo.ToTopic())
+		topics = append(topics, *dbo.ToTopic())
 	}
 
-	return users
+	return topics
+}
+
+func (repo *topicRepo) TitleLike(str string, count int) []domain.Topic {
+	query := "SELECT id, name, title, description, creator, tags FROM topics WHERE title ILIKE $1 LIMIT $2"
+	rows, err := repo.Db.Conn.Query(context.Background(), query, "%"+str+"%", count)
+	if err != nil {
+		return []domain.Topic{}
+	}
+	defer rows.Close()
+	topics := make([]domain.Topic, 0)
+	for rows.Next() {
+		dbo, err := repo.scanRow(rows)
+		if err != nil {
+			return []domain.Topic{}
+		}
+		topics = append(topics, *dbo.ToTopic())
+	}
+
+	return topics
 }
 
 func (repo *topicRepo) scanRow(row pgx.Row) (*TopicDBO, error) {
 	dbo := TopicDBO{}
-	err := row.Scan(&dbo.Id, &dbo.Name, &dbo.Title, &dbo.Description, &dbo.Creator)
+	err := row.Scan(&dbo.Id, &dbo.Name, &dbo.Title, &dbo.Description, &dbo.Creator, &dbo.Tags)
 	return &dbo, err
 }

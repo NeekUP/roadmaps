@@ -131,3 +131,33 @@ func GetTopic(getTopic usecases.GetTopic, log core.AppLogger) func(w http.Respon
 		valueResponse(w, &getTopicResponse{Topic: topicDto})
 	}
 }
+
+type searchTopicReq struct {
+	Str string `json:"query"`
+}
+
+type searchTopicRes struct {
+	Str    string  `json:"query"`
+	Result []topic `json:"result"`
+}
+
+func SearchTopic(searchTopic usecases.SearchTopic, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		data := new(searchTopicReq)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		if err != nil {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		topics := searchTopic.Do(infrastructure.NewContext(r.Context()), data.Str, 10)
+		dtos := make([]topic, len(topics))
+		for i, t := range topics {
+			dtos[i] = *NewTopicDto(&t)
+		}
+		valueResponse(w, &searchTopicRes{Result: dtos, Str: data.Str})
+	}
+}

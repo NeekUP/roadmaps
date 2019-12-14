@@ -15,16 +15,23 @@ type TopicDBO struct {
 	Title       string
 	Description sql.NullString
 	Creator     string
+	Tags        []string
 }
 
 func (dbo *TopicDBO) ToTopic() *domain.Topic {
-	return &domain.Topic{
+	t := &domain.Topic{
 		Id:          dbo.Id,
 		Name:        dbo.Name,
 		Title:       dbo.Title,
 		Description: dbo.Description.String,
 		Creator:     dbo.Creator,
 	}
+	if dbo.Tags == nil {
+		t.Tags = []string{}
+	} else {
+		t.Tags = dbo.Tags
+	}
+	return t
 }
 
 func (dbo *TopicDBO) FromTopic(d *domain.Topic) {
@@ -33,6 +40,11 @@ func (dbo *TopicDBO) FromTopic(d *domain.Topic) {
 	dbo.Title = d.Title
 	dbo.Description = ToNullString(d.Description)
 	dbo.Creator = d.Creator
+	if d.Tags == nil {
+		dbo.Tags = []string{}
+	} else {
+		dbo.Tags = d.Tags
+	}
 }
 
 /*
