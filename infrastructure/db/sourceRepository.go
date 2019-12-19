@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/domain"
-	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 )
 
@@ -26,7 +25,7 @@ func (repo *sourceRepo) Get(id int64) *domain.Source {
 		return nil
 	}
 	if err != nil {
-		repo.Db.Log.Errorw("", "error", err.Error())
+		repo.Db.LogError(err, query)
 		return nil
 	}
 	return dbo.ToSource()
@@ -41,7 +40,7 @@ func (repo *sourceRepo) FindByIdentifier(nIdentifier string) *domain.Source {
 		return nil
 	}
 	if err != nil {
-		repo.Db.Log.Errorw("", "error", err.Error())
+		repo.Db.LogError(err, query)
 		return nil
 	}
 	return dbo.ToSource()
@@ -56,12 +55,7 @@ func (repo *sourceRepo) Save(source *domain.Source) (bool, *core.AppError) {
 	row := repo.Db.Conn.QueryRow(context.Background(), query, dbo.Title, dbo.Identifier, dbo.NormalizedIdentifier, dbo.Type, dbo.Properties, dbo.Img, dbo.Desc)
 	err := row.Scan(&source.Id)
 	if err != nil {
-		if pgerr, ok := err.(*pgconn.PgError); ok {
-			if pgerr.Code == "23505" {
-				return false, core.NewError(core.AlreadyExists)
-			}
-		}
-		return false, core.NewError(core.InternalError)
+		return false, repo.Db.LogError(err, query)
 	}
 	return true, nil
 }
@@ -74,7 +68,7 @@ func (repo *sourceRepo) Update(source *domain.Source) (bool, *core.AppError) {
 		WHERE id=$1;`
 	tag, err := repo.Db.Conn.Exec(context.Background(), query, dbo.Id, dbo.Title, dbo.Identifier, dbo.NormalizedIdentifier, dbo.Type, dbo.Properties, dbo.Img, dbo.Desc)
 	if err != nil {
-		return false, core.NewError(core.InternalError)
+		return false, repo.Db.LogError(err, query)
 	}
 	return tag.RowsAffected() > 0, nil
 }
@@ -90,6 +84,7 @@ ON CONFLICT (normalizedidentifier) DO NOTHING;`
 
 	_, err := repo.Db.Conn.Exec(context.Background(), query, dbo.Title, dbo.Identifier, dbo.NormalizedIdentifier, dbo.Type, dbo.Properties, dbo.Img, dbo.Desc)
 	if err != nil {
+		repo.Db.LogError(err, query)
 		return nil
 	}
 	return repo.FindByIdentifier(dbo.NormalizedIdentifier)
@@ -109,7 +104,7 @@ func (repo *sourceRepo) All() []domain.Source {
 			return nil
 		}
 		if err != nil {
-			repo.Db.Log.Errorw("", "error", err.Error())
+			repo.Db.LogError(err, query)
 			return nil
 		}
 		sources = append(sources, *dbo.ToSource())

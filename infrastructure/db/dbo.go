@@ -16,20 +16,18 @@ type TopicDBO struct {
 	Description sql.NullString
 	Creator     string
 	Tags        []string
+	IsTag       bool
 }
 
-func (dbo *TopicDBO) ToTopic() *domain.Topic {
+func (dbo *TopicDBO) ToTopic(tags []domain.TopicTag) *domain.Topic {
 	t := &domain.Topic{
 		Id:          dbo.Id,
 		Name:        dbo.Name,
 		Title:       dbo.Title,
 		Description: dbo.Description.String,
 		Creator:     dbo.Creator,
-	}
-	if dbo.Tags == nil {
-		t.Tags = []string{}
-	} else {
-		t.Tags = dbo.Tags
+		Tags:        tags,
+		IsTag:       dbo.IsTag,
 	}
 	return t
 }
@@ -40,10 +38,11 @@ func (dbo *TopicDBO) FromTopic(d *domain.Topic) {
 	dbo.Title = d.Title
 	dbo.Description = ToNullString(d.Description)
 	dbo.Creator = d.Creator
-	if d.Tags == nil {
-		dbo.Tags = []string{}
-	} else {
-		dbo.Tags = d.Tags
+	dbo.IsTag = d.IsTag
+	dbo.Tags = make([]string, len(d.Tags))
+
+	for i, tag := range d.Tags {
+		dbo.Tags[i] = tag.Name
 	}
 }
 
@@ -194,6 +193,9 @@ func (dbo *UserDBO) FromUser(u *domain.User) {
 	dbo.Salt = u.Salt
 }
 
+/*
+	Users Plan
+ ******************/
 type UsersPlanDBO struct {
 	UserId    string
 	TopicName string
@@ -214,6 +216,29 @@ func (dbo *UsersPlanDBO) FromUsersPlan(up *domain.UsersPlan) {
 	dbo.TopicName = up.TopicName
 }
 
+/*
+	Topic Tag
+ ******************/
+type TopicTagDBO struct {
+	Name  string
+	Title string
+}
+
+func (dbo *TopicTagDBO) ToTopicTag() *domain.TopicTag {
+	return &domain.TopicTag{
+		Name:  dbo.Name,
+		Title: dbo.Title,
+	}
+}
+
+func (dbo *TopicTagDBO) FromTopicTag(tag *domain.TopicTag) {
+	dbo.Name = tag.Name
+	dbo.Title = tag.Title
+}
+
+/*
+	Utils
+ ******************/
 func ToNullString(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: s != ""}
 }

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/domain"
-	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 )
 
@@ -24,12 +23,7 @@ func (repo *usersPlanRepo) Add(userId string, topicName string, planId int) (boo
 	query := `INSERT INTO usersplans (userid, topic, planid) VALUES ($1, $2, $3);`
 	tag, err := repo.Db.Conn.Exec(context.Background(), query, dbo.UserId, dbo.TopicName, dbo.PlanId)
 	if err != nil {
-		if pgerr, ok := err.(*pgconn.PgError); ok {
-			if pgerr.Code == "23505" {
-				return false, core.NewError(core.AlreadyExists)
-			}
-		}
-		return false, core.NewError(core.InternalError)
+		return false, repo.Db.LogError(err, query)
 	}
 	return tag.RowsAffected() > 0, nil
 }
@@ -38,7 +32,7 @@ func (repo *usersPlanRepo) Remove(userId string, planId int) (bool, *core.AppErr
 	query := `DELETE FROM usersplans WHERE userid=$1 AND planid=$2;`
 	t, err := repo.Db.Conn.Exec(context.Background(), query, userId, planId)
 	if err != nil {
-		return false, core.NewError(core.InternalError)
+		return false, repo.Db.LogError(err, query)
 	}
 	return t.RowsAffected() > 0, nil
 }
@@ -51,7 +45,7 @@ func (repo *usersPlanRepo) GetByTopic(userId, topicName string) *domain.UsersPla
 		return nil
 	}
 	if err != nil {
-		repo.Db.Log.Errorw("", "error", err.Error())
+		repo.Db.LogError(err, query)
 		return nil
 	}
 	return dbo.ToUsersPlan()
@@ -60,7 +54,11 @@ func (repo *usersPlanRepo) GetByTopic(userId, topicName string) *domain.UsersPla
 func (repo *usersPlanRepo) GetByUser(userId string) []domain.UsersPlan {
 	query := `SELECT userid, topic, planid FROM usersplans WHERE userid=$1`
 	rows, err := repo.Db.Conn.Query(context.Background(), query, userId)
+	if err == sql.ErrNoRows {
+		return []domain.UsersPlan{}
+	}
 	if err != nil {
+		repo.Db.LogError(err, query)
 		return []domain.UsersPlan{}
 	}
 	defer rows.Close()

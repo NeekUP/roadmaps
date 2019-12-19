@@ -92,10 +92,12 @@ func main() {
 	getPlanTree := usecases.NewGetPlanTree(planRepo, topicRepo, usersPlanRepo, newLogger("getPlanTree"))
 	addUserPlan := usecases.NewAddUserPlan(planRepo, usersPlanRepo, newLogger("addUserPlan"))
 	removeUserPlan := usecases.NewRemoveUserPlan(usersPlanRepo, newLogger("removeUserPlan"))
-	getPlan := usecases.NewGetPlan(planRepo, userRepo, newLogger("getPlan"))
+	getPlan := usecases.NewGetPlan(planRepo, userRepo, stepRepo, sourceRepo, topicRepo, newLogger("getPlan"))
 	getPlanList := usecases.NewGetPlanList(planRepo, userRepo, newLogger("getPlanList"))
 	getUsersPlans := usecases.NewGetUsersPlans(planRepo, usersPlanRepo, newLogger("getUsersPlans"))
 	searchTopic := usecases.NewSearchTopic(topicRepo, newLogger("getUsersPlans"))
+	addTopicTag := usecases.NewAddTopicTag(topicRepo, newLogger("addTopicTag"))
+	removeTopicTag := usecases.NewRemoveTopicTag(topicRepo, newLogger("removeTopicTag"))
 	/*
 		Api methods
 	*/
@@ -113,6 +115,8 @@ func main() {
 	apiGetPlan := api.GetPlan(getPlan, newLogger("apiGetPlan"))
 	apiGetPlanList := api.GetPlanList(getPlanList, getUsersPlans, newLogger("getPlanList"))
 	apiSearchTopic := api.SearchTopic(searchTopic, newLogger("searchTopic"))
+	apiAddTopicTag := api.AddTopicTag(addTopicTag, newLogger("addTopicTag"))
+	apiRemoveTopicTag := api.RemoveTopicTag(removeTopicTag, newLogger("removeTopicTag"))
 	/*
 		Database
 	*/
@@ -145,6 +149,8 @@ func main() {
 		r.Post("/api/plan/add", apiAddPlan)
 		r.Post("/api/user/plan/favorite", apiAddUserPlan)
 		r.Post("/api/user/plan/unfavorite", apiRemoveAddUserPlan)
+		r.Post("/api/topic/tag/add", apiAddTopicTag)
+		r.Post("/api/topic/tag/remove", apiRemoveTopicTag)
 	})
 
 	// // for development only
