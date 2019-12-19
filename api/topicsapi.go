@@ -9,14 +9,10 @@ import (
 )
 
 type addTopicRequest struct {
-	Title string `json:"title"`
-	Desc  string `json:"desc"`
-}
-
-type addTopicResponse struct {
-	Name  string `json:"name"`
-	Title string `json:"title"`
-	Desc  string `json:"desc"`
+	Title string   `json:"title"`
+	Desc  string   `json:"desc"`
+	Tags  []string `json:"tags"`
+	IsTag bool     `json:"istag"`
 }
 
 func AddTopic(addTopic usecases.AddTopic, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +29,8 @@ func AddTopic(addTopic usecases.AddTopic, log core.AppLogger) func(w http.Respon
 		}
 
 		context := infrastructure.NewContext(r.Context())
-		topic, err := addTopic.Do(context, data.Title, data.Desc)
+
+		topic, err := addTopic.Do(context, data.Title, data.Desc, data.IsTag, data.Tags)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
@@ -43,11 +40,7 @@ func AddTopic(addTopic usecases.AddTopic, log core.AppLogger) func(w http.Respon
 			return
 		}
 
-		valueResponse(w, &addTopicResponse{
-			Title: topic.Title,
-			Name:  topic.Name,
-			Desc:  topic.Description,
-		})
+		valueResponse(w, NewTopicDto(topic))
 	}
 }
 
@@ -123,9 +116,6 @@ func GetTopic(getTopic usecases.GetTopic, log core.AppLogger) func(w http.Respon
 			return
 		}
 
-		// getPlanList
-		// getUsersPlan
-		// assemble all
 		topicDto := NewTopicDto(t)
 
 		valueResponse(w, &getTopicResponse{Topic: topicDto})
@@ -159,5 +149,75 @@ func SearchTopic(searchTopic usecases.SearchTopic, log core.AppLogger) func(w ht
 			dtos[i] = *NewTopicDto(&t)
 		}
 		valueResponse(w, &searchTopicRes{Result: dtos, Str: data.Str})
+	}
+}
+
+type addTopicTagReq struct {
+	TopicName string `json:"topicname"`
+	TagName   string `json:"tagname"`
+}
+
+type addTopicTagRes struct {
+	Added bool `json:"added"`
+}
+
+func AddTopicTag(addTopicTag usecases.AddTopicTag, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		data := new(addTopicTagReq)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		if err != nil {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		added, err := addTopicTag.Do(infrastructure.NewContext(r.Context()), data.TagName, data.TopicName)
+		if err != nil {
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		valueResponse(w, &addTopicTagRes{Added: added})
+	}
+}
+
+type removeTopicTagReq struct {
+	TopicName string `json:"topicname"`
+	TagName   string `json:"tagname"`
+}
+
+type removeTopicTagRes struct {
+	Removed bool `json:"removed"`
+}
+
+func RemoveTopicTag(removeTopicTag usecases.RemoveTopicTag, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		data := new(removeTopicTagReq)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		if err != nil {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		removed, err := removeTopicTag.Do(infrastructure.NewContext(r.Context()), data.TagName, data.TopicName)
+		if err != nil {
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		valueResponse(w, &removeTopicTagRes{Removed: removed})
 	}
 }

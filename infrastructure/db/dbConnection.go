@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/infrastructure"
+	"github.com/jackc/pgconn"
 	"os"
 
 	"github.com/jackc/pgx/v4"
@@ -84,4 +85,17 @@ func (driver *logger) Log(ctx context.Context, level pgx.LogLevel, msg string, d
 			driver.Logger.Debugw(msg, arr)
 		}
 	}
+}
+
+func (db *DbConnection) LogError(err error, query string) *core.AppError {
+	if pgerr, ok := err.(*pgconn.PgError); ok {
+		db.Log.Errorw(pgerr.Message, "code", pgerr.Code, "hint", pgerr.Hint, "position", pgerr.Position, "query", query)
+		if pgerr.Code == "23505" {
+			return core.NewError(core.AlreadyExists)
+		}
+	} else {
+		db.Log.Errorw(err.Error(), "query", query)
+	}
+	return core.NewError(core.InternalError)
+
 }

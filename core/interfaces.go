@@ -35,6 +35,10 @@ type TopicRepository interface {
 	Save(source *domain.Topic) (bool, *AppError)
 	Update(source *domain.Topic) (bool, *AppError)
 	TitleLike(str string, count int) []domain.Topic
+	AddTag(tagname, topicname string) bool
+	DeleteTag(tagname, topicname string) bool
+	GetTags(topicnames []string) []domain.TopicTag
+
 	//dev
 	All() []domain.Topic
 }
