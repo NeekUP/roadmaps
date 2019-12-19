@@ -429,7 +429,11 @@ Response
 	"name": "string (Id)",
 	"title": "string",
 	"desc": "string",
-    "tags": [string]
+    "tags": [{
+        "name": "string",
+        "title": "string"
+    }],
+    "istag": bool
 }
 ```
 
@@ -464,7 +468,11 @@ Response
         "name": "string",
         "title": "string",
         "desc": "string",
-        "tags": [string]
+        "tags": [{
+            "name": "string",
+            "title": "string"
+        }],
+        "istag": bool
     }
 }
 ```
@@ -548,6 +556,40 @@ Response
         "desc": "string",
         "tags": [string]
     }
+}
+```
+
+### Topic add tag
+#### /api/topic/tag/add
+Request
+```javascript
+{
+	"topicname":"strint",
+	"tagname":"string"
+}
+```
+Response
+### 200 - OK
+```javascript
+{
+    "added": bool
+}
+```
+
+### Topic remove tag
+#### /api/topic/tag/remove
+Request
+```javascript
+{
+	"topicname":"strint",
+	"tagname":"string"
+}
+```
+Response
+### 200 - OK
+```javascript
+{
+    "removed": bool
 }
 ```
 

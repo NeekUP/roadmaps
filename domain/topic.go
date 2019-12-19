@@ -8,7 +8,8 @@ type Topic struct {
 	Title       string
 	Description string
 	Creator     string
-	Tags        []string
+	IsTag       bool
+	Tags        []TopicTag
 	Plans       []Plan
 }
 

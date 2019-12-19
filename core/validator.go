@@ -58,13 +58,12 @@ func IsValidDscription(desc string) bool {
 }
 
 func IsValidTopicTitle(title string) bool {
-	r := regexp.MustCompile("^[\\p{L}\\s\\d_\\.:\\/\\-]{1,100}$")
-	return r.MatchString(title)
+	l := len(title)
+	return l > 0 && l < 100
 }
 
 func IsValidTopicName(name string) bool {
 	l := len(name)
-
 	return l > 0 && l < 100 && slug.IsSlug(name)
 }
 

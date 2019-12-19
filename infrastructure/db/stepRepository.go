@@ -17,7 +17,7 @@ func NewStepsRepository(db *DbConnection) core.StepRepository {
 }
 
 func (r stepRepo) All() []domain.Step {
-	query := "SELECT id, planid, referenceid, referencetype, position, FROM steps;"
+	query := "SELECT id, planid, referenceid, referencetype, position FROM steps;"
 	rows, err := r.Db.Conn.Query(context.Background(), query)
 	if err != nil {
 		return []domain.Step{}
@@ -36,9 +36,10 @@ func (r stepRepo) All() []domain.Step {
 }
 
 func (r stepRepo) GetByPlan(planid int) []domain.Step {
-	query := "SELECT id, planid, referenceid, referencetype, position, FROM steps WHERE planid=$1;"
+	query := "SELECT id, planid, referenceid, referencetype, position FROM steps WHERE planid=$1;"
 	rows, err := r.Db.Conn.Query(context.Background(), query, planid)
 	if err != nil {
+		r.Db.LogError(err, query)
 		return []domain.Step{}
 	}
 	defer rows.Close()

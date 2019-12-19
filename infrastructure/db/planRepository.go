@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/domain"
-	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"strings"
 )
@@ -33,15 +32,11 @@ func (r *planRepo) SaveWithSteps(plan *domain.Plan) (bool, *core.AppError) {
 	insertPlanQuery := "INSERT INTO plans(title, topic, owner, points) VALUES ($1, $2, $3, $4) RETURNING id;"
 	err = r.Db.Conn.QueryRow(context.Background(), insertPlanQuery, plan.Title, plan.TopicName, plan.OwnerId, plan.Points).Scan(&plan.Id)
 	if err != nil {
+		//r.Db.Log.Errorw(err.)
 		if e := tx.Rollback(context.Background()); e != nil {
 			r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
 		}
-		if pgerr, ok := err.(*pgconn.PgError); ok {
-			if pgerr.Code == "23505" {
-				return false, core.NewError(core.AlreadyExists)
-			}
-		}
-		return false, core.NewError(core.InternalError)
+		return false, r.Db.LogError(err, insertPlanQuery)
 	}
 
 	for i := 0; i < len(plan.Steps); i++ {
@@ -52,31 +47,26 @@ func (r *planRepo) SaveWithSteps(plan *domain.Plan) (bool, *core.AppError) {
 			if e := tx.Rollback(context.Background()); e != nil {
 				r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
 			}
-			if pgerr, ok := err.(*pgconn.PgError); ok {
-				if pgerr.Code == "23505" {
-					return false, core.NewError(core.AlreadyExists)
-				}
-			}
-			return false, core.NewError(core.InternalError)
+			return false, r.Db.LogError(err, query)
 		}
 	}
 
 	err = tx.Commit(context.Background())
 	if err != nil {
-		return false, core.NewError(core.InternalError)
+		return false, r.Db.LogError(err, "")
 	}
 	return true, nil
 }
 
 func (r *planRepo) Get(id int) *domain.Plan {
-	query := `SELECT id, title, topic, owner, points WHERE p.id=$1;`
+	query := `SELECT id, title, topic, owner, points FROM plans WHERE id=$1;`
 	row := r.Db.Conn.QueryRow(context.Background(), query, id)
 	p, err := r.scanRow(row)
 	if err == sql.ErrNoRows {
 		return nil
 	}
 	if err != nil {
-		r.Db.Log.Errorw("", "error", err.Error())
+		r.Db.LogError(err, query)
 		return nil
 	}
 	return p.ToPlan()
@@ -87,6 +77,7 @@ func (r *planRepo) GetList(id []int) []domain.Plan {
 	query = fmt.Sprintf(query, strings.Trim(strings.Join(strings.Fields(fmt.Sprint(id)), ","), "[]"))
 	rows, err := r.Db.Conn.Query(context.Background(), query)
 	if err != nil {
+		r.Db.LogError(err, query)
 		return []domain.Plan{}
 	}
 	defer rows.Close()
@@ -97,6 +88,7 @@ func (r *planRepo) GetPopularByTopic(topic string, count int) []domain.Plan {
 	query := "SELECT id, title, topic, owner, points FROM plans WHERE topic=$1 ORDER BY points DESC LIMIT $2"
 	rows, err := r.Db.Conn.Query(context.Background(), query, topic, count)
 	if err != nil {
+		r.Db.LogError(err, query)
 		return []domain.Plan{}
 	}
 	defer rows.Close()
@@ -119,6 +111,7 @@ func (r *planRepo) All() []domain.Plan {
 	query := "SELECT id, title, topic, owner, points FROM plans"
 	rows, err := r.Db.Conn.Query(context.Background(), query)
 	if err != nil {
+		r.Db.LogError(err, query)
 		return []domain.Plan{}
 	}
 	defer rows.Close()
