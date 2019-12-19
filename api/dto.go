@@ -6,11 +6,12 @@ import (
 )
 
 type topic struct {
-	Name        string   `json:"name"`
-	Title       string   `json:"title"`
-	Description string   `json:"desc,omitempty"`
-	Tags        []string `json:"tags"`
-	Plans       []plan   `json:"plans,omitempty"`
+	Name        string     `json:"name"`
+	Title       string     `json:"title"`
+	Description string     `json:"desc,omitempty"`
+	Tags        []topicTag `json:"tags"`
+	Plans       []plan     `json:"plans,omitempty"`
+	IsTag       bool       `json:"isTag"`
 }
 
 func NewTopicDto(t *domain.Topic) *topic {
@@ -18,8 +19,13 @@ func NewTopicDto(t *domain.Topic) *topic {
 		Name:        t.Name,
 		Title:       t.Title,
 		Description: t.Description,
-		Tags:        t.Tags,
+		Tags:        make([]topicTag, len(t.Tags)),
 		Plans:       make([]plan, len(t.Plans)),
+		IsTag:       t.IsTag,
+	}
+
+	for i := 0; i < len(t.Tags); i++ {
+		nt.Tags[i] = *NewTopicTag(&t.Tags[i])
 	}
 
 	for i := 0; i < len(t.Plans); i++ {
@@ -122,5 +128,17 @@ func NewUserDto(u *domain.User) *user {
 		Id:   u.Id,
 		Name: u.Name,
 		Img:  u.Img,
+	}
+}
+
+type topicTag struct {
+	Name  string `json:"name"`
+	Title string `json:"title"`
+}
+
+func NewTopicTag(t *domain.TopicTag) *topicTag {
+	return &topicTag{
+		Name:  t.Name,
+		Title: t.Title,
 	}
 }

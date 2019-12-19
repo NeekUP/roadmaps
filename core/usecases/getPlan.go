@@ -9,11 +9,14 @@ type GetPlan interface {
 	Do(ctx core.ReqContext, id int) (*domain.Plan, error)
 }
 
-func NewGetPlan(plans core.PlanRepository, users core.UserRepository, logger core.AppLogger) GetPlan {
+func NewGetPlan(plans core.PlanRepository, users core.UserRepository, steps core.StepRepository, sources core.SourceRepository, topics core.TopicRepository, logger core.AppLogger) GetPlan {
 	return &getPlan{
-		PlanRepo: plans,
-		UserRepo: users,
-		Log:      logger,
+		PlanRepo:   plans,
+		StepRepo:   steps,
+		UserRepo:   users,
+		SourceRepo: sources,
+		TopicRepo:  topics,
+		Log:        logger,
 	}
 }
 
