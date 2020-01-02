@@ -98,6 +98,7 @@ func main() {
 	searchTopic := usecases.NewSearchTopic(topicRepo, newLogger("getUsersPlans"))
 	addTopicTag := usecases.NewAddTopicTag(topicRepo, newLogger("addTopicTag"))
 	removeTopicTag := usecases.NewRemoveTopicTag(topicRepo, newLogger("removeTopicTag"))
+	editTopic := usecases.NewEditTopic(topicRepo, newLogger("removeTopicTag"))
 	/*
 		Api methods
 	*/
@@ -117,6 +118,7 @@ func main() {
 	apiSearchTopic := api.SearchTopic(searchTopic, newLogger("searchTopic"))
 	apiAddTopicTag := api.AddTopicTag(addTopicTag, newLogger("addTopicTag"))
 	apiRemoveTopicTag := api.RemoveTopicTag(removeTopicTag, newLogger("removeTopicTag"))
+	apiEditTopic := api.EditTopic(editTopic, newLogger("removeTopicTag"))
 	/*
 		Database
 	*/
@@ -129,7 +131,7 @@ func main() {
 
 	// for all
 	r.Group(func(r chi.Router) {
-		r.Use(api.Auth(domain.All, tokenService))
+		r.Use(api.Auth(domain.God, tokenService))
 		r.Post("/api/user/registration", apiReqUser)
 		r.Post("/api/user/login", apiLoginUser)
 		r.Post("/api/user/refresh", apiRefreshToken)
@@ -153,7 +155,14 @@ func main() {
 		r.Post("/api/topic/tag/remove", apiRemoveTopicTag)
 	})
 
-	// // for development only
+	// for moderators
+	r.Group(func(r chi.Router) {
+		r.Use(api.Auth(domain.M, tokenService))
+		// for users should uses /api/topic/edit/(title|desc|...)
+		r.Post("/api/topic/edit", apiEditTopic)
+	})
+
+	// for development only
 	listTopicsDev := usecases.NewListTopicsDev(topicRepo)
 	listPlansDev := usecases.NewListPlansDev(planRepo)
 	listStepsDev := usecases.NewListStepsDev(stepRepo)
@@ -167,7 +176,7 @@ func main() {
 	apiListUsersDev := api.ListUsers(listUsersDev)
 
 	r.Group(func(r chi.Router) {
-		r.Use(api.Auth(domain.All, tokenService))
+		r.Use(api.Auth(domain.A, tokenService))
 		r.Post("/api/dev/list/topics", apiListTopicsDev)
 		r.Post("/api/dev/list/plans", apiListPlansDev)
 		r.Post("/api/dev/list/steps", apiListStepsDev)

@@ -593,6 +593,37 @@ Response
 }
 ```
 
+### Edit topic as admin
+#### /api/topic/edit
+Required **M** rights
+
+Request
+```javascript
+{
+	"id": int,
+	"title": "string",
+	"desc": "string",
+	"istag": bool
+}
+```
+Response
+### 200 - OK
+NoBody
+
+### 403 - Forbidden
+NoBody
+
+### 400 
+```javascript
+{
+    "error": "INTERNAL_ERROR | INVALID_REQUEST",
+    "validation":{
+        "title": "INVALID_FORMAT",
+        "id": "INVALID_VALUE"
+    }
+}
+```
+
 ## Errors
 | Error                    | Description |
 | ------------------------ | ----------- |
@@ -611,6 +642,7 @@ Response
 | "INVALID_TITLE"          |
 | "INVALID_PROPS"          |
 | "INVALID_SOURCE_TYPE"    |
+| "INVALID_VALUE"
 | "INACCESSIBLE_WEBPAGE"   |
 | "INVALID_FORMAT"         |
 | "SOURCE_NOT_FOUND"       |
