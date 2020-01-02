@@ -116,5 +116,8 @@ func (repo *sourceRepo) All() []domain.Source {
 func (repo *sourceRepo) scanRow(row pgx.Row) (*SourceDBO, error) {
 	dbo := SourceDBO{}
 	err := row.Scan(&dbo.Id, &dbo.Title, &dbo.Identifier, &dbo.NormalizedIdentifier, &dbo.Type, &dbo.Properties, &dbo.Img, &dbo.Desc)
+	if err != nil && err.Error() == "no rows in result set" {
+		return &dbo, sql.ErrNoRows
+	}
 	return &dbo, err
 }

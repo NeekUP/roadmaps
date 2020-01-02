@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/domain"
 	"github.com/jackc/pgx/v4"
@@ -58,5 +59,8 @@ func (r stepRepo) GetByPlan(planid int) []domain.Step {
 func (r *stepRepo) scanRow(row pgx.Row) (*StepDBO, error) {
 	st := StepDBO{}
 	err := row.Scan(&st.Id, &st.PlanId, &st.ReferenceId, &st.ReferenceType, &st.Position)
+	if err != nil && err.Error() == "no rows in result set" {
+		return &st, sql.ErrNoRows
+	}
 	return &st, err
 }

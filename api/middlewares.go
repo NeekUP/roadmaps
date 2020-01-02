@@ -20,7 +20,7 @@ func Auth(rights domain.Rights, ts core.TokenService) func(next http.Handler) ht
 					return
 				}
 
-				if !rights.HasFlag(domain.All) && !domain.Rights(userRights).HasFlag(rights) {
+				if !rights.HasFlag(domain.God) && !domain.Rights(userRights).HasFlag(rights) {
 					statusResponse(w, &status{Code: http.StatusForbidden})
 					return
 				}
@@ -29,7 +29,7 @@ func Auth(rights domain.Rights, ts core.TokenService) func(next http.Handler) ht
 				ctx = context.WithValue(ctx, infrastructure.ReqUserId, userId)
 				ctx = context.WithValue(ctx, infrastructure.ReqUserName, userName)
 
-			} else if !rights.HasFlag(domain.All) {
+			} else if !rights.HasFlag(domain.God) {
 				statusResponse(w, &status{Code: http.StatusUnauthorized})
 				return
 			}

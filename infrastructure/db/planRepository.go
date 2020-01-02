@@ -121,5 +121,8 @@ func (r *planRepo) All() []domain.Plan {
 func (r *planRepo) scanRow(row pgx.Row) (*PlanDBO, error) {
 	dbo := PlanDBO{}
 	err := row.Scan(&dbo.Id, &dbo.Title, &dbo.TopicName, &dbo.OwnerId, &dbo.Points)
+	if err != nil && err.Error() == "no rows in result set" {
+		return &dbo, sql.ErrNoRows
+	}
 	return &dbo, err
 }
