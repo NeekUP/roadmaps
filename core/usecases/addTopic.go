@@ -19,7 +19,7 @@ func NewAddTopic(topicRepo core.TopicRepository, log core.AppLogger) AddTopic {
 }
 
 func (this *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool, tags []string) (*domain.Topic, error) {
-	appErr := this.validate(title, desc, tags)
+	appErr := this.validate(title, tags)
 	if appErr != nil {
 		this.Log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
@@ -54,7 +54,7 @@ func (this *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool, ta
 	return nil, nil
 }
 
-func (this *addTopic) validate(title, desc string, tags []string) *core.AppError {
+func (this *addTopic) validate(title string, tags []string) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicTitle(title) {
 		errors["title"] = core.InvalidFormat.String()

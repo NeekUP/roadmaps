@@ -77,8 +77,8 @@ func (repo *topicRepo) Update(topic *domain.Topic) (bool, *core.AppError) {
 		AccessMode:     pgx.ReadWrite,
 		DeferrableMode: pgx.NotDeferrable,
 	})
-	query := "UPDATE topics SET name=$2, title=$3, description=$4, creator=$5, istag=$6 WHERE id=$1;"
-	tag, err := repo.Db.Conn.Exec(context.Background(), query, dbo.Id, dbo.Name, dbo.Title, dbo.Description, dbo.Creator, dbo.IsTag)
+	query := "UPDATE topics SET name=$2, title=$3, description=$4, istag=$5 WHERE id=$1;"
+	tag, err := repo.Db.Conn.Exec(context.Background(), query, dbo.Id, dbo.Name, dbo.Title, dbo.Description, dbo.IsTag)
 	if err != nil {
 		if e := tx.Rollback(context.Background()); e != nil {
 			repo.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
@@ -205,5 +205,8 @@ func (repo *topicRepo) DeleteTag(tagname, topicname string) bool {
 func (repo *topicRepo) scanRow(row pgx.Row) (*TopicDBO, error) {
 	dbo := TopicDBO{}
 	err := row.Scan(&dbo.Id, &dbo.Name, &dbo.Title, &dbo.Description, &dbo.Creator, &dbo.Tags, &dbo.IsTag)
+	if err != nil && err.Error() == "no rows in result set" {
+		return &dbo, sql.ErrNoRows
+	}
 	return &dbo, err
 }

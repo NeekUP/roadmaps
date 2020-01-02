@@ -44,6 +44,42 @@ func AddTopic(addTopic usecases.AddTopic, log core.AppLogger) func(w http.Respon
 	}
 }
 
+type editTopicRequest struct {
+	Id    int    `json:"id"`
+	Title string `json:"title"`
+	Desc  string `json:"desc"`
+	IsTag bool   `json:"istag"`
+}
+
+func EditTopic(editTopic usecases.EditTopic, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		decoder := json.NewDecoder(r.Body)
+		data := new(editTopicRequest)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		if err != nil {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		context := infrastructure.NewContext(r.Context())
+
+		_, err = editTopic.Do(context, data.Id, data.Title, data.Desc, data.IsTag)
+		if err != nil {
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		statusResponse(w, &status{Code: 200})
+	}
+}
+
 type getTopicTreeRequest struct {
 	Name string `json:"name"`
 }

@@ -76,5 +76,8 @@ func (repo *usersPlanRepo) GetByUser(userId string) []domain.UsersPlan {
 func (repo *usersPlanRepo) scanRow(row pgx.Row) (*UsersPlanDBO, error) {
 	dbo := UsersPlanDBO{}
 	err := row.Scan(&dbo.UserId, &dbo.TopicName, &dbo.PlanId)
+	if err != nil && err.Error() == "no rows in result set" {
+		return &dbo, sql.ErrNoRows
+	}
 	return &dbo, err
 }

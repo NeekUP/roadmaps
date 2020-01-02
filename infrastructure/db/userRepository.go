@@ -145,5 +145,8 @@ func (r *userRepository) All() []domain.User {
 func (r *userRepository) scanRow(row pgx.Row) (*UserDBO, error) {
 	dbo := UserDBO{}
 	err := row.Scan(&dbo.Id, &dbo.Name, &dbo.NormalizedName, &dbo.Email, &dbo.EmailConfirmed, &dbo.EmailConfirmation, &dbo.Img, &dbo.Tokens, &dbo.Rights, &dbo.Pass, &dbo.Salt)
+	if err != nil && err.Error() == "no rows in result set" {
+		return &dbo, sql.ErrNoRows
+	}
 	return &dbo, err
 }

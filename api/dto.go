@@ -6,6 +6,7 @@ import (
 )
 
 type topic struct {
+	Id          int        `json:"id"`
 	Name        string     `json:"name"`
 	Title       string     `json:"title"`
 	Description string     `json:"desc,omitempty"`
@@ -16,6 +17,7 @@ type topic struct {
 
 func NewTopicDto(t *domain.Topic) *topic {
 	nt := &topic{
+		Id:          t.Id,
 		Name:        t.Name,
 		Title:       t.Title,
 		Description: t.Description,
