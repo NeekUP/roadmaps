@@ -3,13 +3,13 @@ package domain
 type Rights int
 
 const (
-	U   Rights = 1 << iota
-	M   Rights = 2
-	A   Rights = 4
-	O   Rights = 8
-	All Rights = 16
+	U   Rights = 1 << 0
+	M   Rights = 1 << 1
+	A   Rights = 1 << 2
+	O   Rights = 1 << 3
+	God Rights = U | M | A | O
 )
 
-func (this Rights) HasFlag(flag Rights) bool {
-	return this|flag == this
+func (right Rights) HasFlag(flag Rights) bool {
+	return right|flag == right
 }
