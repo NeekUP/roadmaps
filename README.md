@@ -371,11 +371,70 @@ Response
 ### 500 - Internal Error
 No Body
 
+### Edit plan
+#### /api/plan/edit
+Request
+```javascript
+{
+    "id": "string",
+    "title":"string",
+    "topic":"string",
+    "steps":[{
+        "referenceId": "int",
+        "referenceType":"Resource | Topic | Test"
+    }]
+}
+```
+
+Response
+### 200 - OK
+No Body
+
+### 400 - BadRequest
+```javascript
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR ",
+    "validation": {
+        "topic": "INVALID_FORMAT"
+        "title": "INVALID_FORMAT",
+        "steps": "INVALID_COUNT",
+        "id":"NOT_EXISTS | ACCESS_DENIED | INVALID_VALUE"
+    }
+}
+```
+### 500 - Internal Error
+No Body
+
+---
+
+### Remove plan
+```javascript
+{
+    "id": "string"
+}
+```
+Response
+### 200 - OK
+No Body
+
+### 400 - BadRequest
+```javascript
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
+    "validation": {
+        "id":"NOT_EXISTS | ACCESS_DENIED | INVALID_VALUE"
+    }
+}
+```
+### 500 - Internal Error
+No Body
+ 
 ---
 
 ## Resources
 ### App resource
 #### /api/source/add
+Request
 ```javascript
 {
 	"identifier":"string (absolute url / isbn)",
