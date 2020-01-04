@@ -82,43 +82,71 @@ func main() {
 	/*
 		Usecases
 	*/
+	// Users
 	regUser := usecases.NewRegisterUser(userRepo, newLogger("registerUser"), hashProvider)
 	loginUser := usecases.NewLoginUser(userRepo, newLogger("loginUser"), hashProvider, tokenService)
 	refreshToken := usecases.NewRefreshToken(userRepo, newLogger("refreshToken"), tokenService, JwtSecret)
+
+	// Sources
 	addSource := usecases.NewAddSource(sourceRepo, newLogger("addSource"), imageManager)
+
+	// Topics
 	addTopic := usecases.NewAddTopic(topicRepo, newLogger("addTopic"))
-	addPlan := usecases.NewAddPlan(planRepo, newLogger("addPlan"))
 	getTopic := usecases.NewGetTopic(topicRepo, planRepo, usersPlanRepo, newLogger("getTopic"))
+	searchTopic := usecases.NewSearchTopic(topicRepo, newLogger("getUsersPlans"))
+	editTopic := usecases.NewEditTopic(topicRepo, newLogger("editTopic"))
+
+	// Plans
+	addPlan := usecases.NewAddPlan(planRepo, newLogger("addPlan"))
 	getPlanTree := usecases.NewGetPlanTree(planRepo, topicRepo, usersPlanRepo, newLogger("getPlanTree"))
-	addUserPlan := usecases.NewAddUserPlan(planRepo, usersPlanRepo, newLogger("addUserPlan"))
-	removeUserPlan := usecases.NewRemoveUserPlan(usersPlanRepo, newLogger("removeUserPlan"))
 	getPlan := usecases.NewGetPlan(planRepo, userRepo, stepRepo, sourceRepo, topicRepo, newLogger("getPlan"))
 	getPlanList := usecases.NewGetPlanList(planRepo, userRepo, newLogger("getPlanList"))
+	editPlan := usecases.NewEditPlan(planRepo, newLogger("editPlan"))
+	removePlan := usecases.NewRemovePlan(planRepo, newLogger("removePlan"))
+
+	// Users Plans
+	addUserPlan := usecases.NewAddUserPlan(planRepo, usersPlanRepo, newLogger("addUserPlan"))
+	removeUserPlan := usecases.NewRemoveUserPlan(usersPlanRepo, newLogger("removeUserPlan"))
 	getUsersPlans := usecases.NewGetUsersPlans(planRepo, usersPlanRepo, newLogger("getUsersPlans"))
-	searchTopic := usecases.NewSearchTopic(topicRepo, newLogger("getUsersPlans"))
+
+	// Topic Tags
 	addTopicTag := usecases.NewAddTopicTag(topicRepo, newLogger("addTopicTag"))
 	removeTopicTag := usecases.NewRemoveTopicTag(topicRepo, newLogger("removeTopicTag"))
-	editTopic := usecases.NewEditTopic(topicRepo, newLogger("removeTopicTag"))
+
 	/*
 		Api methods
 	*/
-	apiReqUser := api.RegUser(regUser, newLogger("apiReqUser"), captcha)
-	apiLoginUser := api.Login(loginUser, newLogger("apiLogin"), captcha)
-	apiRefreshToken := api.RefreshToken(refreshToken, newLogger("apiRefreshToken"), captcha)
-	apiAddSource := api.AddSource(addSource, newLogger("apiAddSource"))
-	apiAddTopic := api.AddTopic(addTopic, newLogger("apiAddTopic"))
-	apiAddPlan := api.AddPlan(addPlan, newLogger("apiAddPlan"))
-	apiGetPlanTree := api.GetPlanTree(getPlanTree, newLogger("apiGetPlanTree"))
-	apiGetTopicTree := api.GetTopicTree(getPlanTree, newLogger("apiGetTopicTree"))
-	apiAddUserPlan := api.AddUserPlan(addUserPlan, newLogger("apiAddUserPlanTree"))
-	apiRemoveAddUserPlan := api.RemoveUserPlan(removeUserPlan, newLogger("apiRemoveUserPlanTree"))
-	apiGetTopic := api.GetTopic(getTopic, newLogger("apiGetTopic"))
-	apiGetPlan := api.GetPlan(getPlan, newLogger("apiGetPlan"))
-	apiGetPlanList := api.GetPlanList(getPlanList, getUsersPlans, newLogger("getPlanList"))
+
+	// Users
+	apiReqUser := api.RegUser(regUser, newLogger("registerUser"), captcha)
+	apiLoginUser := api.Login(loginUser, newLogger("loginUser"), captcha)
+	apiRefreshToken := api.RefreshToken(refreshToken, newLogger("refreshToken"), captcha)
+
+	// Sources
+	apiAddSource := api.AddSource(addSource, newLogger("addSource"))
+
+	// Topics
+	apiAddTopic := api.AddTopic(addTopic, newLogger("addTopic"))
+	apiGetTopicTree := api.GetTopicTree(getPlanTree, newLogger("getTopicTree"))
+	apiGetTopic := api.GetTopic(getTopic, newLogger("getTopic"))
 	apiSearchTopic := api.SearchTopic(searchTopic, newLogger("searchTopic"))
+	apiEditTopic := api.EditTopic(editTopic, newLogger("editTopic"))
+
+	// Plans
+	apiAddPlan := api.AddPlan(addPlan, newLogger("addPlan"))
+	apiGetPlanTree := api.GetPlanTree(getPlanTree, newLogger("getPlanTree"))
+	apiGetPlan := api.GetPlan(getPlan, newLogger("getPlan"))
+	apiGetPlanList := api.GetPlanList(getPlanList, getUsersPlans, newLogger("getPlanList"))
+	apiEditPlan := api.EditPlan(editPlan, newLogger("editPlan"))
+	apiRemovePlan := api.RemovePlan(removePlan, newLogger("removePlan"))
+
+	// Users Plans
+	apiAddUserPlan := api.AddUserPlan(addUserPlan, newLogger("addUserPlan"))
+	apiRemoveAddUserPlan := api.RemoveUserPlan(removeUserPlan, newLogger("removeUserPlan"))
+
+	// Topic Tag
 	apiAddTopicTag := api.AddTopicTag(addTopicTag, newLogger("addTopicTag"))
 	apiRemoveTopicTag := api.RemoveTopicTag(removeTopicTag, newLogger("removeTopicTag"))
-	apiEditTopic := api.EditTopic(editTopic, newLogger("removeTopicTag"))
 	/*
 		Database
 	*/
@@ -132,27 +160,34 @@ func main() {
 	// for all
 	r.Group(func(r chi.Router) {
 		r.Use(api.Auth(domain.God, tokenService))
-		r.Post("/api/user/registration", apiReqUser)
-		r.Post("/api/user/login", apiLoginUser)
-		r.Post("/api/user/refresh", apiRefreshToken)
-		r.Post("/api/plan/get", apiGetPlan)
-		r.Post("/api/plan/list", apiGetPlanList)
-		r.Post("/api/plan/tree", apiGetPlanTree)
 		r.Post("/api/topic/tree", apiGetTopicTree)
 		r.Post("/api/topic/get", apiGetTopic)
 		r.Post("/api/topic/search", apiSearchTopic)
+
+		r.Post("/api/plan/get", apiGetPlan)
+		r.Post("/api/plan/list", apiGetPlanList)
+		r.Post("/api/plan/tree", apiGetPlanTree)
+
+		r.Post("/api/user/registration", apiReqUser)
+		r.Post("/api/user/login", apiLoginUser)
+		r.Post("/api/user/refresh", apiRefreshToken)
+
 	})
 
 	// for users
 	r.Group(func(r chi.Router) {
 		r.Use(api.Auth(domain.U, tokenService))
 		r.Post("/api/source/add", apiAddSource)
+
 		r.Post("/api/topic/add", apiAddTopic)
-		r.Post("/api/plan/add", apiAddPlan)
-		r.Post("/api/user/plan/favorite", apiAddUserPlan)
-		r.Post("/api/user/plan/unfavorite", apiRemoveAddUserPlan)
 		r.Post("/api/topic/tag/add", apiAddTopicTag)
 		r.Post("/api/topic/tag/remove", apiRemoveTopicTag)
+
+		r.Post("/api/plan/add", apiAddPlan)
+		r.Post("/api/plan/edit", apiEditPlan)
+		r.Post("api/plan/remove", apiRemovePlan)
+		r.Post("/api/user/plan/favorite", apiAddUserPlan)
+		r.Post("/api/user/plan/unfavorite", apiRemoveAddUserPlan)
 	})
 
 	// for moderators
