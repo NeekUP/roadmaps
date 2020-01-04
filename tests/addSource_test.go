@@ -164,7 +164,7 @@ func TestAddBookBadIsbn10(t *testing.T) {
 }
 
 func TestAddLinkSuccess(t *testing.T) {
-	u := registerUser("TestAddLinkSuccess", "TestAddTopicSuccess@w.ww", "TestAddTopicSuccess")
+	u := registerUser("TestAddLinkSuccess", "TestAddLinkSuccess@w.ww", "TestAddLinkSuccess")
 	if u != nil {
 		defer DeleteUser(u.Id)
 	}

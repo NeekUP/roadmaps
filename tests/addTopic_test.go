@@ -24,7 +24,7 @@ func TestAddTopicSuccess(t *testing.T) {
 	usecase := usecases.NewAddTopic(db.NewTopicRepository(DB), log)
 
 	for _, v := range values {
-		result, err := usecase.Do(newContext(u), v.Title, v.Desc)
+		result, err := usecase.Do(newContext(u), v.Title, v.Desc, true, []string{})
 		if err != nil {
 			t.Errorf("Request with title [%s] return err: %s", v.Title, err.Error())
 		} else {

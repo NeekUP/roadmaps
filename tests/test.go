@@ -16,7 +16,11 @@ import (
 var DB *db.DbConnection
 
 func init() {
-	DB = db.NewDbConnection("user=postgres password=1004287 host=localhost port=5432 database=roadmaps_tests sslmode=disable", newLogger("database_tests"))
+	cfg := infrastructure.DbConf{
+		ConnString: "user=postgres password=1004287 host=localhost port=5432 database=roadmaps_tests sslmode=disable",
+		LogLevel:   "Error",
+	}
+	DB = db.NewDbConnection(cfg, newLogger("database_tests"))
 }
 
 func newLogger(name string) core.AppLogger {

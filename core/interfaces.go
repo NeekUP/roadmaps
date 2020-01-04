@@ -49,7 +49,8 @@ type PlanRepository interface {
 	Get(id int) *domain.Plan
 	GetList(id []int) []domain.Plan
 	GetPopularByTopic(topic string, count int) []domain.Plan
-
+	Update(plan *domain.Plan) (bool, *AppError)
+	Delete(planId int) (bool, *AppError)
 	//dev
 	All() []domain.Plan
 }

@@ -11,12 +11,12 @@ import (
 )
 
 type addPlanRequest struct {
-	TopicName    string        `json:"topic"`
-	Title        string        `json:"title"`
-	AddPlanSteps []addPlanstep `json:"steps"`
+	TopicName string     `json:"topic"`
+	Title     string     `json:"title"`
+	Steps     []planstep `json:"steps"`
 }
 
-type addPlanstep struct {
+type planstep struct {
 	ReferenceId   int64                `json:"referenceId"`
 	ReferenceType domain.ReferenceType `json:"referenceType"`
 }
@@ -44,7 +44,7 @@ func AddPlan(addPlan usecases.AddPlan, log core.AppLogger) func(w http.ResponseW
 			TopicName: data.TopicName,
 		}
 
-		for _, v := range data.AddPlanSteps {
+		for _, v := range data.Steps {
 			addPlanReq.Steps = append(addPlanReq.Steps, usecases.PlanStep{ReferenceId: v.ReferenceId, ReferenceType: v.ReferenceType})
 		}
 
@@ -64,6 +64,57 @@ func AddPlan(addPlan usecases.AddPlan, log core.AppLogger) func(w http.ResponseW
 			Id:        core.EncodeNumToString(plan.Id),
 		})
 
+	}
+}
+
+type editPlanRequest struct {
+	Id        string     `json:"id"`
+	TopicName string     `json:"topic"`
+	Title     string     `json:"title"`
+	Steps     []planstep `json:"steps"`
+}
+
+func EditPlan(editPlan usecases.EditPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		data := new(editPlanRequest)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		if err != nil {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		id, err := core.DecodeStringToNum(data.Id)
+		if err != nil {
+			errors := make(map[string]string)
+			errors["id"] = core.InvalidValue.String()
+			badRequest(w, core.ValidationError(errors))
+			return
+		}
+
+		addPlanReq := usecases.EditPlanReq{
+			Id:        id,
+			Title:     data.Title,
+			TopicName: data.TopicName,
+		}
+
+		for _, v := range data.Steps {
+			addPlanReq.Steps = append(addPlanReq.Steps, usecases.PlanStep{ReferenceId: v.ReferenceId, ReferenceType: v.ReferenceType})
+		}
+
+		_, err = editPlan.Do(infrastructure.NewContext(r.Context()), addPlanReq)
+		if err != nil {
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		statusResponse(w, &status{Code: http.StatusOK})
 	}
 }
 
@@ -235,5 +286,43 @@ func GetPlanList(getPlanList usecases.GetPlanList, getUsersPlan usecases.GetUser
 			}
 		}
 		valueResponse(w, result)
+	}
+}
+
+type removePlanReq struct {
+	Id string `json:"id"`
+}
+
+func RemovePlan(removePlan usecases.RemovePlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		data := new(removePlanReq)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		if err != nil {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		id, err := core.DecodeStringToNum(data.Id)
+		if err != nil {
+			errors := make(map[string]string)
+			errors["id"] = core.InvalidValue.String()
+			badRequest(w, core.ValidationError(errors))
+			return
+		}
+
+		_, err = removePlan.Do(infrastructure.NewContext(r.Context()), id)
+		if err != nil {
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		valueResponse(w, &removeTopicTagRes{Removed: true})
 	}
 }

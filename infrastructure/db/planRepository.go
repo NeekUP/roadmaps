@@ -32,7 +32,6 @@ func (r *planRepo) SaveWithSteps(plan *domain.Plan) (bool, *core.AppError) {
 	insertPlanQuery := "INSERT INTO plans(title, topic, owner, points) VALUES ($1, $2, $3, $4) RETURNING id;"
 	err = r.Db.Conn.QueryRow(context.Background(), insertPlanQuery, plan.Title, plan.TopicName, plan.OwnerId, plan.Points).Scan(&plan.Id)
 	if err != nil {
-		//r.Db.Log.Errorw(err.)
 		if e := tx.Rollback(context.Background()); e != nil {
 			r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
 		}
@@ -52,8 +51,69 @@ func (r *planRepo) SaveWithSteps(plan *domain.Plan) (bool, *core.AppError) {
 	}
 
 	err = tx.Commit(context.Background())
+	// if err is serialization error, we should repeat transaction
 	if err != nil {
 		return false, r.Db.LogError(err, "")
+	}
+	return true, nil
+}
+
+func (r *planRepo) Update(plan *domain.Plan) (bool, *core.AppError) {
+	if len(plan.Steps) == 0 {
+		return false, core.NewError(core.InvalidRequest)
+	}
+
+	updatePlanQuery := `UPDATE plans SET title = $1, topic = $2 WHERE id = $3`
+	_, err := r.Db.Conn.Exec(context.Background(), updatePlanQuery, plan.Title, plan.TopicName, plan.Id)
+	if err != nil {
+		return false, r.Db.LogError(err, updatePlanQuery)
+	}
+
+	tx, err := r.Db.Conn.BeginTx(context.Background(), pgx.TxOptions{
+		IsoLevel:       pgx.ReadCommitted,
+		AccessMode:     pgx.ReadWrite,
+		DeferrableMode: pgx.NotDeferrable,
+	})
+	deleteStepsQuery := `DELETE FROM steps WHERE planid = $1`
+	_, err = r.Db.Conn.Exec(context.Background(), deleteStepsQuery, plan.Id)
+	if err != nil {
+		if e := tx.Rollback(context.Background()); e != nil {
+			r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
+		}
+		return false, r.Db.LogError(err, updatePlanQuery)
+	}
+
+	for i := 0; i < len(plan.Steps); i++ {
+		plan.Steps[i].PlanId = plan.Id
+		query := "INSERT INTO steps( planid, referenceid, referencetype, position) VALUES ($1, $2, $3, $4) RETURNING id;"
+		err := r.Db.Conn.QueryRow(context.Background(), query, plan.Steps[i].PlanId, plan.Steps[i].ReferenceId, plan.Steps[i].ReferenceType, plan.Steps[i].Position).Scan(&plan.Steps[i].Id)
+		if err != nil {
+			if e := tx.Rollback(context.Background()); e != nil {
+				r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
+			}
+			return false, r.Db.LogError(err, query)
+		}
+	}
+
+	err = tx.Commit(context.Background())
+	// if err is serialization error, we should repeat transaction
+	if err != nil {
+		return false, r.Db.LogError(err, "")
+	}
+
+	return true, nil
+}
+
+func (r *planRepo) Delete(planId int) (bool, *core.AppError) {
+	deletePlanQuery := `DELETE FROM plans WHERE id = $1`
+	_, err := r.Db.Conn.Exec(context.Background(), deletePlanQuery, planId)
+	if err != nil {
+		return false, r.Db.LogError(err, deletePlanQuery)
+	}
+	deleteStepsQuery := `DELETE FROM steps WHERE planid = $1`
+	_, err = r.Db.Conn.Exec(context.Background(), deleteStepsQuery, planId)
+	if err != nil {
+		return false, r.Db.LogError(err, deletePlanQuery)
 	}
 	return true, nil
 }
