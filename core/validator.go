@@ -3,6 +3,7 @@ package core
 import (
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gosimple/slug"
 
@@ -18,14 +19,14 @@ func IsValidEmail(email string) bool {
 func IsValidPassword(pass string) bool {
 	negativePattern, _ := regexp.Compile("[\\s\"|*']")
 
-	l := len(pass)
+	l := utf8.RuneCountInString(pass)
 	return !(l == 0 || l > 64 || negativePattern.MatchString(pass))
 }
 
 func IsValidUserName(name string) bool {
 	positivePattern, _ := regexp.Compile("^[a-zA-Z0-9_-]+$")
 
-	l := len(name)
+	l := utf8.RuneCountInString(name)
 	return !(l < 2 || l > 32 || !positivePattern.MatchString(name))
 }
 
@@ -58,12 +59,12 @@ func IsValidDscription(desc string) bool {
 }
 
 func IsValidTopicTitle(title string) bool {
-	l := len(title)
+	l := utf8.RuneCountInString(title)
 	return l > 0 && l < 100
 }
 
 func IsValidTopicName(name string) bool {
-	l := len(name)
+	l := utf8.RuneCountInString(name)
 	return l > 0 && l < 100 && slug.IsSlug(name)
 }
 
@@ -73,7 +74,7 @@ func IsValidPlanTitle(title string) bool {
 	startSpace := regexp.MustCompile("^\\s")
 	endSpace := regexp.MustCompile("\\s$")
 
-	l := len(title)
+	l := utf8.RuneCountInString(title)
 
 	return l > 1 &&
 		l < 100 &&

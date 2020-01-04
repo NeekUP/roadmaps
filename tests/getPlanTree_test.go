@@ -8,12 +8,12 @@ import (
 )
 
 func TestGetPlanTreeSuccess(t *testing.T) {
-	u := registerUser("TestAddTopicSuccess", "TestAddTopicSuccess@w.ww", "TestAddTopicSuccess")
+	u := registerUser("TestGetPlanTreeSuccess", "TestGetPlanTreeSuccess@w.ww", "TestGetPlanTreeSuccess")
 	if u != nil {
 		defer DeleteUser(u.Id)
 	}
 	newTopicUsecase := usecases.NewAddTopic(db.NewTopicRepository(DB), log)
-	topic1, _ := newTopicUsecase.Do(newContext(u), "Topic1", "")
+	topic1, _ := newTopicUsecase.Do(newContext(u), "Topic1", "", false, []string{})
 	if topic1 != nil {
 		defer DeleteTopic(topic1.Id)
 	}

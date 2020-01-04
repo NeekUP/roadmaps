@@ -32,7 +32,6 @@ func (this *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool, ta
 	topic := domain.NewTopic(title, desc, userId)
 	topic.IsTag = istag
 	topic.Tags = this.TopicRepo.GetTags(tags)
-
 	saved, err := this.TopicRepo.Save(topic)
 	if err != nil {
 		this.Log.Errorw("Not valid request",
