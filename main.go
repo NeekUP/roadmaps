@@ -185,7 +185,7 @@ func main() {
 
 		r.Post("/api/plan/add", apiAddPlan)
 		r.Post("/api/plan/edit", apiEditPlan)
-		r.Post("api/plan/remove", apiRemovePlan)
+		r.Post("/api/plan/remove", apiRemovePlan)
 		r.Post("/api/user/plan/favorite", apiAddUserPlan)
 		r.Post("/api/user/plan/unfavorite", apiRemoveAddUserPlan)
 	})
