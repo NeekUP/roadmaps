@@ -69,7 +69,7 @@ type step struct {
 	Id            int64                `json:"id"`
 	ReferenceType domain.ReferenceType `json:"type"`
 	Position      int                  `json:"position"`
-	Source        *source              `json:"source"`
+	Source        interface{}          `json:"source"`
 }
 
 func NewStepDto(s *domain.Step) *step {
@@ -94,25 +94,38 @@ type source struct {
 	Desc       string            `json:"desc,omitempty"`
 }
 
-func NewSourceDto(s *domain.Source) *source {
+func NewSourceDto(s interface{}) interface{} {
 	if s == nil {
 		return nil
 	}
 
-	result := &source{
-		Id:         s.Id,
-		Title:      s.Title,
-		Type:       s.Type,
-		Properties: s.Properties,
-		Img:        s.Img,
-		Desc:       s.Desc,
+	switch v := s.(type) {
+	case *domain.Source:
+		src := &source{
+			Id:         v.Id,
+			Title:      v.Title,
+			Type:       v.Type,
+			Properties: v.Properties,
+			Img:        v.Img,
+			Desc:       v.Desc,
+		}
+
+		if v.Id == -1 {
+			src.Id = v.Identifier
+		}
+		return src
+	case *domain.Topic:
+		tpc := &topic{
+			Id:          v.Id,
+			Title:       v.Title,
+			Name:        v.Name,
+			Description: v.Description,
+			IsTag:       v.IsTag,
+		}
+		return tpc
 	}
 
-	if s.Id == -1 {
-		result.Id = s.Identifier
-	}
-
-	return result
+	return nil
 }
 
 type user struct {
