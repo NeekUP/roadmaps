@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type User struct {
 	Id                string
 	Name              string
@@ -18,6 +20,7 @@ type UserToken struct {
 	Id          string
 	Fingerprint string
 	UserAgent   string
+	Date        time.Time
 }
 
 func (this *User) RemoveToken(i int) {

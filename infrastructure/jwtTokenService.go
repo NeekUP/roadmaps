@@ -56,7 +56,8 @@ func (this *JwtTokenService) Create(user *domain.User, fingerprint, useragent st
 	user.Tokens = append(user.Tokens, domain.UserToken{
 		Id:          rid,
 		Fingerprint: fingerprint,
-		UserAgent:   useragent})
+		UserAgent:   useragent,
+		Date:        time.Now()})
 
 	if ok, err := this.UserRepo.Update(user); !ok || err != nil {
 		return "", "", err
