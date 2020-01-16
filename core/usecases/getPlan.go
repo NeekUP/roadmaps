@@ -9,14 +9,21 @@ type GetPlan interface {
 	Do(ctx core.ReqContext, id int) (*domain.Plan, error)
 }
 
-func NewGetPlan(plans core.PlanRepository, users core.UserRepository, steps core.StepRepository, sources core.SourceRepository, topics core.TopicRepository, logger core.AppLogger) GetPlan {
+func NewGetPlan(plans core.PlanRepository,
+	users core.UserRepository,
+	steps core.StepRepository,
+	sources core.SourceRepository,
+	topics core.TopicRepository,
+	//usersPlans core.UsersPlanRepository,
+	logger core.AppLogger) GetPlan {
 	return &getPlan{
 		PlanRepo:   plans,
 		StepRepo:   steps,
 		UserRepo:   users,
 		SourceRepo: sources,
 		TopicRepo:  topics,
-		Log:        logger,
+		//UsersPlansRepo: usersPlans,
+		Log: logger,
 	}
 }
 
@@ -26,7 +33,8 @@ type getPlan struct {
 	SourceRepo core.SourceRepository
 	TopicRepo  core.TopicRepository
 	UserRepo   core.UserRepository
-	Log        core.AppLogger
+	//UsersPlansRepo core.UsersPlanRepository
+	Log core.AppLogger
 }
 
 func (this *getPlan) Do(ctx core.ReqContext, id int) (*domain.Plan, error) {

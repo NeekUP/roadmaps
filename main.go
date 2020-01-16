@@ -29,6 +29,7 @@ import (
 var (
 	AppLog    core.AppLogger
 	Cfg       *infrastructure.Config
+	// TODO: remove 
 	JwtSecret = "ih7Cp1aB0exNXzsHjV9Z66qBczoG8g14_bBBW7iK1L-szDYVIbhWDZv6R-d_PD_TOjriomFr44UYMky2snKInO_7UL23uBmsH6hFlaqGJv12SQl4LC_1D7DW1iNLWSB22u1f3YowVH8YS_odqsUs5klaR7BlsvnQxucJcqSom6JuuZynz3j8p-8MevBDWTPAD7QeD4NUjTp55JftBEEg8J3Qf0ZrFOxkP2ULKvX-VbTwBN2U3YnNHJsdQ5aleUH-62NiG9EUiEDrLuEWw73oHaSCDPLVhIM1zCHW25Nmy8oxzW7rBVPwyLHC9v63QBSH7JXVhBOfDm-F55eOG0zlBw"
 )
 
@@ -56,7 +57,8 @@ func main() {
 
 	/*
 		Middlewares
-	*/
+	**************************************/
+	
 	r.Use(cors.Handler)
 	r.Use(infrastructure.RequestID)
 	r.Use(middleware.RealIP)
@@ -66,7 +68,8 @@ func main() {
 
 	/*
 		Infrastructure initialization
-	*/
+	**************************************/
+
 	dbConnection := db.NewDbConnection(Cfg.Db, newLogger("database"))
 	hashProvider := infrastructure.NewSha256HashProvider()
 	userRepo := db.NewUserRepository(dbConnection)
@@ -81,7 +84,8 @@ func main() {
 
 	/*
 		Usecases
-	*/
+	**************************************/
+
 	// Users
 	regUser := usecases.NewRegisterUser(userRepo, newLogger("registerUser"), hashProvider)
 	loginUser := usecases.NewLoginUser(userRepo, newLogger("loginUser"), hashProvider, tokenService)
@@ -98,7 +102,7 @@ func main() {
 
 	// Plans
 	addPlan := usecases.NewAddPlan(planRepo, newLogger("addPlan"))
-	getPlanTree := usecases.NewGetPlanTree(planRepo, topicRepo, usersPlanRepo, newLogger("getPlanTree"))
+	getPlanTree := usecases.NewGetPlanTree(planRepo, topicRepo, stepRepo, usersPlanRepo, newLogger("getPlanTree"))
 	getPlan := usecases.NewGetPlan(planRepo, userRepo, stepRepo, sourceRepo, topicRepo, newLogger("getPlan"))
 	getPlanList := usecases.NewGetPlanList(planRepo, userRepo, newLogger("getPlanList"))
 	editPlan := usecases.NewEditPlan(planRepo, newLogger("editPlan"))
@@ -115,7 +119,7 @@ func main() {
 
 	/*
 		Api methods
-	*/
+	**************************************/
 
 	// Users
 	apiReqUser := api.RegUser(regUser, newLogger("registerUser"), captcha)
@@ -147,15 +151,17 @@ func main() {
 	// Topic Tag
 	apiAddTopicTag := api.AddTopicTag(addTopicTag, newLogger("addTopicTag"))
 	apiRemoveTopicTag := api.RemoveTopicTag(removeTopicTag, newLogger("removeTopicTag"))
+
 	/*
 		Database
-	*/
+	**************************************/
+
 	dbSeed := infrastructure.NewDbSeed(regUser, userRepo)
 	dbSeed.Seed()
 
 	/*
 		Http server
-	*/
+	**************************************/
 
 	// for all
 	r.Group(func(r chi.Router) {
