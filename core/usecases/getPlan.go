@@ -63,12 +63,7 @@ func (this *getPlan) fillSteps(plan *domain.Plan) {
 			if t == nil {
 				break
 			}
-			plan.Steps[i].Source = &domain.Source{
-				Id:         int64(t.Id),
-				Title:      t.Title,
-				Identifier: t.Name,
-				Desc:       t.Description,
-			}
+			plan.Steps[i].Source = t
 		} else if plan.Steps[i].ReferenceType == domain.TestReference {
 			plan.Steps[i].Source = &domain.Source{
 				Title:      "Test",
