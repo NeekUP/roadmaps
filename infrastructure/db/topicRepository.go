@@ -132,7 +132,7 @@ func (repo *topicRepo) All() []domain.Topic {
 }
 
 func (repo *topicRepo) TitleLike(str string, count int) []domain.Topic {
-	query := "SELECT id, name, title, description, creator, tags FROM topics WHERE title ILIKE $1 LIMIT $2"
+	query := "SELECT id, name, title, description, creator, tags , istag FROM topics WHERE title ILIKE $1 LIMIT $2"
 	rows, err := repo.Db.Conn.Query(context.Background(), query, "%"+str+"%", count)
 	if err != nil {
 		return []domain.Topic{}
