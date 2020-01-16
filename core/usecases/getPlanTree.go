@@ -21,12 +21,13 @@ type GetPlanTree interface {
 type getPlanTree struct {
 	PlanRepo   core.PlanRepository
 	TopicRepo  core.TopicRepository
+	StepsRepo  core.StepRepository
 	UsersPlans core.UsersPlanRepository
 	Log        core.AppLogger
 }
 
-func NewGetPlanTree(planRepo core.PlanRepository, topics core.TopicRepository, uplans core.UsersPlanRepository, log core.AppLogger) GetPlanTree {
-	return &getPlanTree{PlanRepo: planRepo, TopicRepo: topics, UsersPlans: uplans, Log: log}
+func NewGetPlanTree(planRepo core.PlanRepository, topics core.TopicRepository, steps core.StepRepository, uplans core.UsersPlanRepository, log core.AppLogger) GetPlanTree {
+	return &getPlanTree{PlanRepo: planRepo, TopicRepo: topics, UsersPlans: uplans, StepsRepo: steps, Log: log}
 }
 
 func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) {
@@ -64,7 +65,7 @@ func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) 
 
 		userId := ctx.UserId()
 		userFavorits := this.getUserFavoritsPlans(userId)
-
+		plans[i].Steps = this.StepsRepo.GetByPlan(plans[i].Id)
 		// for every plan step with topic
 		for j := 0; j < len(plans[i].Steps); j++ {
 			if plans[i].Steps[j].ReferenceType == domain.TopicReference {

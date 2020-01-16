@@ -4,6 +4,6 @@ type ReferenceType string
 
 const (
 	ResourceReference ReferenceType = "Resource"
-	TopicReference    ReferenceType = "TopicName"
+	TopicReference    ReferenceType = "Topic"
 	TestReference     ReferenceType = "Test"
 )
