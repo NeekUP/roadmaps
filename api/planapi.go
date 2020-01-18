@@ -196,7 +196,7 @@ func newPlanTree(node usecases.TreeNode, tree *treeNode) {
 	}
 }
 
-func GetPlan(getPlan usecases.GetPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+func GetPlan(getPlan usecases.GetPlan, getUsersPlan usecases.GetUsersPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		data := new(getPlanRequest)
@@ -230,7 +230,21 @@ func GetPlan(getPlan usecases.GetPlan, log core.AppLogger) func(w http.ResponseW
 			return
 		}
 
-		valueResponse(w, NewPlanDto(plan, false))
+		usersPlan, err := getUsersPlan.Do(infrastructure.NewContext(r.Context()), plan.TopicName)
+		if err != nil {
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		isFavorite := false
+		if usersPlan != nil {
+			isFavorite = plan.Id == usersPlan.Id
+		}
+		valueResponse(w, NewPlanDto(plan, isFavorite))
 	}
 }
 
