@@ -139,7 +139,7 @@ func main() {
 	// Plans
 	apiAddPlan := api.AddPlan(addPlan, newLogger("addPlan"))
 	apiGetPlanTree := api.GetPlanTree(getPlanTree, newLogger("getPlanTree"))
-	apiGetPlan := api.GetPlan(getPlan, newLogger("getPlan"))
+	apiGetPlan := api.GetPlan(getPlan, getUsersPlans, newLogger("getPlan"))
 	apiGetPlanList := api.GetPlanList(getPlanList, getUsersPlans, newLogger("getPlanList"))
 	apiEditPlan := api.EditPlan(editPlan, newLogger("editPlan"))
 	apiRemovePlan := api.RemovePlan(removePlan, newLogger("removePlan"))
