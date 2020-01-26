@@ -3,6 +3,9 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
+
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/domain"
 	"github.com/google/uuid"
@@ -120,6 +123,32 @@ func (r *userRepository) Count() (count int, ok bool) {
 func (r *userRepository) All() []domain.User {
 	query := "select id, name, normalizedname, email, emailconfirmed, emailconfirmation, img, tokens, rights, password, salt " +
 		"FROM users"
+	rows, err := r.Db.Conn.Query(context.Background(), query)
+	if err != nil {
+		r.Db.LogError(err, query)
+		return []domain.User{}
+	}
+	defer rows.Close()
+	users := make([]domain.User, 0)
+	for rows.Next() {
+		dbo, err := r.scanRow(rows)
+		if err == sql.ErrNoRows {
+			return []domain.User{}
+		}
+		if err != nil {
+			r.Db.LogError(err, query)
+			return []domain.User{}
+		}
+		users = append(users, *dbo.ToUser())
+	}
+
+	return users
+}
+
+func (r *userRepository) GetList(id []string) []domain.User {
+	query := "select id, name, normalizedname, email, emailconfirmed, emailconfirmation, img, tokens, rights, password, salt " +
+		"FROM users WHERE Id IN ('%s')"
+	query = fmt.Sprintf(query, strings.Trim(strings.Join(strings.Fields(fmt.Sprint(id)), "','"), "[]"))
 	rows, err := r.Db.Conn.Query(context.Background(), query)
 	if err != nil {
 		r.Db.LogError(err, query)

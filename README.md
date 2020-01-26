@@ -1,7 +1,49 @@
 # roadmaps
 
-## Deploy
-1. On the first start, app should be able to create default users. For allow this, we should need to add environment variables called `adminname{n}`,`adminemail{n}`,`adminpass{n}` where `{n}` is positive integer up to 10. It will be created only if table `users` is empty.
+## Run
+On the first start, app should be able to create default users. For allow this, we should need to add environment variables called `adminname{n}`,`adminemail{n}`,`adminpass{n}` where `{n}` is positive integer up to 10. It will be created only if table `users` is empty.
+
+# API
+## [Users](#user-api)
+- [Registration](#registration)
+- [Login](#login)
+- [Refresh token](#refresh-token)
+
+## [Plans](#plans)
+- [Add](#add-plan)
+- [Get](#get-plan-with-steps)
+- [Get list](#plan-list)
+- [Edit](#edit-plan)
+- [Remove](#remove-plan)
+- [Add to favorite](#choose-plan-as-favorite-within-topic) 
+- [Remove from favorite](#remove-plan-from-favorite-within-topic)
+- [Plan tree](#plan-tree)
+
+## [Resources](#resources)
+- [Add](#add-resource)
+
+## [Topics](#topics)
+- [Add](#add-topic)
+- [Get](#topic-get)
+- [Topic tree](#topic-tree)
+- [Search](#topic-search)
+- [Add tag](#topic-add-tag)
+- [Remove tag](#topic-remove-tag)
+- [Edit](#edit-topic-as-admin)
+
+## [Comments](#comments)
+- [Add](#add-comment)
+- [Remove](#remove-comment)
+- [Threads list](#thread-list)
+- [Thread comments](#thread-comments)
+
+---
+
+## Types
+- [EntityType](#EntityType)
+- [Errors](#Errors)
+
+---
 
 ## User Api
 Successfull login will return atoken - authorization token and rtoken - refresh token.
@@ -91,7 +133,7 @@ No Body
 
 ---
 
-### Refresh roken
+### Refresh token
 #### /api/user/refresh
 Request
 ```javascript
@@ -432,7 +474,7 @@ No Body
 ---
 
 ## Resources
-### App resource
+### Add resource
 #### /api/source/add
 Request
 ```javascript
@@ -672,7 +714,7 @@ NoBody
 ### 403 - Forbidden
 NoBody
 
-### 400 
+### 400 - BadRequest
 ```javascript
 {
     "error": "INTERNAL_ERROR | INVALID_REQUEST",
@@ -682,6 +724,194 @@ NoBody
     }
 }
 ```
+
+## Comments
+### Add comment
+#### /api/comment/add
+Request
+```javascript
+{
+	"entityType": int, // see EntityType
+	"entityId": "string", // string for planId and int for other
+	"parentId": int,
+	"text": "string",
+	"title": "string" // null if parentId == 0
+}
+```
+Response
+### 200 - OK
+```javascript
+{
+    "id": int
+}
+```
+
+### 403 - Forbidden
+NoBody
+
+### 400 - BadRequest
+```javascript
+{
+    "error": "INTERNAL_ERROR | INVALID_REQUEST",
+    "validation":{
+        "entityType": "INVALID_VALUE",
+        "entityId": "INVALID_VALUE",
+        "text": "INVALID_VALUE",
+        "title": "INVALID_VALUE",
+        "parentId"  "INVALID_VALUE",
+    }
+}
+```
+
+### Remove comment
+#### /api/comment/delete
+Request
+```javascript
+{
+    "id": int
+}
+```
+
+### 200 - OK
+NoBody
+
+### 403 - Forbidden
+NoBody
+
+### 400 - BadRequest
+```javascript
+{
+    "error": "INTERNAL_ERROR | INVALID_REQUEST",
+    "validation":{
+        "id": "INVALID_VALUE"
+    }
+}
+```
+### Thread list
+#### /api/comment/threads
+Request
+```javascript
+{
+	"entityType": int,  // see EntityType
+	"entityId": "string", // string for planId and int for other
+	"count": int, // count per page
+	"page": int // start from zero
+}
+```
+
+### 200 - OK
+```javascript
+{
+    "hasMore": false,
+    "page": 0,
+    "comments": [
+        {
+            "Id": 1,
+            "EntityType": 1,
+            "EntityId": "e",
+            "ThreadId": 0,
+            "ParentId": 0,
+            "Date": "2020-01-26T11:54:55.3433Z",
+            "User": {
+                "id": "e45bdc37-6a74-4871-bbfe-0e03e1347920",
+                "name": "Neek",
+                "img": ""
+            },
+            "Text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+            "Title": "wft man!",
+            "Deleted": false,
+            "Points": 0
+        }
+    ]
+}
+```
+
+### 400 - BadRequest
+```javascript
+{
+    "error": "INTERNAL_ERROR | INVALID_REQUEST",
+    "validation":{
+        "entityType": "INVALID_VALUE",
+        "entityId": "INVALID_VALUE",
+        "count": "INVALID_VALUE",
+        "page": "INVALID_VALUE"
+    }
+}
+```
+
+### Thread comments
+#### /api/comment/thread
+Request
+```javascript
+{
+	"entityType": int,  // see EntityType
+	"entityId": "string", // string for planId and int for other
+	"threadId": int, 
+}
+```
+
+### 200 - OK
+```javascript
+[
+    {
+        "Id": 3,
+        "EntityType": 1,
+        "EntityId": "e",
+        "ThreadId": 1,
+        "ParentId": 1,
+        "Date": "2020-01-26T11:55:32.941379Z",
+        "User": {
+            "id": "e45bdc37-6a74-4871-bbfe-0e03e1347920",
+            "name": "Neek",
+            "img": ""
+        },
+        "Text": "anim id est laborum",
+        "Title": "",
+        "Deleted": false,
+        "Points": 0,
+        "Childs": [
+            {
+                "Id": 5,
+                "EntityType": 1,
+                "EntityId": "e",
+                "ThreadId": 1,
+                "ParentId": 3,
+                "Date": "2020-01-26T15:14:28.766358Z",
+                "User": {
+                    "id": "e45bdc37-6a74-4871-bbfe-0e03e1347920",
+                    "name": "Neek",
+                    "img": ""
+                },
+                "Text": "!!!!! 3-",
+                "Title": "",
+                "Deleted": false,
+                "Points": 0,
+                "Childs": []
+            }
+        ]
+    }
+]
+```
+### 400 - BadRequest
+```javascript
+{
+    "error": "INTERNAL_ERROR | INVALID_REQUEST",
+    "validation":{
+        "entityType": "INVALID_VALUE",
+        "entityId": "INVALID_VALUE",
+        "threadId": "INVALID_VALUE"
+    }
+}
+```
+
+
+## EntityType
+| Name                      | Value |
+| ------------------------  | ----------- |
+| Plan                      | 1
+| Topic                     | 2
+| Project                   | 3
+| Resource                  | 4
 
 ## Errors
 | Error                    | Description |

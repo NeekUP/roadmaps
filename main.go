@@ -27,9 +27,9 @@ import (
 )
 
 var (
-	AppLog    core.AppLogger
-	Cfg       *infrastructure.Config
-	// TODO: remove 
+	AppLog core.AppLogger
+	Cfg    *infrastructure.Config
+	// TODO: remove
 	JwtSecret = "ih7Cp1aB0exNXzsHjV9Z66qBczoG8g14_bBBW7iK1L-szDYVIbhWDZv6R-d_PD_TOjriomFr44UYMky2snKInO_7UL23uBmsH6hFlaqGJv12SQl4LC_1D7DW1iNLWSB22u1f3YowVH8YS_odqsUs5klaR7BlsvnQxucJcqSom6JuuZynz3j8p-8MevBDWTPAD7QeD4NUjTp55JftBEEg8J3Qf0ZrFOxkP2ULKvX-VbTwBN2U3YnNHJsdQ5aleUH-62NiG9EUiEDrLuEWw73oHaSCDPLVhIM1zCHW25Nmy8oxzW7rBVPwyLHC9v63QBSH7JXVhBOfDm-F55eOG0zlBw"
 )
 
@@ -58,7 +58,7 @@ func main() {
 	/*
 		Middlewares
 	**************************************/
-	
+
 	r.Use(cors.Handler)
 	r.Use(infrastructure.RequestID)
 	r.Use(middleware.RealIP)
@@ -81,6 +81,7 @@ func main() {
 	tokenService := infrastructure.NewJwtTokenService(userRepo, JwtSecret)
 	imageManager := infrastructure.NewImageManager(Cfg.ImgSaver.LocalFolder, Cfg.ImgSaver.UriPath)
 	stepRepo := db.NewStepsRepository(dbConnection)
+	commentsRepo := db.NewCommentsRepository(dbConnection)
 
 	/*
 		Usecases
@@ -117,6 +118,12 @@ func main() {
 	addTopicTag := usecases.NewAddTopicTag(topicRepo, newLogger("addTopicTag"))
 	removeTopicTag := usecases.NewRemoveTopicTag(topicRepo, newLogger("removeTopicTag"))
 
+	// Comments
+	addComment := usecases.NewAddComment(commentsRepo, planRepo, newLogger("addComment"))
+	editComment := usecases.NewEditComment(commentsRepo, newLogger("editComment"))
+	removeComment := usecases.NewRemoveComments(commentsRepo, newLogger("removeComment"))
+	getCommentsThreads := usecases.NewGetCommentsThreads(commentsRepo, userRepo, newLogger("getCommentsThreads"))
+	getCommentsThread := usecases.NewGetCommentsThread(commentsRepo, userRepo, newLogger("getCommentsThread"))
 	/*
 		Api methods
 	**************************************/
@@ -152,6 +159,13 @@ func main() {
 	apiAddTopicTag := api.AddTopicTag(addTopicTag, newLogger("addTopicTag"))
 	apiRemoveTopicTag := api.RemoveTopicTag(removeTopicTag, newLogger("removeTopicTag"))
 
+	// Comments
+	apiAddComment := api.AddComment(addComment, newLogger("addComment"))
+	apiEditComment := api.EditComment(editComment, newLogger("editComment"))
+	apiRemoveComment := api.DeleteComment(removeComment, newLogger("removeComment"))
+	apiGetCommentsThreads := api.GetThreads(getCommentsThreads, newLogger("getCommentsThreads"))
+	apiGetCommentsThread := api.GetThread(getCommentsThread, newLogger("getCommentsThread"))
+
 	/*
 		Database
 	**************************************/
@@ -177,7 +191,8 @@ func main() {
 		r.Post("/api/user/registration", apiReqUser)
 		r.Post("/api/user/login", apiLoginUser)
 		r.Post("/api/user/refresh", apiRefreshToken)
-
+		r.Post("/api/comment/threads", apiGetCommentsThreads)
+		r.Post("/api/comment/thread", apiGetCommentsThread)
 	})
 
 	// for users
@@ -194,6 +209,9 @@ func main() {
 		r.Post("/api/plan/remove", apiRemovePlan)
 		r.Post("/api/user/plan/favorite", apiAddUserPlan)
 		r.Post("/api/user/plan/unfavorite", apiRemoveAddUserPlan)
+		r.Post("/api/comment/add", apiAddComment)
+		r.Post("/api/comment/edit", apiEditComment)
+		r.Post("/api/comment/delete", apiRemoveComment)
 	})
 
 	// for moderators
