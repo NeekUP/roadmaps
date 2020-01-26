@@ -83,3 +83,13 @@ func IsValidPlanTitle(title string) bool {
 		!startSpace.MatchString(title) &&
 		!endSpace.MatchString(title)
 }
+
+func IsValidCommentText(text string) bool {
+	length := utf8.RuneCountInString(text)
+	return length > 0 && length < 1000
+}
+
+func IsValidCommentTitle(text string) bool {
+	length := utf8.RuneCountInString(text)
+	return length < 256
+}

@@ -1,6 +1,9 @@
 package api
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/domain"
 )
@@ -149,6 +152,52 @@ func NewUserDto(u *domain.User) *user {
 type topicTag struct {
 	Name  string `json:"name"`
 	Title string `json:"title"`
+}
+
+func NewCommentDto(c *domain.Comment) *comment {
+	if c == nil {
+		return nil
+	}
+
+	entityId := strconv.FormatInt(c.EntityId, 10)
+	if c.EntityType == domain.PlanEntity {
+		entityId = core.EncodeNumToString(int(c.EntityId))
+	}
+
+	childs := make([]comment, len(c.Childs))
+	for i := 0; i < len(c.Childs); i++ {
+		childs[i] = *NewCommentDto(&c.Childs[i])
+	}
+
+	return &comment{
+		Id:         c.Id,
+		EntityType: int(c.EntityType),
+		EntityId:   entityId,
+		ThreadId:   c.ThreadId,
+		ParentId:   c.ParentId,
+		Date:       c.Date,
+		User:       NewUserDto(c.User),
+		Text:       c.Text,
+		Title:      c.Title,
+		Deleted:    c.Deleted,
+		Points:     c.Points,
+		Childs:     childs,
+	}
+}
+
+type comment struct {
+	Id         int64
+	EntityType int
+	EntityId   string
+	ThreadId   int64
+	ParentId   int64
+	Date       time.Time
+	User       *user
+	Text       string
+	Title      string
+	Deleted    bool
+	Points     int
+	Childs     []comment
 }
 
 func NewTopicTag(t *domain.TopicTag) *topicTag {

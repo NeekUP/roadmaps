@@ -1,6 +1,11 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+	"regexp"
+
+	"github.com/microcosm-cc/bluemonday"
+)
 
 const Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const AlphabetLen = 62
@@ -45,4 +50,24 @@ func DecodeStringToNum(s string) (int, error) {
 	}
 
 	return num, nil
+}
+
+// func RenderMarkdown(text string) []byte {
+// 	extentions := blackfriday.NoIntraEmphasis
+// 	extentions |= blackfriday.Tables
+// 	extentions |= blackfriday.FencedCode
+// 	extentions |= blackfriday.DefinitionLists
+
+// 	options := blackfriday.WithExtensions(extentions)
+// 	return blackfriday.Run([]byte(text), options)
+// }
+
+func SanitizeString(text string) string {
+	return string(SanitizeInput([]byte(text)))
+}
+
+func SanitizeInput(data []byte) []byte {
+	p := bluemonday.UGCPolicy()
+	p.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
+	return p.SanitizeBytes(data)
 }
