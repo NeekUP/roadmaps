@@ -7,6 +7,7 @@ import (
 
 type UserRepository interface {
 	Get(id string) *domain.User
+	GetList(id []string) []domain.User
 	Save(user *domain.User) (bool, *AppError)
 	Update(user *domain.User) (bool, *AppError)
 	ExistsName(name string) (exists bool, ok bool)
@@ -69,6 +70,15 @@ type UsersPlanRepository interface {
 	Remove(userId string, planId int) (bool, *AppError)
 	GetByTopic(userId, topicName string) *domain.UsersPlan
 	GetByUser(userId string) []domain.UsersPlan
+}
+
+type CommentsRepository interface {
+	Add(comment *domain.Comment) (bool, error)
+	Update(id int64, text, title string) (bool, error)
+	Delete(id int64) (bool, error)
+	Get(id int64) *domain.Comment
+	GetThreadList(entityType int, entityId int64, count int, page int) []domain.Comment
+	GetThread(entityType int, entityId int64, threadId int64) []domain.Comment
 }
 
 type HashProvider interface {

@@ -3,6 +3,8 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
+
 	"github.com/NeekUP/roadmaps/domain"
 )
 
@@ -237,8 +239,60 @@ func (dbo *TopicTagDBO) FromTopicTag(tag *domain.TopicTag) {
 }
 
 /*
+	Comments
+*******************/
+type CommentDBO struct {
+	Id         int64
+	EntityType int
+	EntityId   int64
+	ThreadId   sql.NullInt64 // id родительского комментария 0 уровня
+	ParentId   sql.NullInt64
+	Date       time.Time
+	UserId     string
+	Text       string
+	Title      sql.NullString
+	Deleted    bool
+	Points     int
+}
+
+func (dbo *CommentDBO) ToComment() *domain.Comment {
+	return &domain.Comment{
+		Id:         dbo.Id,
+		EntityType: domain.EntityType(dbo.EntityType),
+		EntityId:   dbo.EntityId,
+		ThreadId:   dbo.ThreadId.Int64,
+		ParentId:   dbo.ParentId.Int64,
+		Date:       dbo.Date,
+		UserId:     dbo.UserId,
+		Text:       dbo.Text,
+		Title:      dbo.Title.String,
+		Deleted:    dbo.Deleted,
+		Points:     dbo.Points,
+		Childs:     []domain.Comment{},
+	}
+}
+
+func (dbo *CommentDBO) FromComment(c *domain.Comment) {
+	dbo.Id = c.Id
+	dbo.EntityType = int(c.EntityType)
+	dbo.EntityId = c.EntityId
+	dbo.ThreadId = ToNullInt64(c.ThreadId)
+	dbo.ParentId = ToNullInt64(c.ParentId)
+	dbo.Date = c.Date
+	dbo.UserId = c.UserId
+	dbo.Text = c.Text
+	dbo.Title = ToNullString(c.Title)
+	dbo.Deleted = c.Deleted
+	dbo.Points = c.Points
+}
+
+/*
 	Utils
  ******************/
 func ToNullString(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: s != ""}
+}
+
+func ToNullInt64(s int64) sql.NullInt64 {
+	return sql.NullInt64{Int64: s, Valid: s != 0}
 }
