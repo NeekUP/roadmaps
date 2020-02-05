@@ -2,12 +2,13 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+	"strconv"
+
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/core/usecases"
 	"github.com/NeekUP/roadmaps/domain"
 	"github.com/NeekUP/roadmaps/infrastructure"
-	"net/http"
-	"strconv"
 )
 
 type addPlanRequest struct {
@@ -131,7 +132,7 @@ type treeNode struct {
 	TopicTitle string     `json:"topicTitle"`
 	PlanId     string     `json:"planId"`
 	PlanTitle  string     `json:"planTitle"`
-	Child      []treeNode `json:"child"`
+	Child      []treeNode `json:"children"`
 }
 
 func GetPlanTree(getPlanTree usecases.GetPlanTree, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
