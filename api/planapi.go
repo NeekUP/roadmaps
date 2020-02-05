@@ -131,7 +131,7 @@ type treeNode struct {
 	TopicTitle string     `json:"topicTitle"`
 	PlanId     string     `json:"planId"`
 	PlanTitle  string     `json:"planTitle"`
-	Child      []treeNode `json:"child"`
+	Child      []treeNode `json:"children"`
 }
 
 func GetPlanTree(getPlanTree usecases.GetPlanTree, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
