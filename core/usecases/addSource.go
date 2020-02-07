@@ -34,14 +34,15 @@ type AddSource interface {
 	Do(ctx core.ReqContext, identifier string, props map[string]string, sourceType domain.SourceType) (*domain.Source, error)
 }
 
-func NewAddSource(sr core.SourceRepository, log core.AppLogger, imgSaver core.ImageManager) AddSource {
-	return &addSource{Repo: sr, Log: log, ImageManager: imgSaver}
+func NewAddSource(sr core.SourceRepository, log core.AppLogger, imgSaver core.ImageManager, changelog core.ChangeLog) AddSource {
+	return &addSource{sourceRepo: sr, log: log, imageManager: imgSaver, changeLog: changelog}
 }
 
 type addSource struct {
-	Repo         core.SourceRepository
-	Log          core.AppLogger
-	ImageManager core.ImageManager
+	sourceRepo   core.SourceRepository
+	log          core.AppLogger
+	imageManager core.ImageManager
+	changeLog    core.ChangeLog
 }
 
 type webPageSummary struct {
@@ -60,13 +61,14 @@ type bookSummary struct {
 }
 
 // Должен возвращать или уже созданный ранее или новый объект
-func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[string]string, sourceType domain.SourceType) (*domain.Source, error) {
-	appErr := this.validate(identifier, props, sourceType)
+func (usecase *addSource) Do(ctx core.ReqContext, identifier string, props map[string]string, sourceType domain.SourceType) (*domain.Source, error) {
+	appErr := usecase.validate(identifier, props, sourceType)
+	userId := ctx.UserId()
 	if props == nil {
 		props = map[string]string{}
 	}
 	if appErr != nil {
-		this.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
@@ -81,9 +83,9 @@ func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[stri
 	// link without protocol and www...
 	// isbn to isbn13 format
 	var err error
-	s.NormalizedIdentifier, err = this.normalizeIdentifier(sourceType, identifier)
+	s.NormalizedIdentifier, err = usecase.normalizeIdentifier(sourceType, identifier)
 	if err != nil {
-		this.Log.Errorw("Identifier contain not valid value",
+		usecase.log.Errorw("Identifier contain not valid value",
 			"ReqId", ctx.ReqId(),
 			"Error", err,
 			"Identifier", identifier)
@@ -91,7 +93,7 @@ func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[stri
 	}
 
 	// Find exists source by normalized identifier
-	source := this.Repo.FindByIdentifier(s.NormalizedIdentifier)
+	source := usecase.sourceRepo.FindByIdentifier(s.NormalizedIdentifier)
 	if source != nil {
 		return source, nil
 	}
@@ -101,9 +103,9 @@ func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[stri
 	// Fetch source summary
 	switch sourceType {
 	case domain.Book:
-		bookMeta, err := this.getBookMeta(s.NormalizedIdentifier)
+		bookMeta, err := usecase.getBookMeta(s.NormalizedIdentifier)
 		if err != nil {
-			this.Log.Errorw("Book summary not parsed",
+			usecase.log.Errorw("Book summary not parsed",
 				"ReqId", ctx.ReqId(),
 				"Error", err.Error(),
 				"Identifier", identifier)
@@ -118,9 +120,9 @@ func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[stri
 		props["authors"] = strings.Join(bookMeta.Authors, ", ")
 		break
 	case domain.Audio, domain.Video, domain.Article:
-		pageMeta, err := this.getWebPageMeta(identifier)
+		pageMeta, err := usecase.getWebPageMeta(identifier)
 		if err != nil {
-			this.Log.Errorw("Fail to get page summary",
+			usecase.log.Errorw("Fail to get page summary",
 				"ReqId", ctx.ReqId(),
 				"Error", err.Error(),
 				"Identifier", identifier)
@@ -136,11 +138,11 @@ func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[stri
 
 	// Resize and save image
 	if img != nil {
-		s.Img, err = this.resizeAndSaveImage(img)
+		s.Img, err = usecase.resizeAndSaveImage(img)
 
 		if err != nil {
 			s.Img = ""
-			this.Log.Errorw("Fail to save image",
+			usecase.log.Errorw("Fail to save image",
 				"ReqId", ctx.ReqId(),
 				"Error", err.Error(),
 				"Identifier", identifier)
@@ -153,18 +155,20 @@ func (this *addSource) Do(ctx core.ReqContext, identifier string, props map[stri
 	}
 
 	s.Properties = string(p)
-	s = this.Repo.GetOrAddByIdentifier(s)
+	s = usecase.sourceRepo.GetOrAddByIdentifier(s)
+
+	usecase.changeLog.Added(domain.ResourceEntity, s.Id, userId)
 	return s, nil
 }
 
-func (this *addSource) resizeAndSaveImage(img image.Image) (string, error) {
-	resized, err := this.resizeImage(200, 0, img)
+func (usecase *addSource) resizeAndSaveImage(img image.Image) (string, error) {
+	resized, err := usecase.resizeImage(200, 0, img)
 	if err != nil {
 		return "", err
 	}
 
-	name := this.generateFileName("jpg")
-	err = this.ImageManager.Save(resized, name)
+	name := usecase.generateFileName("jpg")
+	err = usecase.imageManager.Save(resized, name)
 	if err != nil {
 		return "", err
 	}
@@ -172,19 +176,19 @@ func (this *addSource) resizeAndSaveImage(img image.Image) (string, error) {
 	return name, nil
 }
 
-func (this *addSource) normalizeIdentifier(sourceType domain.SourceType, identifier string) (string, error) {
+func (usecase *addSource) normalizeIdentifier(sourceType domain.SourceType, identifier string) (string, error) {
 	switch sourceType {
 	case domain.Book:
-		return this.getBookIdentifier(identifier)
+		return usecase.getBookIdentifier(identifier)
 	case domain.Audio, domain.Video, domain.Article:
-		return this.getLinkIdentifier(identifier)
+		return usecase.getLinkIdentifier(identifier)
 	default:
 		return "", core.NewError(core.InvalidSourceType)
 	}
 }
 
-func (this *addSource) getImage(uri string) (image.Image, error) {
-	img, err := this.getImageByUrl(uri)
+func (usecase *addSource) getImage(uri string) (image.Image, error) {
+	img, err := usecase.getImageByUrl(uri)
 	if err != nil {
 		return nil, err
 	}
@@ -192,10 +196,10 @@ func (this *addSource) getImage(uri string) (image.Image, error) {
 	return img, nil
 }
 
-func (this *addSource) getWebPageMeta(uri string) (*webPageSummary, error) {
+func (usecase *addSource) getWebPageMeta(uri string) (*webPageSummary, error) {
 
-	if this.isIDN(uri) {
-		uri = this.decodeIDN(uri)
+	if usecase.isIDN(uri) {
+		uri = usecase.decodeIDN(uri)
 	}
 
 	res, err := http.Get(uri)
@@ -212,17 +216,17 @@ func (this *addSource) getWebPageMeta(uri string) (*webPageSummary, error) {
 		return nil, err
 	}
 
-	summary := this.getTwitterMeta(doc)
+	summary := usecase.getTwitterMeta(doc)
 	if summary != nil {
 		return summary, nil
 	}
 
-	summary = this.getOpenGraphMeta(doc)
+	summary = usecase.getOpenGraphMeta(doc)
 	if summary != nil {
 		return summary, nil
 	}
 
-	summary = this.getRawHtmlMeta(doc)
+	summary = usecase.getRawHtmlMeta(doc)
 	if summary != nil {
 		return summary, nil
 	}
@@ -230,16 +234,16 @@ func (this *addSource) getWebPageMeta(uri string) (*webPageSummary, error) {
 	return nil, core.NewError(core.InaccessibleWebPage)
 }
 
-func (this *addSource) getBookMeta(isbn13 string) (*bookSummary, error) {
-	summary, err := this.getBookMetaFromGoogle(isbn13)
+func (usecase *addSource) getBookMeta(isbn13 string) (*bookSummary, error) {
+	summary, err := usecase.getBookMetaFromGoogle(isbn13)
 	if err == nil {
 		return summary, err
 	}
 
-	return this.getBookMetaFromOpenLibrary(isbn13)
+	return usecase.getBookMetaFromOpenLibrary(isbn13)
 }
 
-func (this *addSource) getBookMetaFromGoogle(isbn13 string) (*bookSummary, error) {
+func (usecase *addSource) getBookMetaFromGoogle(isbn13 string) (*bookSummary, error) {
 	uri := fmt.Sprintf(googleApiUrl, isbn13)
 	res, err := http.Get(uri)
 	if err != nil {
@@ -274,9 +278,9 @@ func (this *addSource) getBookMetaFromGoogle(isbn13 string) (*bookSummary, error
 					}
 
 					if item.VolumeInfo.ImageLinks.Thumbnail != "" {
-						summary.Img, err = this.getImage(item.VolumeInfo.ImageLinks.Thumbnail)
+						summary.Img, err = usecase.getImage(item.VolumeInfo.ImageLinks.Thumbnail)
 						if err != nil {
-							this.Log.Errorw("Fail to download image from",
+							usecase.log.Errorw("Fail to download image from",
 								"Error", err.Error(),
 								"Url", item.VolumeInfo.ImageLinks.Thumbnail)
 						}
@@ -306,7 +310,7 @@ func (this *addSource) getBookMetaFromGoogle(isbn13 string) (*bookSummary, error
 	return nil, fmt.Errorf("Fail to parse book info from response: %s", buf.String())
 }
 
-func (this *addSource) getBookMetaFromOpenLibrary(isbn13 string) (*bookSummary, error) {
+func (usecase *addSource) getBookMetaFromOpenLibrary(isbn13 string) (*bookSummary, error) {
 	uri := fmt.Sprintf(openLibraryApiUrl, isbn13)
 	res, err := http.Get(uri)
 	if err != nil {
@@ -340,9 +344,9 @@ func (this *addSource) getBookMetaFromOpenLibrary(isbn13 string) (*bookSummary, 
 		}
 
 		if value.Cover.Large != "" {
-			summary.Img, err = this.getImage(value.Cover.Large)
+			summary.Img, err = usecase.getImage(value.Cover.Large)
 			if err != nil {
-				this.Log.Errorw("Fail to download image",
+				usecase.log.Errorw("Fail to download image",
 					"Url", value.Cover.Large,
 					"Error", err.Error())
 			}
@@ -359,7 +363,7 @@ func (this *addSource) getBookMetaFromOpenLibrary(isbn13 string) (*bookSummary, 
 	return nil, fmt.Errorf("Fail to parse book info from response: %s", buf.String())
 }
 
-func (this *addSource) decodeIDN(uri string) string {
+func (usecase *addSource) decodeIDN(uri string) string {
 
 	u, err := url.Parse(uri)
 
@@ -373,31 +377,31 @@ func (this *addSource) decodeIDN(uri string) string {
 	return uri
 }
 
-func (this *addSource) isIDN(uri string) bool {
+func (usecase *addSource) isIDN(uri string) bool {
 	return strings.Contains(uri, "://xn--")
 }
 
-func (this *addSource) getTwitterMeta(doc *goquery.Document) *webPageSummary {
+func (usecase *addSource) getTwitterMeta(doc *goquery.Document) *webPageSummary {
 
 	summarycard := doc.Find("meta[name=twitter\\:card]")
 	if summarycard.Length() == 0 {
 		return nil
 	}
 
-	return this.getWebPageSummaryFromMeta(doc.Find("meta[name^=twitter\\:]"), "name", "content")
+	return usecase.getWebPageSummaryFromMeta(doc.Find("meta[name^=twitter\\:]"), "name", "content")
 }
 
-func (this *addSource) getOpenGraphMeta(doc *goquery.Document) *webPageSummary {
+func (usecase *addSource) getOpenGraphMeta(doc *goquery.Document) *webPageSummary {
 
 	selections := doc.Find("meta[property^=og\\:]")
 	if selections.Length() == 0 {
 		return nil
 	}
 
-	return this.getWebPageSummaryFromMeta(selections, "property", "content")
+	return usecase.getWebPageSummaryFromMeta(selections, "property", "content")
 }
 
-func (this *addSource) getRawHtmlMeta(doc *goquery.Document) *webPageSummary {
+func (usecase *addSource) getRawHtmlMeta(doc *goquery.Document) *webPageSummary {
 	meta := new(webPageSummary)
 	titles := doc.Find("title")
 	if titles.Length() != 1 {
@@ -408,7 +412,7 @@ func (this *addSource) getRawHtmlMeta(doc *goquery.Document) *webPageSummary {
 	return meta
 }
 
-func (this *addSource) getWebPageSummaryFromMeta(selections *goquery.Selection, keyAttr, valueAttr string) *webPageSummary {
+func (usecase *addSource) getWebPageSummaryFromMeta(selections *goquery.Selection, keyAttr, valueAttr string) *webPageSummary {
 	meta := new(webPageSummary)
 	selections.Each(func(i int, s *goquery.Selection) {
 		if val, ok := s.Attr(keyAttr); ok {
@@ -425,9 +429,9 @@ func (this *addSource) getWebPageSummaryFromMeta(selections *goquery.Selection, 
 				break
 			case "image", "image:src":
 				if meta.Img == nil {
-					meta.Img, _ = this.getImage(content)
+					meta.Img, _ = usecase.getImage(content)
 					if meta.Img == nil {
-						this.Log.Errorw("Fail to download image from",
+						usecase.log.Errorw("Fail to download image from",
 							"Url", content)
 					}
 				}
@@ -443,15 +447,15 @@ func (this *addSource) getWebPageSummaryFromMeta(selections *goquery.Selection, 
 	return meta
 }
 
-func (this *addSource) generateFileName(extention string) string {
+func (usecase *addSource) generateFileName(extention string) string {
 	return uuid.New().String() + "." + extention
 }
 
-func (this *addSource) getImageByUrl(uri string) (image.Image, error) {
+func (usecase *addSource) getImageByUrl(uri string) (image.Image, error) {
 	// check link without protocol
 	u, err := url.Parse(uri)
 	if err != nil {
-		this.Log.Errorw("Fail to parse image url", "uri", uri, "error", err.Error())
+		usecase.log.Errorw("Fail to parse image url", "uri", uri, "error", err.Error())
 		return nil, err
 	}
 
@@ -462,35 +466,35 @@ func (this *addSource) getImageByUrl(uri string) (image.Image, error) {
 
 	response, err := http.Get(uri)
 	if err != nil {
-		this.Log.Errorw("Fail to download image", "uri", uri, "error", err.Error())
+		usecase.log.Errorw("Fail to download image", "uri", uri, "error", err.Error())
 		return nil, err
 	}
 	defer response.Body.Close()
 
 	image, _, err := image.Decode(response.Body)
 	if err != nil {
-		this.Log.Errorw("Fail to decode image", "uri", uri, "error", err.Error())
+		usecase.log.Errorw("Fail to decode image", "uri", uri, "error", err.Error())
 		return nil, err
 	}
 
 	return image, nil
 }
 
-func (this *addSource) resizeImage(w, h uint, image image.Image) ([]byte, error) {
+func (usecase *addSource) resizeImage(w, h uint, image image.Image) ([]byte, error) {
 
 	newImage := resize.Resize(w, h, image, resize.Lanczos3)
 
 	buf := new(bytes.Buffer)
 	err := jpeg.Encode(buf, newImage, nil)
 	if err != nil {
-		this.Log.Errorw("Fail to resize image", "error", err.Error())
+		usecase.log.Errorw("Fail to resize image", "error", err.Error())
 		return nil, err
 	}
 
 	return buf.Bytes(), nil
 }
 
-func (this *addSource) getLinkIdentifier(identifier string) (string, error) {
+func (usecase *addSource) getLinkIdentifier(identifier string) (string, error) {
 
 	identifier = strings.ToLower(identifier)
 	identifier = strings.TrimRight(identifier, "/")
@@ -517,7 +521,7 @@ func (this *addSource) getLinkIdentifier(identifier string) (string, error) {
 	return fmt.Sprintf("%s%s%s", host, path, query), nil
 }
 
-func (this *addSource) getBookIdentifier(identifier string) (string, error) {
+func (usecase *addSource) getBookIdentifier(identifier string) (string, error) {
 	b := strings.Replace(identifier, "-", "", -1)
 	if !isbn.Validate(b) {
 		return "", fmt.Errorf("Isbn is not valid: %s", b)
@@ -531,7 +535,7 @@ func (this *addSource) getBookIdentifier(identifier string) (string, error) {
 	return identifier, nil
 }
 
-func (this *addSource) validate(identifier string, props map[string]string, sourceType domain.SourceType) *core.AppError {
+func (usecase *addSource) validate(identifier string, props map[string]string, sourceType domain.SourceType) *core.AppError {
 
 	errors := make(map[string]string)
 	if sourceType != domain.Book {

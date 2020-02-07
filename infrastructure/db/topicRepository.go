@@ -183,7 +183,7 @@ func (repo *topicRepo) AddTag(tagname, topicname string) bool {
 SET tags = array_cat(tags, $1) 
 WHERE name=$2 
 	AND array_position(tags, $3) IS NULL
-	AND EXISTS( SELECT id FROM topics WHERE name=$2 AND istag = true );`
+	AND EXISTS( SELECT id FROM topics WHERE name=$3 AND istag = true );`
 	t, err := repo.Db.Conn.Exec(context.Background(), query, []string{tagname}, topicname, tagname)
 	if err != nil {
 		repo.Db.LogError(err, query)

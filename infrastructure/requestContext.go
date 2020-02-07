@@ -14,59 +14,59 @@ type requestContext struct {
 	ctx context.Context
 }
 
-func (this *requestContext) Deadline() (deadline time.Time, ok bool) {
-	if this.ctx == nil {
+func (reqCtx *requestContext) Deadline() (deadline time.Time, ok bool) {
+	if reqCtx.ctx == nil {
 		return time.Now(), false
 	}
-	return this.ctx.Deadline()
+	return reqCtx.ctx.Deadline()
 }
 
-func (this *requestContext) Done() <-chan struct{} {
-	if this.ctx == nil {
+func (reqCtx *requestContext) Done() <-chan struct{} {
+	if reqCtx.ctx == nil {
 		return nil
 	}
-	return this.ctx.Done()
+	return reqCtx.ctx.Done()
 }
 
-func (this *requestContext) Err() error {
-	if this.ctx == nil {
+func (reqCtx *requestContext) Err() error {
+	if reqCtx.ctx == nil {
 		return nil
 	}
-	return this.ctx.Err()
+	return reqCtx.ctx.Err()
 }
 
-func (this *requestContext) Value(key interface{}) interface{} {
-	if this.ctx == nil {
+func (reqCtx *requestContext) Value(key interface{}) interface{} {
+	if reqCtx.ctx == nil {
 		return nil
 	}
-	return this.ctx.Value(key)
+	return reqCtx.ctx.Value(key)
 }
 
-func (this *requestContext) ReqId() string {
-	if this.ctx == nil {
+func (reqCtx *requestContext) ReqId() string {
+	if reqCtx.ctx == nil {
 		return ""
 	}
-	if reqID, ok := this.ctx.Value(ReqId).(string); ok {
+	if reqID, ok := reqCtx.ctx.Value(ReqId).(string); ok {
 		return reqID
 	}
 	return ""
 }
 
-func (this *requestContext) UserId() string {
-	if this.ctx == nil {
+func (reqCtx *requestContext) UserId() string {
+	if reqCtx.ctx == nil {
 		return ""
 	}
-	if userId, ok := this.ctx.Value(ReqUserId).(string); ok {
+	if userId, ok := reqCtx.ctx.Value(ReqUserId).(string); ok {
 		return userId
 	}
 	return ""
 }
 
-func (this *requestContext) UserName() string {
-	if this.ctx == nil {
+func (reqCtx *requestContext) UserName() string {
+	if reqCtx.ctx == nil {
 		return ""
 	}
-	if userName, ok := this.ctx.Value(ReqUserName).(string); ok {
+	if userName, ok := reqCtx.ctx.Value(ReqUserName).(string); ok {
 		return userName
 	}
 	return ""

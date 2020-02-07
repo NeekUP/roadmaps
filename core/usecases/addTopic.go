@@ -10,18 +10,19 @@ type AddTopic interface {
 }
 
 type addTopic struct {
-	TopicRepo core.TopicRepository
-	Log       core.AppLogger
+	topicRepo core.TopicRepository
+	log       core.AppLogger
+	changeLog core.ChangeLog
 }
 
-func NewAddTopic(topicRepo core.TopicRepository, log core.AppLogger) AddTopic {
-	return &addTopic{TopicRepo: topicRepo, Log: log}
+func NewAddTopic(topicRepo core.TopicRepository, changelog core.ChangeLog, log core.AppLogger) AddTopic {
+	return &addTopic{topicRepo: topicRepo, changeLog: changelog, log: log}
 }
 
-func (this *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool, tags []string) (*domain.Topic, error) {
-	appErr := this.validate(title, tags)
+func (usecase *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool, tags []string) (*domain.Topic, error) {
+	appErr := usecase.validate(title, tags)
 	if appErr != nil {
-		this.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
@@ -31,10 +32,10 @@ func (this *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool, ta
 	userId := ctx.UserId()
 	topic := domain.NewTopic(title, desc, userId)
 	topic.IsTag = istag
-	topic.Tags = this.TopicRepo.GetTags(tags)
-	saved, err := this.TopicRepo.Save(topic)
+	topic.Tags = usecase.topicRepo.GetTags(tags)
+	saved, err := usecase.topicRepo.Save(topic)
 	if err != nil {
-		this.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", err.Error(),
 		)
@@ -44,16 +45,17 @@ func (this *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool, ta
 	if saved {
 		if len(topic.Tags) > 0 {
 			for _, tag := range topic.Tags {
-				this.TopicRepo.AddTag(tag.Name, topic.Name)
+				usecase.topicRepo.AddTag(tag.Name, topic.Name)
 			}
 		}
+		usecase.changeLog.Added(domain.TopicEntity, int64(topic.Id), userId)
 		return topic, nil
 	}
 
 	return nil, nil
 }
 
-func (this *addTopic) validate(title string, tags []string) *core.AppError {
+func (usecase *addTopic) validate(title string, tags []string) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicTitle(title) {
 		errors["title"] = core.InvalidFormat.String()
