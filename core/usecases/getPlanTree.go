@@ -19,21 +19,21 @@ type GetPlanTree interface {
 }
 
 type getPlanTree struct {
-	PlanRepo   core.PlanRepository
-	TopicRepo  core.TopicRepository
-	StepsRepo  core.StepRepository
-	UsersPlans core.UsersPlanRepository
-	Log        core.AppLogger
+	planRepo   core.PlanRepository
+	topicRepo  core.TopicRepository
+	stepsRepo  core.StepRepository
+	usersPlans core.UsersPlanRepository
+	log        core.AppLogger
 }
 
 func NewGetPlanTree(planRepo core.PlanRepository, topics core.TopicRepository, steps core.StepRepository, uplans core.UsersPlanRepository, log core.AppLogger) GetPlanTree {
-	return &getPlanTree{PlanRepo: planRepo, TopicRepo: topics, UsersPlans: uplans, StepsRepo: steps, Log: log}
+	return &getPlanTree{planRepo: planRepo, topicRepo: topics, usersPlans: uplans, stepsRepo: steps, log: log}
 }
 
-func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) {
-	appErr := this.validate(ids)
+func (usecase *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) {
+	appErr := usecase.validate(ids)
 	if appErr != nil {
-		this.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
@@ -41,7 +41,7 @@ func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) 
 	}
 
 	// get plans
-	plans := this.PlanRepo.GetList(ids)
+	plans := usecase.planRepo.GetList(ids)
 	if len(plans) == 0 {
 		return nil, core.NewError(core.InvalidRequest)
 	}
@@ -51,7 +51,7 @@ func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) 
 	// for every plan
 	for i := 0; i < len(plans); i++ {
 		// get topic
-		t := this.TopicRepo.Get(plans[i].TopicName)
+		t := usecase.topicRepo.Get(plans[i].TopicName)
 		if t == nil {
 			return nil, core.NewError(core.InvalidRequest)
 		}
@@ -64,19 +64,19 @@ func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) 
 		}
 
 		userId := ctx.UserId()
-		userFavorits := this.getUserFavoritsPlans(userId)
-		plans[i].Steps = this.StepsRepo.GetByPlan(plans[i].Id)
+		userFavorits := usecase.getUserFavoritsPlans(userId)
+		plans[i].Steps = usecase.stepsRepo.GetByPlan(plans[i].Id)
 		// for every plan step with topic
 		for j := 0; j < len(plans[i].Steps); j++ {
 			if plans[i].Steps[j].ReferenceType == domain.TopicReference {
 				// get topic
-				t := this.TopicRepo.GetById(int(plans[i].Steps[j].ReferenceId))
+				t := usecase.topicRepo.GetById(int(plans[i].Steps[j].ReferenceId))
 				if t != nil {
 					if userFavorits[t.Name] != 0 {
-						plan := this.PlanRepo.Get(userFavorits[t.Name])
+						plan := usecase.planRepo.Get(userFavorits[t.Name])
 						t.Plans = []domain.Plan{*plan}
 					} else {
-						t.Plans = this.PlanRepo.GetPopularByTopic(t.Name, 1)
+						t.Plans = usecase.planRepo.GetPopularByTopic(t.Name, 1)
 					}
 					chPlanId := -1
 					chPlanTitle := ""
@@ -103,7 +103,7 @@ func (this *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) 
 	return result, nil
 }
 
-func (this *getPlanTree) getUserFavoritsPlans(userid string) map[string]int {
+func (usecase *getPlanTree) getUserFavoritsPlans(userid string) map[string]int {
 	userFavorits := make(map[string]int)
 	if userid == "" {
 		return userFavorits
@@ -111,7 +111,7 @@ func (this *getPlanTree) getUserFavoritsPlans(userid string) map[string]int {
 
 	userId := userid
 	if userId != "" {
-		uplans := this.UsersPlans.GetByUser(userId)
+		uplans := usecase.usersPlans.GetByUser(userId)
 		for i := 0; i < len(uplans); i++ {
 			userFavorits[uplans[i].TopicName] = uplans[i].PlanId
 		}
@@ -120,18 +120,18 @@ func (this *getPlanTree) getUserFavoritsPlans(userid string) map[string]int {
 	return userFavorits
 }
 
-func (this *getPlanTree) DoByTopic(ctx core.ReqContext, name string) ([]TreeNode, error) {
-	topic := this.TopicRepo.Get(name)
+func (usecase *getPlanTree) DoByTopic(ctx core.ReqContext, name string) ([]TreeNode, error) {
+	topic := usecase.topicRepo.Get(name)
 	if topic == nil {
 		return nil, core.NewError(core.InvalidRequest)
 	}
 
-	up := this.UsersPlans.GetByTopic(ctx.UserId(), topic.Name)
+	up := usecase.usersPlans.GetByTopic(ctx.UserId(), topic.Name)
 	if up != nil {
-		p := this.PlanRepo.Get(up.PlanId)
+		p := usecase.planRepo.Get(up.PlanId)
 		topic.Plans = []domain.Plan{*p}
 	} else {
-		topic.Plans = this.PlanRepo.GetPopularByTopic(topic.Name, 1)
+		topic.Plans = usecase.planRepo.GetPopularByTopic(topic.Name, 1)
 	}
 
 	if len(topic.Plans) == 0 {
@@ -141,10 +141,10 @@ func (this *getPlanTree) DoByTopic(ctx core.ReqContext, name string) ([]TreeNode
 		}}, nil
 	}
 
-	return this.Do(ctx, []int{topic.Plans[0].Id})
+	return usecase.Do(ctx, []int{topic.Plans[0].Id})
 }
 
-func (this *getPlanTree) validate(identifiers []int) *core.AppError {
+func (usecase *getPlanTree) validate(identifiers []int) *core.AppError {
 	errors := make(map[string]string)
 
 	if identifiers == nil {

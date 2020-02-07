@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"github.com/NeekUP/roadmaps/infrastructure"
 	"strings"
 	"testing"
 
@@ -18,7 +19,7 @@ func TestAddFirstCommetSuccess(t *testing.T) {
 		defer DeleteUser(u.Id)
 	}
 
-	addCommentUsecase := usecases.NewAddComment(db.NewCommentsRepository(DB), db.NewPlansRepository(DB), appLoggerForTests{})
+	addCommentUsecase := usecases.NewAddComment(db.NewCommentsRepository(DB), db.NewPlansRepository(DB), infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}), appLoggerForTests{})
 
 	topic, err := createTopic(u)
 	if err != nil {
@@ -57,7 +58,7 @@ func TestAddFirstComment_NotExistsTarget(t *testing.T) {
 		defer DeleteUser(u.Id)
 	}
 
-	addCommentUsecase := usecases.NewAddComment(db.NewCommentsRepository(DB), db.NewPlansRepository(DB), appLoggerForTests{})
+	addCommentUsecase := usecases.NewAddComment(db.NewCommentsRepository(DB), db.NewPlansRepository(DB), infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}), appLoggerForTests{})
 
 	comment, err := addCommentUsecase.Do(newContext(u), domain.PlanEntity, 1000, 0, "text", "title")
 	if err == nil {
@@ -82,7 +83,7 @@ func TestGetCommentThreads(t *testing.T) {
 		defer DeleteUser(u.Id)
 	}
 
-	addCommentUsecase := usecases.NewAddComment(db.NewCommentsRepository(DB), db.NewPlansRepository(DB), appLoggerForTests{})
+	addCommentUsecase := usecases.NewAddComment(db.NewCommentsRepository(DB), db.NewPlansRepository(DB), infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}), appLoggerForTests{})
 
 	topic, err := createTopic(u)
 	if err != nil {
@@ -176,7 +177,7 @@ func createPlan(topic *domain.Topic, u *domain.User) (*domain.Plan, error) {
 			},
 		},
 	}
-	addPlanUsecase := usecases.NewAddPlan(db.NewPlansRepository(DB), &appLoggerForTests{})
+	addPlanUsecase := usecases.NewAddPlan(db.NewPlansRepository(DB), infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}), &appLoggerForTests{})
 	plan, err := addPlanUsecase.Do(newContext(u), addPlanReq)
 	if err != nil {
 		return nil, err
@@ -185,7 +186,7 @@ func createPlan(topic *domain.Topic, u *domain.User) (*domain.Plan, error) {
 }
 
 func createTopic(u *domain.User) (*domain.Topic, error) {
-	newTopicUsecase := usecases.NewAddTopic(db.NewTopicRepository(DB), appLoggerForTests{})
+	newTopicUsecase := usecases.NewAddTopic(db.NewTopicRepository(DB), infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}), appLoggerForTests{})
 	topic, err := newTopicUsecase.Do(newContext(u), "TestAddFirstCommetSuccess", "", true, []string{})
 	if err != nil {
 		return nil, err

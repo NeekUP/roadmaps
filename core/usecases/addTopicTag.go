@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"github.com/NeekUP/roadmaps/core"
+	"github.com/NeekUP/roadmaps/domain"
 )
 
 type AddTopicTag interface {
@@ -9,29 +10,42 @@ type AddTopicTag interface {
 }
 
 type addTopicTag struct {
-	TopicRepo core.TopicRepository
-	Log       core.AppLogger
+	topicRepo core.TopicRepository
+	log       core.AppLogger
+	changeLog core.ChangeLog
 }
 
-func NewAddTopicTag(topicRepo core.TopicRepository, log core.AppLogger) AddTopicTag {
-	return &addTopicTag{TopicRepo: topicRepo, Log: log}
+func NewAddTopicTag(topicRepo core.TopicRepository, changeLog core.ChangeLog, log core.AppLogger) AddTopicTag {
+	return &addTopicTag{topicRepo: topicRepo, changeLog: changeLog, log: log}
 }
 
-func (a *addTopicTag) Do(ctx core.ReqContext, tagname, topicname string) (bool, error) {
-	appErr := a.validate(tagname, topicname)
+func (usecase *addTopicTag) Do(ctx core.ReqContext, tagname, topicname string) (bool, error) {
+	appErr := usecase.validate(tagname, topicname)
 	if appErr != nil {
-		a.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
 		return false, appErr
 	}
 
-	result := a.TopicRepo.AddTag(tagname, topicname)
-	return result, nil
+	userId := ctx.UserId()
+	topic := usecase.topicRepo.Get(topicname)
+	if topic == nil {
+		return false, core.NewError(core.NotExists)
+	}
+
+	hasChanges := usecase.topicRepo.AddTag(tagname, topicname)
+	if hasChanges {
+		changedTopic := *topic
+		copy(changedTopic.Tags, topic.Tags)
+		changedTopic.Tags = append(changedTopic.Tags, domain.TopicTag{Name: topicname})
+		usecase.changeLog.Edited(domain.TopicEntity, int64(topic.Id), userId, topic, &changedTopic)
+	}
+	return hasChanges, nil
 }
 
-func (a *addTopicTag) validate(tagname, topicname string) *core.AppError {
+func (usecase *addTopicTag) validate(tagname, topicname string) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicName(tagname) {
 		errors["tagname"] = core.InvalidFormat.String()

@@ -10,8 +10,9 @@ type EditPlan interface {
 }
 
 type editPlan struct {
-	PlanRepo core.PlanRepository
-	Log      core.AppLogger
+	planRepo  core.PlanRepository
+	log       core.AppLogger
+	changeLog core.ChangeLog
 }
 
 type EditPlanReq struct {
@@ -21,21 +22,22 @@ type EditPlanReq struct {
 	Steps     []PlanStep
 }
 
-func NewEditPlan(planRepo core.PlanRepository, log core.AppLogger) EditPlan {
-	return &editPlan{PlanRepo: planRepo, Log: log}
+func NewEditPlan(planRepo core.PlanRepository, changeLog core.ChangeLog, log core.AppLogger) EditPlan {
+	return &editPlan{planRepo: planRepo, changeLog: changeLog, log: log}
 }
 
-func (this *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) {
-	appErr := this.validate(req, ctx.UserId())
+func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) {
+	old := usecase.planRepo.Get(req.Id)
+	userId := ctx.UserId()
+	appErr := usecase.validate(req, userId, old)
 	if appErr != nil {
-		this.Log.Errorw("Invalid request",
+		usecase.log.Errorw("Invalid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
 		return false, appErr
 	}
 
-	userId := ctx.UserId()
 	stepsCount := len(req.Steps)
 	steps := make([]domain.Step, 0, stepsCount)
 
@@ -56,9 +58,9 @@ func (this *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) {
 		Steps:     steps,
 	}
 
-	if ok, err := this.PlanRepo.Update(plan); !ok {
+	if ok, err := usecase.planRepo.Update(plan); !ok {
 		if err != nil {
-			this.Log.Errorw("Invalid request",
+			usecase.log.Errorw("Invalid request",
 				"ReqId", ctx.ReqId(),
 				"Error", err.Error(),
 			)
@@ -66,10 +68,11 @@ func (this *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) {
 		return false, err
 	}
 
+	usecase.changeLog.Edited(domain.PlanEntity, int64(plan.Id), userId, old, plan)
 	return true, nil
 }
 
-func (this *editPlan) validate(req EditPlanReq, userId string) *core.AppError {
+func (usecase *editPlan) validate(req EditPlanReq, userId string, plan *domain.Plan) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicName(req.TopicName) {
 		errors["topic"] = core.InvalidFormat.String()
@@ -83,7 +86,6 @@ func (this *editPlan) validate(req EditPlanReq, userId string) *core.AppError {
 		errors["steps"] = core.InvalidCount.String()
 	}
 
-	plan := this.PlanRepo.Get(req.Id)
 	if plan == nil {
 		errors["id"] = core.NotExists.String()
 	}

@@ -7,6 +7,8 @@ const (
 	TopicEntity    EntityType = 2
 	ProjectEntity  EntityType = 3
 	ResourceEntity EntityType = 4
+	CommentEntity  EntityType = 5
+	UserEntity     EntityType = 6
 )
 
 func (et EntityType) IsValid() bool {

@@ -25,12 +25,12 @@ type dbSeedProd struct {
 	UserRepo core.UserRepository
 }
 
-func (this *dbSeedProd) Seed() {
-	this.seedUsers()
+func (seed *dbSeedProd) Seed() {
+	seed.seedUsers()
 }
 
-func (this *dbSeedProd) seedUsers() {
-	if count, ok := this.UserRepo.Count(); ok && count == 0 {
+func (seed *dbSeedProd) seedUsers() {
+	if count, ok := seed.UserRepo.Count(); ok && count == 0 {
 		for _, e := range os.Environ() {
 			pair := strings.SplitN(e, "=", 2)
 			fmt.Println(pair[0])
@@ -40,9 +40,9 @@ func (this *dbSeedProd) seedUsers() {
 			email := os.Getenv(fmt.Sprintf("adminemail%d", i))
 			pass := os.Getenv(fmt.Sprintf("adminpass%d", i))
 
-			exists, ok := this.UserRepo.ExistsEmail(email)
+			exists, ok := seed.UserRepo.ExistsEmail(email)
 			if !exists && ok && name != "" && email != "" && pass != "" {
-				this.RegUser.Do(NewContext(context.Background()), name, email, pass)
+				seed.RegUser.Do(NewContext(context.Background()), name, email, pass)
 			}
 		}
 	}

@@ -81,6 +81,16 @@ type CommentsRepository interface {
 	GetThread(entityType int, entityId int64, threadId int64) []domain.Comment
 }
 
+type ChangeLogRepository interface {
+	Add(record *domain.ChangeLogRecord) bool
+}
+
+type ChangeLog interface {
+	Added(entityType domain.EntityType, entityId int64, userId string)
+	Edited(entityType domain.EntityType, entityId int64, userId string, before interface{}, after interface{})
+	Deleted(entityType domain.EntityType, entityId int64, userId string)
+}
+
 type HashProvider interface {
 	HashPassword(pass string) (hash []byte, salt []byte)
 	CheckPassword(pass string, hash []byte, salt []byte) bool

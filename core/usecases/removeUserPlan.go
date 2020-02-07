@@ -7,21 +7,21 @@ type RemoveUserPlan interface {
 }
 
 type removeUserPlan struct {
-	UsersPlanRepo core.UsersPlanRepository
-	Log           core.AppLogger
+	usersPlanRepo core.UsersPlanRepository
+	log           core.AppLogger
 }
 
 func NewRemoveUserPlan(planRepo core.UsersPlanRepository, log core.AppLogger) RemoveUserPlan {
 	return &removeUserPlan{
-		UsersPlanRepo: planRepo,
-		Log:           log,
+		usersPlanRepo: planRepo,
+		log:           log,
 	}
 }
 
-func (this *removeUserPlan) Do(ctx core.ReqContext, planId int) (bool, error) {
+func (usecase *removeUserPlan) Do(ctx core.ReqContext, planId int) (bool, error) {
 	userId := ctx.UserId()
-	if _, err := this.UsersPlanRepo.Remove(userId, planId); err != nil {
-		this.Log.Errorw("Not valid request",
+	if _, err := usecase.usersPlanRepo.Remove(userId, planId); err != nil {
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", err.Error(),
 		)
