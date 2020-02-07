@@ -9,29 +9,29 @@ type AddUserPlan interface {
 }
 
 type addUserPlan struct {
-	PlanRepo      core.PlanRepository
-	UsersPlanRepo core.UsersPlanRepository
-	Log           core.AppLogger
+	planRepo      core.PlanRepository
+	usersPlanRepo core.UsersPlanRepository
+	log           core.AppLogger
 }
 
 func NewAddUserPlan(planRepo core.PlanRepository, userPlanRepo core.UsersPlanRepository, log core.AppLogger) AddUserPlan {
 	return &addUserPlan{
-		PlanRepo:      planRepo,
-		UsersPlanRepo: userPlanRepo,
-		Log:           log,
+		planRepo:      planRepo,
+		usersPlanRepo: userPlanRepo,
+		log:           log,
 	}
 }
 
-func (this *addUserPlan) Do(ctx core.ReqContext, planId int) (bool, error) {
-	plan := this.PlanRepo.Get(planId)
+func (usecase *addUserPlan) Do(ctx core.ReqContext, planId int) (bool, error) {
+	plan := usecase.planRepo.Get(planId)
 	if plan == nil {
 		return false, core.NewError(core.InvalidRequest)
 	}
 
 	userId := ctx.UserId()
-	success, err := this.UsersPlanRepo.Add(userId, plan.TopicName, planId)
+	success, err := usecase.usersPlanRepo.Add(userId, plan.TopicName, planId)
 	if err != nil {
-		this.Log.Errorw("Invalid request",
+		usecase.log.Errorw("Invalid request",
 			"ReqId", ctx.ReqId(),
 			"Error", err.Error(),
 		)

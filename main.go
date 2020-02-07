@@ -82,6 +82,8 @@ func main() {
 	imageManager := infrastructure.NewImageManager(Cfg.ImgSaver.LocalFolder, Cfg.ImgSaver.UriPath)
 	stepRepo := db.NewStepsRepository(dbConnection)
 	commentsRepo := db.NewCommentsRepository(dbConnection)
+	changesRepository := db.NewChangeLogRepository(dbConnection)
+	changeLog := infrastructure.NewChangesCollector(changesRepository, newLogger("changeLog"))
 
 	/*
 		Usecases
@@ -93,21 +95,21 @@ func main() {
 	refreshToken := usecases.NewRefreshToken(userRepo, newLogger("refreshToken"), tokenService, JwtSecret)
 
 	// Sources
-	addSource := usecases.NewAddSource(sourceRepo, newLogger("addSource"), imageManager)
+	addSource := usecases.NewAddSource(sourceRepo, newLogger("addSource"), imageManager, changeLog)
 
 	// Topics
-	addTopic := usecases.NewAddTopic(topicRepo, newLogger("addTopic"))
+	addTopic := usecases.NewAddTopic(topicRepo, changeLog, newLogger("addTopic"))
 	getTopic := usecases.NewGetTopic(topicRepo, planRepo, usersPlanRepo, newLogger("getTopic"))
 	searchTopic := usecases.NewSearchTopic(topicRepo, newLogger("getUsersPlans"))
-	editTopic := usecases.NewEditTopic(topicRepo, newLogger("editTopic"))
+	editTopic := usecases.NewEditTopic(topicRepo, changeLog, newLogger("editTopic"))
 
 	// Plans
-	addPlan := usecases.NewAddPlan(planRepo, newLogger("addPlan"))
+	addPlan := usecases.NewAddPlan(planRepo, changeLog, newLogger("addPlan"))
 	getPlanTree := usecases.NewGetPlanTree(planRepo, topicRepo, stepRepo, usersPlanRepo, newLogger("getPlanTree"))
 	getPlan := usecases.NewGetPlan(planRepo, userRepo, stepRepo, sourceRepo, topicRepo, newLogger("getPlan"))
 	getPlanList := usecases.NewGetPlanList(planRepo, userRepo, newLogger("getPlanList"))
-	editPlan := usecases.NewEditPlan(planRepo, newLogger("editPlan"))
-	removePlan := usecases.NewRemovePlan(planRepo, newLogger("removePlan"))
+	editPlan := usecases.NewEditPlan(planRepo, changeLog, newLogger("editPlan"))
+	removePlan := usecases.NewRemovePlan(planRepo, changeLog, newLogger("removePlan"))
 
 	// Users Plans
 	addUserPlan := usecases.NewAddUserPlan(planRepo, usersPlanRepo, newLogger("addUserPlan"))
@@ -115,13 +117,13 @@ func main() {
 	getUsersPlans := usecases.NewGetUsersPlans(planRepo, usersPlanRepo, newLogger("getUsersPlans"))
 
 	// Topic Tags
-	addTopicTag := usecases.NewAddTopicTag(topicRepo, newLogger("addTopicTag"))
-	removeTopicTag := usecases.NewRemoveTopicTag(topicRepo, newLogger("removeTopicTag"))
+	addTopicTag := usecases.NewAddTopicTag(topicRepo, changeLog, newLogger("addTopicTag"))
+	removeTopicTag := usecases.NewRemoveTopicTag(topicRepo, changeLog, newLogger("removeTopicTag"))
 
 	// Comments
-	addComment := usecases.NewAddComment(commentsRepo, planRepo, newLogger("addComment"))
-	editComment := usecases.NewEditComment(commentsRepo, newLogger("editComment"))
-	removeComment := usecases.NewRemoveComments(commentsRepo, newLogger("removeComment"))
+	addComment := usecases.NewAddComment(commentsRepo, planRepo, changeLog, newLogger("addComment"))
+	editComment := usecases.NewEditComment(commentsRepo, changeLog, newLogger("editComment"))
+	removeComment := usecases.NewRemoveComments(commentsRepo, changeLog, newLogger("removeComment"))
 	getCommentsThreads := usecases.NewGetCommentsThreads(commentsRepo, userRepo, newLogger("getCommentsThreads"))
 	getCommentsThread := usecases.NewGetCommentsThread(commentsRepo, userRepo, newLogger("getCommentsThread"))
 	/*
@@ -199,11 +201,7 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(api.Auth(domain.U, tokenService))
 		r.Post("/api/source/add", apiAddSource)
-
 		r.Post("/api/topic/add", apiAddTopic)
-		r.Post("/api/topic/tag/add", apiAddTopicTag)
-		r.Post("/api/topic/tag/remove", apiRemoveTopicTag)
-
 		r.Post("/api/plan/add", apiAddPlan)
 		r.Post("/api/plan/edit", apiEditPlan)
 		r.Post("/api/plan/remove", apiRemovePlan)
@@ -217,7 +215,8 @@ func main() {
 	// for moderators
 	r.Group(func(r chi.Router) {
 		r.Use(api.Auth(domain.M, tokenService))
-		// for users should uses /api/topic/edit/(title|desc|...)
+		r.Post("/api/topic/tag/add", apiAddTopicTag)
+		r.Post("/api/topic/tag/remove", apiRemoveTopicTag)
 		r.Post("/api/topic/edit", apiEditTopic)
 	})
 
@@ -323,7 +322,7 @@ func recoverer(l core.AppLogger) func(next http.Handler) http.Handler {
 				if rvr := recover(); rvr != nil {
 
 					if l != nil {
-						l.Panic(rvr, debug.Stack())
+						l.Panic(rvr, string(debug.Stack()))
 					} else {
 						fmt.Fprintf(os.Stderr, "Panic:%v \r\n%s", rvr, string(debug.Stack()))
 						debug.PrintStack()

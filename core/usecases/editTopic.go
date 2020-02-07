@@ -10,42 +10,55 @@ type EditTopic interface {
 }
 
 type editTopic struct {
-	TopicRepo core.TopicRepository
-	Log       core.AppLogger
+	repo      core.TopicRepository
+	log       core.AppLogger
+	changeLog core.ChangeLog
 }
 
-func NewEditTopic(topicRepo core.TopicRepository, log core.AppLogger) EditTopic {
-	return &editTopic{TopicRepo: topicRepo, Log: log}
+func NewEditTopic(topicRepo core.TopicRepository, changelog core.ChangeLog, log core.AppLogger) EditTopic {
+	return &editTopic{repo: topicRepo, changeLog: changelog, log: log}
 }
 
-func (et *editTopic) Do(ctx core.ReqContext, id int, title, desc string, istag bool) (bool, error) {
-	appErr := et.validate(id, title)
+func (usecase *editTopic) Do(ctx core.ReqContext, id int, title, desc string, istag bool) (bool, error) {
+	userId := ctx.UserId()
+	old := usecase.repo.GetById(id)
+	appErr := usecase.validate(id, title, old, userId)
+
 	if appErr != nil {
-		et.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
 		return false, appErr
 	}
 
-	userId := ctx.UserId()
 	topic := domain.NewTopic(title, desc, userId)
 	topic.Id = id
 	topic.IsTag = istag
-	saved, err := et.TopicRepo.Update(topic)
+	saved, err := usecase.repo.Update(topic)
 	if err != nil {
-		et.Log.Errorw("Topic not updated",
+		usecase.log.Errorw("Topic not updated",
 			"ReqId", ctx.ReqId(),
 			"Error", err.Error(),
 		)
 		return false, err
 	}
 
+	usecase.changeLog.Edited(domain.TopicEntity, int64(topic.Id), ctx.UserId(), old, topic)
 	return saved, nil
 }
 
-func (et *editTopic) validate(id int, title string) *core.AppError {
+func (usecase *editTopic) validate(id int, title string, topic *domain.Topic, userId string) *core.AppError {
 	errors := make(map[string]string)
+
+	if topic == nil {
+		errors["id"] = core.NotExists.String()
+	}
+
+	if topic.Creator != userId {
+		errors["id"] = core.AccessDenied.String()
+	}
+
 	if !core.IsValidTopicTitle(title) {
 		errors["title"] = core.InvalidFormat.String()
 	}

@@ -12,19 +12,20 @@ type AddComment interface {
 }
 
 type addComment struct {
-	CommentsRepo core.CommentsRepository
-	PlanRepo     core.PlanRepository
-	Log          core.AppLogger
+	commentsRepo core.CommentsRepository
+	planRepo     core.PlanRepository
+	log          core.AppLogger
+	changeLog    core.ChangeLog
 }
 
-func NewAddComment(commentsRepo core.CommentsRepository, planRepo core.PlanRepository, log core.AppLogger) AddComment {
-	return &addComment{CommentsRepo: commentsRepo, PlanRepo: planRepo, Log: log}
+func NewAddComment(commentsRepo core.CommentsRepository, planRepo core.PlanRepository, changeLog core.ChangeLog, log core.AppLogger) AddComment {
+	return &addComment{commentsRepo: commentsRepo, planRepo: planRepo, changeLog: changeLog, log: log}
 }
 
 func (usecase *addComment) Do(ctx core.ReqContext, entityType domain.EntityType, entityId int64, parentId int64, text string, title string) (*domain.Comment, error) {
 	appErr := usecase.validate(entityType, entityId, parentId, text, title)
 	if appErr != nil {
-		usecase.Log.Errorw("Invalid request",
+		usecase.log.Errorw("Invalid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
@@ -33,7 +34,7 @@ func (usecase *addComment) Do(ctx core.ReqContext, entityType domain.EntityType,
 
 	var threadId int64 = 0
 	if parentId > 0 {
-		parent := usecase.CommentsRepo.Get(parentId)
+		parent := usecase.commentsRepo.Get(parentId)
 		if parent == nil {
 			errors := make(map[string]string)
 			errors["parentId"] = core.InvalidValue.String()
@@ -45,22 +46,22 @@ func (usecase *addComment) Do(ctx core.ReqContext, entityType domain.EntityType,
 			threadId = parentId
 		}
 	}
-
+	userId := ctx.UserId()
 	comment := &domain.Comment{
 		EntityType: entityType,
 		EntityId:   entityId,
 		ThreadId:   threadId,
 		ParentId:   parentId,
-		UserId:     ctx.UserId(),
+		UserId:     userId,
 		Text:       string(core.SanitizeString(text)),
 		Title:      title,
 		Date:       time.Now().UTC(),
 		Deleted:    false,
 	}
 
-	if ok, err := usecase.CommentsRepo.Add(comment); !ok {
+	if ok, err := usecase.commentsRepo.Add(comment); !ok {
 		if err != nil {
-			usecase.Log.Errorw("Invalid request",
+			usecase.log.Errorw("Invalid request",
 				"ReqId", ctx.ReqId(),
 				"Error", err.Error(),
 			)
@@ -68,6 +69,7 @@ func (usecase *addComment) Do(ctx core.ReqContext, entityType domain.EntityType,
 		return nil, err
 	}
 
+	usecase.changeLog.Added(domain.CommentEntity, comment.Id, userId)
 	return comment, nil
 }
 
@@ -83,7 +85,7 @@ func (ac *addComment) validate(entityType domain.EntityType, entityId int64, par
 
 	switch entityType {
 	case domain.PlanEntity:
-		if ac.PlanRepo.Get(int(entityId)) == nil {
+		if ac.planRepo.Get(int(entityId)) == nil {
 			errors["entityId"] = core.InvalidValue.String()
 		}
 	default:

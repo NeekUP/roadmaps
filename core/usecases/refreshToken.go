@@ -10,25 +10,25 @@ type RefreshToken interface {
 
 func NewRefreshToken(ur core.UserRepository, log core.AppLogger, ts core.TokenService, secret string) RefreshToken {
 	return &refreshToken{
-		UserRepo:     ur,
-		Log:          log,
-		Secret:       secret,
-		TokenService: ts,
+		userRepo:     ur,
+		log:          log,
+		secret:       secret,
+		tokenService: ts,
 	}
 }
 
 type refreshToken struct {
-	UserRepo     core.UserRepository
-	Log          core.AppLogger
-	Secret       string
-	TokenService core.TokenService
+	userRepo     core.UserRepository
+	log          core.AppLogger
+	secret       string
+	tokenService core.TokenService
 }
 
-func (this *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error) {
+func (usecase *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error) {
 
-	appErr := this.validate(authToken, refreshToken, fingerprint, useragent)
+	appErr := usecase.validate(authToken, refreshToken, fingerprint, useragent)
 	if appErr != nil {
-		this.Log.Infow("Not valid data",
+		usecase.log.Infow("Not valid data",
 			"reqId", ctx.ReqId(),
 			"authToken", authToken,
 			"refreshToken", refreshToken,
@@ -40,10 +40,10 @@ func (this *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, finge
 
 	useragent = core.UserAgentFingerprint(useragent)
 
-	auth, refresh, err := this.TokenService.Refresh(authToken, refreshToken, fingerprint, useragent)
+	auth, refresh, err := usecase.tokenService.Refresh(authToken, refreshToken, fingerprint, useragent)
 
 	if err != nil {
-		this.Log.Infow("Fail to refresh token",
+		usecase.log.Infow("Fail to refresh token",
 			"reqId", ctx.ReqId(),
 			"authToken", authToken,
 			"refreshToken", refreshToken,
@@ -55,7 +55,7 @@ func (this *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, finge
 	return auth, refresh, err
 }
 
-func (this *refreshToken) validate(aToken, rToken, fingerprint, useragent string) *core.AppError {
+func (usecase *refreshToken) validate(aToken, rToken, fingerprint, useragent string) *core.AppError {
 
 	errors := make(map[string]string)
 	if !core.IsValidTokenFormat(aToken) {

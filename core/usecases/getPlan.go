@@ -17,49 +17,48 @@ func NewGetPlan(plans core.PlanRepository,
 	//usersPlans core.UsersPlanRepository,
 	logger core.AppLogger) GetPlan {
 	return &getPlan{
-		PlanRepo:   plans,
-		StepRepo:   steps,
-		UserRepo:   users,
-		SourceRepo: sources,
-		TopicRepo:  topics,
+		planRepo:   plans,
+		stepRepo:   steps,
+		userRepo:   users,
+		sourceRepo: sources,
+		topicRepo:  topics,
 		//UsersPlansRepo: usersPlans,
-		Log: logger,
+		log: logger,
 	}
 }
 
 type getPlan struct {
-	PlanRepo   core.PlanRepository
-	StepRepo   core.StepRepository
-	SourceRepo core.SourceRepository
-	TopicRepo  core.TopicRepository
-	UserRepo   core.UserRepository
-	//UsersPlansRepo core.UsersPlanRepository
-	Log core.AppLogger
+	planRepo   core.PlanRepository
+	stepRepo   core.StepRepository
+	sourceRepo core.SourceRepository
+	topicRepo  core.TopicRepository
+	userRepo   core.UserRepository
+	log        core.AppLogger
 }
 
-func (this *getPlan) Do(ctx core.ReqContext, id int) (*domain.Plan, error) {
-	appErr := this.validate(id)
+func (usecase *getPlan) Do(ctx core.ReqContext, id int) (*domain.Plan, error) {
+	appErr := usecase.validate(id)
 	if appErr != nil {
-		this.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
 		return nil, appErr
 	}
 
-	plan := this.PlanRepo.Get(id)
+	plan := usecase.planRepo.Get(id)
 	if plan != nil {
-		plan.Steps = this.StepRepo.GetByPlan(plan.Id)
-		plan.Owner = this.UserRepo.Get(plan.OwnerId)
-		this.fillSteps(plan)
+		plan.Steps = usecase.stepRepo.GetByPlan(plan.Id)
+		plan.Owner = usecase.userRepo.Get(plan.OwnerId)
+		usecase.fillSteps(plan)
 	}
 	return plan, nil
 }
 
-func (this *getPlan) fillSteps(plan *domain.Plan) {
+func (usecase *getPlan) fillSteps(plan *domain.Plan) {
 	for i := 0; i < len(plan.Steps); i++ {
 		if plan.Steps[i].ReferenceType == domain.TopicReference {
-			t := this.TopicRepo.GetById(int(plan.Steps[i].ReferenceId))
+			t := usecase.topicRepo.GetById(int(plan.Steps[i].ReferenceId))
 			if t == nil {
 				break
 			}
@@ -71,7 +70,7 @@ func (this *getPlan) fillSteps(plan *domain.Plan) {
 				Desc:       "Not implementer yet",
 			}
 		} else {
-			s := this.SourceRepo.Get(plan.Steps[i].ReferenceId)
+			s := usecase.sourceRepo.Get(plan.Steps[i].ReferenceId)
 			if s == nil {
 				break
 			}
@@ -89,7 +88,7 @@ func (this *getPlan) fillSteps(plan *domain.Plan) {
 	}
 }
 
-func (this *getPlan) validate(id int) *core.AppError {
+func (usecase *getPlan) validate(id int) *core.AppError {
 	errors := make(map[string]string)
 	if id < 0 {
 		errors["id"] = core.InvalidValue.String()

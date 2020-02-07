@@ -287,8 +287,43 @@ func (dbo *CommentDBO) FromComment(c *domain.Comment) {
 }
 
 /*
-	Utils
- ******************/
+	ChangeLogRecord
+*******************/
+type ChangeLogRecordDTO struct {
+	Id         int64
+	Date       time.Time
+	Action     int
+	UserId     string
+	EntityType int
+	EntityId   int64
+	Diff       sql.NullString
+	Points     int
+}
+
+func (dbo *ChangeLogRecordDTO) ToChangeLogRecord() *domain.ChangeLogRecord {
+	return &domain.ChangeLogRecord{
+		Id:         dbo.Id,
+		Date:       dbo.Date,
+		Action:     domain.ChangeType(dbo.Action),
+		UserId:     dbo.UserId,
+		EntityType: domain.EntityType(dbo.EntityType),
+		EntityId:   dbo.EntityId,
+		Diff:       dbo.Diff.String,
+		Points:     dbo.Points,
+	}
+}
+
+func (dbo *ChangeLogRecordDTO) FromChangeLogRecord(c *domain.ChangeLogRecord) {
+	dbo.Id = c.Id
+	dbo.Date = c.Date
+	dbo.Action = int(c.Action)
+	dbo.UserId = c.UserId
+	dbo.EntityType = int(c.EntityType)
+	dbo.EntityId = c.EntityId
+	dbo.Diff = ToNullString(c.Diff)
+	dbo.Points = c.Points
+}
+
 func ToNullString(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: s != ""}
 }

@@ -10,8 +10,9 @@ type AddPlan interface {
 }
 
 type addPlan struct {
-	PlanRepo core.PlanRepository
-	Log      core.AppLogger
+	planRepo  core.PlanRepository
+	log       core.AppLogger
+	changeLog core.ChangeLog
 }
 
 type AddPlanReq struct {
@@ -25,15 +26,15 @@ type PlanStep struct {
 	ReferenceType domain.ReferenceType
 }
 
-func NewAddPlan(planRepo core.PlanRepository, log core.AppLogger) AddPlan {
-	return &addPlan{PlanRepo: planRepo, Log: log}
+func NewAddPlan(planRepo core.PlanRepository, changeLog core.ChangeLog, log core.AppLogger) AddPlan {
+	return &addPlan{planRepo: planRepo, changeLog: changeLog, log: log}
 }
 
-func (this *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, error) {
+func (usecase *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, error) {
 
-	appErr := this.validate(req)
+	appErr := usecase.validate(req)
 	if appErr != nil {
-		this.Log.Errorw("Invalid request",
+		usecase.log.Errorw("Invalid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
@@ -60,13 +61,9 @@ func (this *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, erro
 		Steps:     steps,
 	}
 
-	/*
-		Сохранить в транзакции в базу все
-		В базе должны быть проверки уникальности и вторичные ключи
-	*/
-	if ok, err := this.PlanRepo.SaveWithSteps(plan); !ok {
+	if ok, err := usecase.planRepo.SaveWithSteps(plan); !ok {
 		if err != nil {
-			this.Log.Errorw("Invalid request",
+			usecase.log.Errorw("Invalid request",
 				"ReqId", ctx.ReqId(),
 				"Error", err.Error(),
 			)
@@ -74,10 +71,11 @@ func (this *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, erro
 		return nil, err
 	}
 
+	usecase.changeLog.Added(domain.PlanEntity, int64(plan.Id), userId)
 	return plan, nil
 }
 
-func (this *addPlan) validate(req AddPlanReq) *core.AppError {
+func (usecase *addPlan) validate(req AddPlanReq) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicName(req.TopicName) {
 		errors["topic"] = core.InvalidFormat.String()

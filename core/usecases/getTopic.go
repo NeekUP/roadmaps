@@ -11,34 +11,34 @@ type GetTopic interface {
 }
 
 type getTopic struct {
-	TopicRepo core.TopicRepository
-	PlanRepo  core.PlanRepository
-	UsersPlan core.UsersPlanRepository
-	Log       core.AppLogger
+	topicRepo core.TopicRepository
+	planRepo  core.PlanRepository
+	usersPlan core.UsersPlanRepository
+	log       core.AppLogger
 }
 
 func NewGetTopic(topicRepo core.TopicRepository, planRepo core.PlanRepository, userPlans core.UsersPlanRepository, log core.AppLogger) GetTopic {
-	return &getTopic{TopicRepo: topicRepo, PlanRepo: planRepo, UsersPlan: userPlans, Log: log}
+	return &getTopic{topicRepo: topicRepo, planRepo: planRepo, usersPlan: userPlans, log: log}
 }
 
-func (this *getTopic) Do(ctx core.ReqContext, name string, planCount int) (*domain.Topic, error) {
-	appErr := this.validate(name, planCount)
+func (usecase *getTopic) Do(ctx core.ReqContext, name string, planCount int) (*domain.Topic, error) {
+	appErr := usecase.validate(name, planCount)
 	if appErr != nil {
-		this.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
 		return nil, appErr
 	}
 
-	topic := this.TopicRepo.Get(name)
+	topic := usecase.topicRepo.Get(name)
 	if topic == nil {
 		return nil, core.NewError(core.NotExists)
 	}
 	return topic, nil
 }
 
-func (this *getTopic) validate(name string, planCount int) *core.AppError {
+func (usecase *getTopic) validate(name string, planCount int) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicName(name) {
 		errors["name"] = core.InvalidFormat.String()

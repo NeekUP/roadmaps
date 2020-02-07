@@ -3,6 +3,7 @@ package tests
 import (
 	"github.com/NeekUP/roadmaps/core/usecases"
 	"github.com/NeekUP/roadmaps/domain"
+	"github.com/NeekUP/roadmaps/infrastructure"
 	"github.com/NeekUP/roadmaps/infrastructure/db"
 	"testing"
 )
@@ -12,22 +13,22 @@ func TestGetPlanTreeSuccess(t *testing.T) {
 	if u != nil {
 		defer DeleteUser(u.Id)
 	}
-	newTopicUsecase := usecases.NewAddTopic(db.NewTopicRepository(DB), log)
+	newTopicUsecase := usecases.NewAddTopic(db.NewTopicRepository(DB), infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}), log)
 	topic1, _ := newTopicUsecase.Do(newContext(u), "Topic1", "", false, []string{})
 	if topic1 != nil {
 		defer DeleteTopic(topic1.Id)
 	}
 
 	addPlansReq := []usecases.AddPlanReq{
-		usecases.AddPlanReq{
+		{
 			Title:     "Plan #1 !!!",
 			TopicName: topic1.Name,
 			Steps: []usecases.PlanStep{
-				usecases.PlanStep{
+				{
 					ReferenceId:   int64(topic1.Id),
 					ReferenceType: domain.TopicReference,
 				},
-				usecases.PlanStep{
+				{
 					ReferenceId:   int64(topic1.Id),
 					ReferenceType: domain.TopicReference,
 				},
@@ -36,7 +37,7 @@ func TestGetPlanTreeSuccess(t *testing.T) {
 	}
 
 	plans := make([]domain.Plan, len(addPlansReq), len(addPlansReq))
-	usecase := usecases.NewAddPlan(db.NewPlansRepository(DB), &appLoggerForTests{})
+	usecase := usecases.NewAddPlan(db.NewPlansRepository(DB), infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}), &appLoggerForTests{})
 	for i, v := range addPlansReq {
 		plan, err := usecase.Do(newContext(u), v)
 		if err != nil {

@@ -10,13 +10,13 @@ type ListTopicsDev interface {
 }
 
 type listTopicsDev struct {
-	TopicRepo core.TopicRepository
+	topicRepo core.TopicRepository
 }
 
 func NewListTopicsDev(topics core.TopicRepository) ListTopicsDev {
-	return &listTopicsDev{TopicRepo: topics}
+	return &listTopicsDev{topicRepo: topics}
 }
 
-func (this listTopicsDev) Do() []domain.Topic {
-	return this.TopicRepo.All()
+func (usecase listTopicsDev) Do() []domain.Topic {
+	return usecase.topicRepo.All()
 }

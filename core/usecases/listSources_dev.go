@@ -10,13 +10,13 @@ type ListSourcesDev interface {
 }
 
 type listSourcesDev struct {
-	SourceRepo core.SourceRepository
+	sourceRepo core.SourceRepository
 }
 
 func NewListSourcesDev(Sources core.SourceRepository) ListSourcesDev {
-	return &listSourcesDev{SourceRepo: Sources}
+	return &listSourcesDev{sourceRepo: Sources}
 }
 
-func (this listSourcesDev) Do() []domain.Source {
-	return this.SourceRepo.All()
+func (usecase listSourcesDev) Do() []domain.Source {
+	return usecase.sourceRepo.All()
 }

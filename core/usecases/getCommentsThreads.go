@@ -10,26 +10,26 @@ type GetCommentsThreads interface {
 }
 
 type getCommentsThreads struct {
-	CommentsRepo core.CommentsRepository
-	UsersRepo    core.UserRepository
-	Log          core.AppLogger
+	commentsRepo core.CommentsRepository
+	usersRepo    core.UserRepository
+	log          core.AppLogger
 }
 
 func NewGetCommentsThreads(commentsRepo core.CommentsRepository, usersRepo core.UserRepository, log core.AppLogger) GetCommentsThreads {
-	return &getCommentsThreads{CommentsRepo: commentsRepo, UsersRepo: usersRepo, Log: log}
+	return &getCommentsThreads{commentsRepo: commentsRepo, usersRepo: usersRepo, log: log}
 }
 
 func (usecase *getCommentsThreads) Do(ctx core.ReqContext, entityType domain.EntityType, entityId int64, count int, page int) (comments []domain.Comment, hasMore bool, err error) {
 	appErr := usecase.validate(entityType, entityId, count, page)
 	if appErr != nil {
-		usecase.Log.Errorw("Invalid request",
+		usecase.log.Errorw("Invalid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
 		return nil, false, appErr
 	}
 
-	list := usecase.CommentsRepo.GetThreadList(int(entityType), entityId, count, page)
+	list := usecase.commentsRepo.GetThreadList(int(entityType), entityId, count, page)
 	userIds := make(map[string]*domain.User)
 	for i := 0; i < len(list); i++ {
 		if _, ok := userIds[list[i].UserId]; !ok {
@@ -42,7 +42,7 @@ func (usecase *getCommentsThreads) Do(ctx core.ReqContext, entityType domain.Ent
 		idList = append(idList, k)
 	}
 
-	for _, v := range usecase.UsersRepo.GetList(idList) {
+	for _, v := range usecase.usersRepo.GetList(idList) {
 		userIds[v.Id] = &v
 	}
 

@@ -18,7 +18,9 @@ require (
 	github.com/moraes/isbn v0.0.0-20151007102746-e6388fb1bfd5
 	github.com/mssola/user_agent v0.5.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	github.com/r3labs/diff v0.0.0-20191120142937-b4ed99a31f5a
 	github.com/russross/blackfriday/v2 v2.0.1
+	github.com/sergi/go-diff v1.1.0
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	go.uber.org/zap v1.13.0
 	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
