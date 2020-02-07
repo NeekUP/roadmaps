@@ -10,13 +10,13 @@ type ListUsersDev interface {
 }
 
 type listUsersDev struct {
-	UserRepo core.UserRepository
+	userRepo core.UserRepository
 }
 
 func NewListUsersDev(Users core.UserRepository) ListUsersDev {
-	return &listUsersDev{UserRepo: Users}
+	return &listUsersDev{userRepo: Users}
 }
 
-func (this *listUsersDev) Do() []domain.User {
-	return this.UserRepo.All()
+func (usecase *listUsersDev) Do() []domain.User {
+	return usecase.userRepo.All()
 }

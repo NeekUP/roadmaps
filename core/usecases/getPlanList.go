@@ -11,37 +11,37 @@ type GetPlanList interface {
 
 func NewGetPlanList(plans core.PlanRepository, users core.UserRepository, logger core.AppLogger) GetPlanList {
 	return &getPlanList{
-		PlanRepo: plans,
-		UserRepo: users,
-		Log:      logger,
+		planRepo: plans,
+		userRepo: users,
+		log:      logger,
 	}
 }
 
 type getPlanList struct {
-	PlanRepo core.PlanRepository
-	UserRepo core.UserRepository
-	Log      core.AppLogger
+	planRepo core.PlanRepository
+	userRepo core.UserRepository
+	log      core.AppLogger
 }
 
-func (this *getPlanList) Do(ctx core.ReqContext, topicName string, count int) ([]domain.Plan, error) {
-	appErr := this.validate(topicName, count)
+func (usecase *getPlanList) Do(ctx core.ReqContext, topicName string, count int) ([]domain.Plan, error) {
+	appErr := usecase.validate(topicName, count)
 	if appErr != nil {
-		this.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
 		return nil, appErr
 	}
 
-	list := this.PlanRepo.GetPopularByTopic(topicName, count)
+	list := usecase.planRepo.GetPopularByTopic(topicName, count)
 
 	for i := 0; i < len(list); i++ {
-		list[i].Owner = this.UserRepo.Get(list[i].OwnerId)
+		list[i].Owner = usecase.userRepo.Get(list[i].OwnerId)
 	}
 	return list, nil
 }
 
-func (this *getPlanList) validate(topicName string, count int) *core.AppError {
+func (usecase *getPlanList) validate(topicName string, count int) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicName(topicName) {
 		errors["topicName"] = core.InvalidFormat.String()

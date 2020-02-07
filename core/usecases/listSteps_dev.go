@@ -10,13 +10,13 @@ type ListStepsDev interface {
 }
 
 type listStepsDev struct {
-	StepRepo core.StepRepository
+	stepRepo core.StepRepository
 }
 
 func NewListStepsDev(Steps core.StepRepository) ListStepsDev {
-	return &listStepsDev{StepRepo: Steps}
+	return &listStepsDev{stepRepo: Steps}
 }
 
-func (this listStepsDev) Do() []domain.Step {
-	return this.StepRepo.All()
+func (usecase listStepsDev) Do() []domain.Step {
+	return usecase.stepRepo.All()
 }

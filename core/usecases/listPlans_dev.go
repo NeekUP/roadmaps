@@ -10,13 +10,13 @@ type ListPlansDev interface {
 }
 
 type listPlansDev struct {
-	PlanRepo core.PlanRepository
+	planRepo core.PlanRepository
 }
 
 func NewListPlansDev(plans core.PlanRepository) ListPlansDev {
-	return &listPlansDev{PlanRepo: plans}
+	return &listPlansDev{planRepo: plans}
 }
 
-func (this listPlansDev) Do() []domain.Plan {
-	return this.PlanRepo.All()
+func (usecase listPlansDev) Do() []domain.Plan {
+	return usecase.planRepo.All()
 }

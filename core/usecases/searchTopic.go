@@ -10,28 +10,28 @@ type SearchTopic interface {
 }
 
 type searchTopic struct {
-	TopicRepo core.TopicRepository
-	Log       core.AppLogger
+	topicRepo core.TopicRepository
+	log       core.AppLogger
 }
 
 func NewSearchTopic(topicRepo core.TopicRepository, log core.AppLogger) SearchTopic {
-	return &searchTopic{TopicRepo: topicRepo, Log: log}
+	return &searchTopic{topicRepo: topicRepo, log: log}
 }
 
-func (r *searchTopic) Do(ctx core.ReqContext, str string, count int) []domain.Topic {
-	appErr := r.validate(str)
+func (usecase *searchTopic) Do(ctx core.ReqContext, str string, count int) []domain.Topic {
+	appErr := usecase.validate(str)
 	if appErr != nil {
-		r.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", appErr.Error(),
 		)
 		return []domain.Topic{}
 	}
 
-	return r.TopicRepo.TitleLike(str, count)
+	return usecase.topicRepo.TitleLike(str, count)
 }
 
-func (r *searchTopic) validate(str string) *core.AppError {
+func (usecase *searchTopic) validate(str string) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicTitle(str) {
 		errors["search"] = core.InvalidFormat.String()

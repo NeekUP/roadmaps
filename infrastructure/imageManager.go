@@ -23,8 +23,8 @@ func NewImageManager(saveTo string, uriPath string) core.ImageManager {
 	}
 }
 
-func (this *imageManager) Save(data []byte, name string) error {
-	p := path.Join(this.LocalPath, name)
+func (mananger *imageManager) Save(data []byte, name string) error {
+	p := path.Join(mananger.LocalPath, name)
 	f, err := os.Create(p)
 	if err != nil {
 		return err
@@ -38,6 +38,6 @@ func (this *imageManager) Save(data []byte, name string) error {
 	return nil
 }
 
-func (this *imageManager) GetUrl(name string) string {
-	return path.Join(this.UriPath, name)
+func (mananger *imageManager) GetUrl(name string) string {
+	return path.Join(mananger.UriPath, name)
 }

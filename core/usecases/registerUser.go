@@ -1,9 +1,10 @@
 package usecases
 
 import (
+	"strings"
+
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/domain"
-	"strings"
 
 	"github.com/google/uuid"
 )
@@ -13,23 +14,24 @@ type RegisterUser interface {
 }
 
 type registerUser struct {
-	UserRepo core.UserRepository
-	Log      core.AppLogger
-	Hash     core.HashProvider
+	userRepo core.UserRepository
+	log      core.AppLogger
+	hash     core.HashProvider
 }
 
 func NewRegisterUser(userRepo core.UserRepository, log core.AppLogger, hash core.HashProvider) RegisterUser {
 	return &registerUser{
-		UserRepo: userRepo,
-		Log:      log,
-		Hash:     hash}
+		userRepo: userRepo,
+		log:      log,
+		hash:     hash,
+	}
 }
 
-func (r *registerUser) Do(ctx core.ReqContext, name string, email string, password string) (*domain.User, error) {
+func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, password string) (*domain.User, error) {
 
-	appErr := r.validate(ctx, name, email, password)
+	appErr := usecase.validate(ctx, name, email, password)
 	if appErr != nil {
-		r.Log.Errorw("Not valid request",
+		usecase.log.Errorw("Not valid request",
 			"reqId", ctx.ReqId(),
 			"email", email,
 			"error", appErr.Error(),
@@ -37,7 +39,7 @@ func (r *registerUser) Do(ctx core.ReqContext, name string, email string, passwo
 		return nil, appErr
 	}
 
-	hash, salt := r.Hash.HashPassword(password)
+	hash, salt := usecase.hash.HashPassword(password)
 	user := &domain.User{
 		Id:             uuid.New().String(),
 		Name:           name,
@@ -47,17 +49,18 @@ func (r *registerUser) Do(ctx core.ReqContext, name string, email string, passwo
 
 	user.Pass = hash
 	user.Salt = salt
-	if _, err := r.UserRepo.Save(user); err != nil {
-		r.Log.Errorw("Not valid request",
+	if _, err := usecase.userRepo.Save(user); err != nil {
+		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", err.Error(),
 		)
 		return nil, err
 	}
+
 	return user, nil
 }
 
-func (r *registerUser) validate(ctx core.ReqContext, name string, email string, password string) *core.AppError {
+func (usecase *registerUser) validate(ctx core.ReqContext, name string, email string, password string) *core.AppError {
 
 	errors := make(map[string]string)
 
@@ -73,11 +76,11 @@ func (r *registerUser) validate(ctx core.ReqContext, name string, email string, 
 		errors["pass"] = core.InvalidFormat.String()
 	}
 
-	if exists, ok := r.UserRepo.ExistsName(name); ok && exists {
+	if exists, ok := usecase.userRepo.ExistsName(name); ok && exists {
 		errors["name"] = core.AlreadyExists.String()
 	}
 
-	if exists, ok := r.UserRepo.ExistsEmail(email); ok && exists {
+	if exists, ok := usecase.userRepo.ExistsEmail(email); ok && exists {
 		errors["email"] = core.AlreadyExists.String()
 	}
 

@@ -18,7 +18,7 @@ func TestAddBookIsbn13(t *testing.T) {
 		return
 	}
 	isbn := "978-1-10-769989-2"
-	usecase := usecases.NewAddSource(db.NewSourceRepository(DB), log, &fakeImageManager{})
+	usecase := usecases.NewAddSource(db.NewSourceRepository(DB), log, &fakeImageManager{}, infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}))
 	source, err := usecase.Do(newContext(u), isbn, make(map[string]string), domain.Book)
 
 	if err != nil {
@@ -48,7 +48,7 @@ func TestAddBookIsbn10(t *testing.T) {
 	isbn10 := "3-598-21500-2"
 	isbn13 := "978-3-598-21500-1"
 
-	usecase := usecases.NewAddSource(db.NewSourceRepository(DB), log, &fakeImageManager{})
+	usecase := usecases.NewAddSource(db.NewSourceRepository(DB), log, &fakeImageManager{}, infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}))
 	source, err := usecase.Do(newContext(u), isbn10, make(map[string]string), domain.Book)
 
 	if err != nil {
@@ -76,7 +76,7 @@ func TestAddBookTwiceWithSameResult(t *testing.T) {
 		defer DeleteUser(u.Id)
 	}
 	isbn := "978-3-598-21501-8"
-	usecase := usecases.NewAddSource(db.NewSourceRepository(DB), log, &fakeImageManager{})
+	usecase := usecases.NewAddSource(db.NewSourceRepository(DB), log, &fakeImageManager{}, infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}))
 	sourceOne, err := usecase.Do(newContext(u), isbn, make(map[string]string), domain.Book)
 	if err != nil {
 		t.Errorf("Book not saved as source using isbn %s with error %s", isbn, err.Error())
@@ -114,7 +114,7 @@ func TestAddBookBadIsbn13(t *testing.T) {
 		defer DeleteUser(u.Id)
 	}
 	isbn := "978-1-10-769989-0"
-	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{})
+	usecase := usecases.NewAddSource(db.NewSourceRepository(nil), log, &fakeImageManager{}, infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}))
 	source, err := usecase.Do(newContext(u), isbn, make(map[string]string), domain.Book)
 
 	if err == nil {
@@ -132,7 +132,7 @@ func TestAddBookBadIsbn10(t *testing.T) {
 	if u != nil {
 		defer DeleteUser(u.Id)
 	}
-	usecase := usecases.NewAddSource(db.NewSourceRepository(DB), log, &fakeImageManager{})
+	usecase := usecases.NewAddSource(db.NewSourceRepository(DB), log, &fakeImageManager{}, infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}))
 
 	isbnList := []struct {
 		x string
@@ -168,7 +168,7 @@ func TestAddLinkSuccess(t *testing.T) {
 	if u != nil {
 		defer DeleteUser(u.Id)
 	}
-	usecase := usecases.NewAddSource(db.NewSourceRepository(DB), log, &fakeImageManager{})
+	usecase := usecases.NewAddSource(db.NewSourceRepository(DB), log, &fakeImageManager{}, infrastructure.NewChangesCollector(db.NewChangeLogRepository(DB), &appLoggerForTests{}))
 
 	linkList := []struct {
 		url  string
