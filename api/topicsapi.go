@@ -15,6 +15,16 @@ type addTopicRequest struct {
 	IsTag bool     `json:"istag"`
 }
 
+func (req *addTopicRequest) Sanitize() {
+	req.Title = StrictSanitize(req.Title)
+	req.Desc = StrictSanitize(req.Desc)
+	sanitizedTags := make([]string, len(req.Tags))
+	for i, v := range req.Tags {
+		sanitizedTags[i] = StrictSanitize(v)
+	}
+	req.Tags = sanitizedTags
+}
+
 func AddTopic(addTopic usecases.AddTopic, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -29,7 +39,7 @@ func AddTopic(addTopic usecases.AddTopic, log core.AppLogger) func(w http.Respon
 		}
 
 		context := infrastructure.NewContext(r.Context())
-
+		data.Sanitize()
 		topic, err := addTopic.Do(context, data.Title, data.Desc, data.IsTag, data.Tags)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
@@ -51,6 +61,11 @@ type editTopicRequest struct {
 	IsTag bool   `json:"istag"`
 }
 
+func (req *editTopicRequest) Sanitize() {
+	req.Title = StrictSanitize(req.Title)
+	req.Desc = StrictSanitize(req.Desc)
+}
+
 func EditTopic(editTopic usecases.EditTopic, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -65,7 +80,7 @@ func EditTopic(editTopic usecases.EditTopic, log core.AppLogger) func(w http.Res
 		}
 
 		context := infrastructure.NewContext(r.Context())
-
+		data.Sanitize()
 		_, err = editTopic.Do(context, data.Id, data.Title, data.Desc, data.IsTag)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
@@ -84,6 +99,10 @@ type getTopicTreeRequest struct {
 	Name string `json:"name"`
 }
 
+func (req *getTopicTreeRequest) Sanitize() {
+	req.Name = StrictSanitize(req.Name)
+}
+
 type getTopicTreeResponse struct {
 	Nodes []treeNode `json:"nodes"`
 }
@@ -99,7 +118,7 @@ func GetTopicTree(getTopicTree usecases.GetPlanTree, log core.AppLogger) func(w 
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		trees, err := getTopicTree.DoByTopic(infrastructure.NewContext(r.Context()), data.Name)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
@@ -124,6 +143,10 @@ func GetTopicTree(getTopicTree usecases.GetPlanTree, log core.AppLogger) func(w 
 type getTopicRequest struct {
 	Name      string `json:"name"`
 	PlanCount int    `json:"planCount"`
+}
+
+func (req *getTopicRequest) Sanitize() {
+	req.Name = StrictSanitize(req.Name)
 }
 
 type getTopicResponse struct {
@@ -159,7 +182,11 @@ func GetTopic(getTopic usecases.GetTopic, log core.AppLogger) func(w http.Respon
 }
 
 type searchTopicReq struct {
-	Str string `json:"query"`
+	Query string `json:"query"`
+}
+
+func (req *searchTopicReq) Sanitize() {
+	req.Query = StrictSanitize(req.Query)
 }
 
 type searchTopicRes struct {
@@ -178,19 +205,24 @@ func SearchTopic(searchTopic usecases.SearchTopic, log core.AppLogger) func(w ht
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
-		topics := searchTopic.Do(infrastructure.NewContext(r.Context()), data.Str, 10)
+		data.Sanitize()
+		topics := searchTopic.Do(infrastructure.NewContext(r.Context()), data.Query, 10)
 		dtos := make([]topic, len(topics))
 		for i, t := range topics {
 			dtos[i] = *NewTopicDto(&t)
 		}
-		valueResponse(w, &searchTopicRes{Result: dtos, Str: data.Str})
+		valueResponse(w, &searchTopicRes{Result: dtos, Str: data.Query})
 	}
 }
 
 type addTopicTagReq struct {
 	TopicName string `json:"topicname"`
 	TagName   string `json:"tagname"`
+}
+
+func (req *addTopicTagReq) Sanitize() {
+	req.TopicName = StrictSanitize(req.TopicName)
+	req.TagName = StrictSanitize(req.TagName)
 }
 
 type addTopicTagRes struct {
@@ -208,7 +240,7 @@ func AddTopicTag(addTopicTag usecases.AddTopicTag, log core.AppLogger) func(w ht
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		added, err := addTopicTag.Do(infrastructure.NewContext(r.Context()), data.TagName, data.TopicName)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
@@ -228,6 +260,11 @@ type removeTopicTagReq struct {
 	TagName   string `json:"tagname"`
 }
 
+func (req *removeTopicTagReq) Sanitize() {
+	req.TopicName = StrictSanitize(req.TopicName)
+	req.TagName = StrictSanitize(req.TagName)
+}
+
 type removeTopicTagRes struct {
 	Removed bool `json:"removed"`
 }
@@ -243,7 +280,7 @@ func RemoveTopicTag(removeTopicTag usecases.RemoveTopicTag, log core.AppLogger) 
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		removed, err := removeTopicTag.Do(infrastructure.NewContext(r.Context()), data.TagName, data.TopicName)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {

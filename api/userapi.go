@@ -24,6 +24,11 @@ type regUserReq struct {
 	Pass  string `json:"pass"`
 }
 
+func (req *regUserReq) Sanitize() {
+	req.Name = StrictSanitize(req.Name)
+	req.Email = StrictSanitize(req.Email)
+}
+
 func RegUser(regUsr usecases.RegisterUser, log core.AppLogger, captcha Captcha) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -36,12 +41,12 @@ func RegUser(regUsr usecases.RegisterUser, log core.AppLogger, captcha Captcha) 
 		data := new(regUserReq)
 		err := decoder.Decode(data)
 		defer r.Body.Close()
-
 		if err != nil {
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-		//ua := r.UserAgent()
+
+		data.Sanitize()
 		_, err = regUsr.Do(infrastructure.NewContext(r.Context()), data.Name, data.Email, data.Pass)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
@@ -64,6 +69,10 @@ type loginUserReq struct {
 	Email       string `json:"email"`
 	Pass        string `json:"pass"`
 	Fingerprint string `json:"fp"`
+}
+
+func (req *loginUserReq) Sanitize() {
+	req.Email = StrictSanitize(req.Email)
 }
 
 type loginUserRes struct {
@@ -89,7 +98,7 @@ func Login(loginUsr usecases.LoginUser, log core.AppLogger, captcha Captcha) fun
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		user, aToken, rToken, err := loginUsr.Do(infrastructure.NewContext(r.Context()), data.Email, data.Pass, data.Fingerprint, r.UserAgent())
 
 		if err != nil {
@@ -164,6 +173,10 @@ type userPlanReq struct {
 	PlanId string `json:"planId"`
 }
 
+func (req *userPlanReq) Sanitize() {
+	req.PlanId = StrictSanitize(req.PlanId)
+}
+
 type userPlanRes struct {
 	Success bool `json:"success"`
 }
@@ -180,7 +193,7 @@ func AddUserPlan(addUserPlan usecases.AddUserPlan, log core.AppLogger) func(w ht
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		ctx := infrastructure.NewContext(r.Context())
 		planId, err := core.DecodeStringToNum(data.PlanId)
 		if err != nil {
