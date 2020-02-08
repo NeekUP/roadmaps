@@ -17,6 +17,11 @@ type addPlanRequest struct {
 	Steps     []planstep `json:"steps"`
 }
 
+func (req *addPlanRequest) Sanitize() {
+	req.TopicName = StrictSanitize(req.TopicName)
+	req.Title = StrictSanitize(req.Title)
+}
+
 type planstep struct {
 	ReferenceId   int64                `json:"referenceId"`
 	ReferenceType domain.ReferenceType `json:"referenceType"`
@@ -39,7 +44,7 @@ func AddPlan(addPlan usecases.AddPlan, log core.AppLogger) func(w http.ResponseW
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		addPlanReq := usecases.AddPlanReq{
 			Title:     data.Title,
 			TopicName: data.TopicName,
@@ -75,6 +80,12 @@ type editPlanRequest struct {
 	Steps     []planstep `json:"steps"`
 }
 
+func (req *editPlanRequest) Sanitize() {
+	req.Id = StrictSanitize(req.Id)
+	req.Title = StrictSanitize(req.Title)
+	req.TopicName = StrictSanitize(req.TopicName)
+}
+
 func EditPlan(editPlan usecases.EditPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
@@ -86,7 +97,7 @@ func EditPlan(editPlan usecases.EditPlan, log core.AppLogger) func(w http.Respon
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		id, err := core.DecodeStringToNum(data.Id)
 		if err != nil {
 			errors := make(map[string]string)
@@ -123,6 +134,10 @@ type getPlanRequest struct {
 	Id string `json:"id"`
 }
 
+func (req *getPlanRequest) Sanitize() {
+	req.Id = StrictSanitize(req.Id)
+}
+
 type getPlanTreeResponse struct {
 	Nodes []treeNode `json:"nodes"`
 }
@@ -147,6 +162,7 @@ func GetPlanTree(getPlanTree usecases.GetPlanTree, log core.AppLogger) func(w ht
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
+		data.Sanitize()
 		// TODO: Remove this
 		id, err := strconv.Atoi(data.Id)
 		if err != nil {
@@ -253,6 +269,10 @@ type getPlanListRequest struct {
 	TopicName string `json:"topicName"`
 }
 
+func (req *getPlanListRequest) Sanitize() {
+	req.TopicName = StrictSanitize(req.TopicName)
+}
+
 func GetPlanList(getPlanList usecases.GetPlanList, getUsersPlan usecases.GetUsersPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
@@ -265,6 +285,7 @@ func GetPlanList(getPlanList usecases.GetPlanList, getUsersPlan usecases.GetUser
 			return
 		}
 
+		data.Sanitize()
 		list, err := getPlanList.Do(infrastructure.NewContext(r.Context()), data.TopicName, 100)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
@@ -308,6 +329,10 @@ type removePlanReq struct {
 	Id string `json:"id"`
 }
 
+func (req *removePlanReq) Sanitize() {
+	req.Id = StrictSanitize(req.Id)
+}
+
 func RemovePlan(removePlan usecases.RemovePlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
@@ -319,7 +344,7 @@ func RemovePlan(removePlan usecases.RemovePlan, log core.AppLogger) func(w http.
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		id, err := core.DecodeStringToNum(data.Id)
 		if err != nil {
 			errors := make(map[string]string)

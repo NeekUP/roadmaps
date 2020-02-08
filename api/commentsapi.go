@@ -19,6 +19,12 @@ type addCommentRequest struct {
 	Title      string `json:"title"`
 }
 
+func (req *addCommentRequest) Sanitize() {
+	req.Title = StrictSanitize(req.Title)
+	req.Text = SanitizeText(req.Text)
+	req.EntityId = StrictSanitize(req.EntityId)
+}
+
 type addCommentResponse struct {
 	Id int64 `json:"id"`
 }
@@ -34,6 +40,8 @@ func AddComment(addComment usecases.AddComment, log core.AppLogger) func(w http.
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
+
+		data.Sanitize()
 
 		entityId, err := strconv.ParseInt(data.EntityId, 10, 64)
 		if err != nil || data.EntityType == int(domain.PlanEntity) {
@@ -69,6 +77,11 @@ type editCommentRequest struct {
 	Title string `json:"title"`
 }
 
+func (req *editCommentRequest) Sanitize() {
+	req.Title = StrictSanitize(req.Title)
+	req.Text = SanitizeText(req.Text)
+}
+
 func EditComment(editComment usecases.EditComment, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
@@ -80,7 +93,7 @@ func EditComment(editComment usecases.EditComment, log core.AppLogger) func(w ht
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		_, err = editComment.Do(infrastructure.NewContext(r.Context()), data.Id, data.Text, data.Title)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
@@ -132,6 +145,10 @@ type getCommentThreadsRequest struct {
 	Page       int    `json:"page"`
 }
 
+func (req *getCommentThreadsRequest) Sanitize() {
+	req.EntityId = StrictSanitize(req.EntityId)
+}
+
 type getCommentThreadsResponse struct {
 	HasMore  bool      `json:"hasMore"`
 	Page     int       `json:"page"`
@@ -149,7 +166,7 @@ func GetThreads(getThreads usecases.GetCommentsThreads, log core.AppLogger) func
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		entityId, err := strconv.ParseInt(data.EntityId, 10, 64)
 		if err != nil || data.EntityType == int(domain.PlanEntity) {
 			id, err := core.DecodeStringToNum(data.EntityId)
@@ -191,6 +208,10 @@ type getCommentThreadRequest struct {
 	ThreadId   int64  `json:"threadId"`
 }
 
+func (req *getCommentThreadRequest) Sanitize() {
+	req.EntityId = StrictSanitize(req.EntityId)
+}
+
 type getCommentThreadResponse struct {
 	Comments []comment `json:"comments"`
 }
@@ -206,7 +227,7 @@ func GetThread(getThread usecases.GetCommentsThread, log core.AppLogger) func(w 
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		entityId, err := strconv.ParseInt(data.EntityId, 10, 64)
 		if err != nil || data.EntityType == int(domain.PlanEntity) {
 			id, err := core.DecodeStringToNum(data.EntityId)

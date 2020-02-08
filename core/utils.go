@@ -2,9 +2,6 @@ package core
 
 import (
 	"fmt"
-	"regexp"
-
-	"github.com/microcosm-cc/bluemonday"
 )
 
 const Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -61,13 +58,3 @@ func DecodeStringToNum(s string) (int, error) {
 // 	options := blackfriday.WithExtensions(extentions)
 // 	return blackfriday.Run([]byte(text), options)
 // }
-
-func SanitizeString(text string) string {
-	return string(SanitizeInput([]byte(text)))
-}
-
-func SanitizeInput(data []byte) []byte {
-	p := bluemonday.UGCPolicy()
-	p.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
-	return p.SanitizeBytes(data)
-}
