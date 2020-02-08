@@ -15,6 +15,15 @@ type addSourceRequest struct {
 	Props      map[string]string `json:"props"`
 }
 
+func (req *addSourceRequest) Sanitize() {
+	req.Identifier = StrictSanitize(req.Identifier)
+	sanitizedProps := make(map[string]string)
+	for k, v := range req.Props {
+		sanitizedProps[StrictSanitize(k)] = StrictSanitize(v)
+	}
+	req.Props = sanitizedProps
+}
+
 type addSourceResponse struct {
 	Id         int64             `json:"id"`
 	Title      string            `json:"title"`
@@ -36,7 +45,7 @@ func AddSource(addSource usecases.AddSource, log core.AppLogger) func(w http.Res
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
-
+		data.Sanitize()
 		source, err := addSource.Do(infrastructure.NewContext(r.Context()), data.Identifier, data.Props, data.Type)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
