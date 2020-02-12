@@ -14,16 +14,18 @@ type RegisterUser interface {
 }
 
 type registerUser struct {
-	userRepo core.UserRepository
-	log      core.AppLogger
-	hash     core.HashProvider
+	userRepo     core.UserRepository
+	log          core.AppLogger
+	hash         core.HashProvider
+	emailService core.EmailSender
 }
 
-func NewRegisterUser(userRepo core.UserRepository, log core.AppLogger, hash core.HashProvider) RegisterUser {
+func NewRegisterUser(userRepo core.UserRepository, emailService core.EmailSender, hash core.HashProvider, log core.AppLogger) RegisterUser {
 	return &registerUser{
-		userRepo: userRepo,
-		log:      log,
-		hash:     hash,
+		userRepo:     userRepo,
+		emailService: emailService,
+		hash:         hash,
+		log:          log,
 	}
 }
 
@@ -39,16 +41,39 @@ func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, 
 		return nil, appErr
 	}
 
+	if ok := core.IsValidEmailHost(email); !ok {
+		err := core.NewError(core.BadEmail)
+		usecase.log.Errorw("Not valid email host",
+			"reqId", ctx.ReqId(),
+			"email", email,
+			"error", err.Error(),
+		)
+		return nil, appErr
+	}
+
+	//if ok, err := core.IsExistsEmail(email); !ok {
+	//	if err != nil {
+	//		usecase.log.Errorw("Not exists email",
+	//			"reqId", ctx.ReqId(),
+	//			"email", email,
+	//			"error", err.Error(),
+	//		)
+	//	}
+	//	return nil, core.NewError(core.BadEmail)
+	//}
+
 	hash, salt := usecase.hash.HashPassword(password)
 	user := &domain.User{
-		Id:             uuid.New().String(),
-		Name:           name,
-		NormalizedName: strings.ToUpper(name),
-		Email:          email,
-		Rights:         domain.U}
+		Id:                uuid.New().String(),
+		Name:              name,
+		NormalizedName:    strings.ToUpper(name),
+		Email:             email,
+		Rights:            domain.U,
+		Pass:              hash,
+		Salt:              salt,
+		EmailConfirmation: uuid.New().String(),
+	}
 
-	user.Pass = hash
-	user.Salt = salt
 	if _, err := usecase.userRepo.Save(user); err != nil {
 		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
@@ -56,6 +81,8 @@ func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, 
 		)
 		return nil, err
 	}
+
+	go usecase.emailService.Registration(email, user.Id, user.EmailConfirmation)
 
 	return user, nil
 }

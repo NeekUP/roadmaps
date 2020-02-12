@@ -96,9 +96,9 @@ type HashProvider interface {
 	CheckPassword(pass string, hash []byte, salt []byte) bool
 }
 
-type EmailChecker interface {
-	IsValid(email string) bool
-	IsExists(email string) (exists bool, errCode string, errMeg string)
+type EmailSender interface {
+	Send(recipient string, subject string, body string) (bool, error)
+	Registration(recipient, userId, secret string) (bool, error)
 }
 
 type TokenService interface {

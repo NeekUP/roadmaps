@@ -1,8 +1,9 @@
 package infrastructure
 
 type Config struct {
-	Db     DbConf
-	Logger struct {
+	SiteHost string `json:"siteHost"`
+	Db       DbConf
+	Logger   struct {
 		Path string `json:"path"`
 	}
 	ImgSaver struct {
@@ -21,10 +22,17 @@ type Config struct {
 	Client struct {
 		Host string `json:"host"`
 	}
+	SMTP struct {
+		SenderEmail string `json:"senderEmail"`
+		SenderName  string `json:"senderName"`
+		Host        string `json:"host"`
+		Port        int    `json:"port"`
+		Pass        string `json:"pass"`
+	}
 	//Cache struct {
 	//	Enable    bool   `json:"enable"`
-	//	Host      string `json:"host"`
-	//	Port      string `json:"port"`
+	//	host      string `json:"host"`
+	//	port      string `json:"port"`
 	//	Password  string `json:"password"`
 	//	User      string `json:"user"`
 	//	DB        string `json:"db"`
