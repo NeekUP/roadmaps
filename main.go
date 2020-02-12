@@ -84,15 +84,16 @@ func main() {
 	commentsRepo := db.NewCommentsRepository(dbConnection)
 	changesRepository := db.NewChangeLogRepository(dbConnection)
 	changeLog := infrastructure.NewChangesCollector(changesRepository, newLogger("changeLog"))
-
+	emailService := infrastructure.NewEmailSender(Cfg.SiteHost, Cfg.SMTP.SenderEmail, Cfg.SMTP.SenderName, Cfg.SMTP.Host, Cfg.SMTP.Pass, Cfg.SMTP.Port, newLogger("emails"))
 	/*
 		Usecases
 	**************************************/
 
 	// Users
-	regUser := usecases.NewRegisterUser(userRepo, newLogger("registerUser"), hashProvider)
+	regUser := usecases.NewRegisterUser(userRepo, emailService, hashProvider, newLogger("registerUser"))
 	loginUser := usecases.NewLoginUser(userRepo, newLogger("loginUser"), hashProvider, tokenService)
 	refreshToken := usecases.NewRefreshToken(userRepo, newLogger("refreshToken"), tokenService, JwtSecret)
+	emailConfirmation := usecases.NewEmailConfirmation(userRepo, newLogger("emailConfirmation"))
 
 	// Sources
 	addSource := usecases.NewAddSource(sourceRepo, newLogger("addSource"), imageManager, changeLog)
@@ -134,7 +135,7 @@ func main() {
 	apiReqUser := api.RegUser(regUser, newLogger("registerUser"), captcha)
 	apiLoginUser := api.Login(loginUser, newLogger("loginUser"), captcha)
 	apiRefreshToken := api.RefreshToken(refreshToken, newLogger("refreshToken"), captcha)
-
+	apiEmailConfirmation := api.EmailConfirmation(emailConfirmation, newLogger("emailConfirmation"))
 	// Sources
 	apiAddSource := api.AddSource(addSource, newLogger("addSource"))
 
@@ -195,6 +196,7 @@ func main() {
 		r.Post("/api/user/refresh", apiRefreshToken)
 		r.Post("/api/comment/threads", apiGetCommentsThreads)
 		r.Post("/api/comment/thread", apiGetCommentsThread)
+		r.Get("/s/confirm", apiEmailConfirmation)
 	})
 
 	// for users

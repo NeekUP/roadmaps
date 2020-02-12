@@ -24,6 +24,12 @@ type regUserReq struct {
 	Pass  string `json:"pass"`
 }
 
+type regUserResp struct {
+	Name             string `json:"name"`
+	Email            string `json:"email"`
+	NeedConfirmation bool   `json:"confirmation"`
+}
+
 func (req *regUserReq) Sanitize() {
 	req.Name = StrictSanitize(req.Name)
 	req.Email = StrictSanitize(req.Email)
@@ -47,7 +53,7 @@ func RegUser(regUsr usecases.RegisterUser, log core.AppLogger, captcha Captcha) 
 		}
 
 		data.Sanitize()
-		_, err = regUsr.Do(infrastructure.NewContext(r.Context()), data.Name, data.Email, data.Pass)
+		u, err := regUsr.Do(infrastructure.NewContext(r.Context()), data.Name, data.Email, data.Pass)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
@@ -57,7 +63,11 @@ func RegUser(regUsr usecases.RegisterUser, log core.AppLogger, captcha Captcha) 
 			return
 		}
 
-		statusResponse(w, &status{Code: 200})
+		valueResponse(w, &regUserResp{
+			Name:             u.Name,
+			Email:            u.Email,
+			NeedConfirmation: !u.EmailConfirmed,
+		})
 	}
 }
 
@@ -249,5 +259,33 @@ func RemoveUserPlan(removeUserPlan usecases.RemoveUserPlan, log core.AppLogger) 
 			return
 		}
 		valueResponse(w, &userPlanRes{Success: success})
+	}
+}
+
+func EmailConfirmation(confirmation usecases.EmailConfirmation, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := r.URL.Query()["u"]
+		if !ok || len(id[0]) < 1 {
+			log.Errorw("Parameters with user id is missing", "url", r.URL.String())
+			statusResponse(w, &status{Code: 403})
+			return
+		}
+
+		secret, ok := r.URL.Query()["s"]
+		if !ok || len(secret[0]) < 1 {
+			log.Errorw("Parameters with secret is missing", "url", r.URL.String())
+			statusResponse(w, &status{Code: 403})
+			return
+		}
+
+		ctx := infrastructure.NewContext(r.Context())
+		_, err := confirmation.Do(ctx, id[0], secret[0])
+		if err != nil {
+			log.Errorw("Bad request", "error", err.Error(), "url", r.URL.String())
+			statusResponse(w, &status{Code: 403})
+			return
+		}
+
+		http.Redirect(w, r, "/login", 302)
 	}
 }
