@@ -1,8 +1,13 @@
 package core
 
 import (
+	"context"
+	"fmt"
+	"github.com/badoux/checkmail"
+	"net"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/gosimple/slug"
@@ -14,6 +19,26 @@ func IsValidEmail(email string) bool {
 
 	re := regexp.MustCompile("^[\\w0-9.!#$%&'*+/=?^_`{|}~-]+@[\\w0-9](?:[\\w0-9-]{0,61}[\\w0-9])?(?:\\.[\\w0-9](?:[\\w0-9-]{0,61}[\\w0-9])?)*\\.[\\w]{2,15}$$")
 	return re.MatchString(email)
+}
+
+func IsValidEmailHost(email string) bool {
+	i := strings.LastIndexByte(email, '@')
+	host := email[i+1:]
+	ctx, cancel := context.WithTimeout(context.Background(), 3000*time.Millisecond)
+	defer cancel()
+	var r net.Resolver
+	_, err := r.LookupMX(ctx, host)
+	return err == nil
+}
+
+func IsExistsEmail(email string) (bool, error) {
+	err := checkmail.ValidateHost(email)
+	if smtpErr, ok := err.(checkmail.SmtpError); ok && err != nil {
+		return false, fmt.Errorf("Code: %s, Msg: %s", smtpErr.Code(), smtpErr)
+	} else if !ok {
+		return false, NewError(BadEmail)
+	}
+	return true, nil
 }
 
 func IsValidPassword(pass string) bool {

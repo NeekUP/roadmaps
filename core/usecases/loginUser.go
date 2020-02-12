@@ -41,6 +41,13 @@ func (usecase *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, 
 		return nil, "", "", core.NewError(core.AuthenticationError)
 	}
 
+	if !user.EmailConfirmed {
+		usecase.log.Infow("Email not confirmed",
+			"reqId", ctx.ReqId(),
+			"email", email)
+		return nil, "", "", core.NewError(core.AuthenticationError)
+	}
+
 	if !usecase.hash.CheckPassword(password, user.Pass, user.Salt) {
 		usecase.log.Infow("Password is wrong",
 			"reqId", ctx.ReqId(),
