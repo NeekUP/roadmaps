@@ -17,7 +17,10 @@ func NewUsersPlanRepository(db *DbConnection) core.UsersPlanRepository {
 		Db: db}
 }
 
-func (repo *usersPlanRepo) Add(userId string, topicName string, planId int) (bool, *core.AppError) {
+func (repo *usersPlanRepo) Add(ctx core.ReqContext, userId string, topicName string, planId int) (bool, *core.AppError) {
+	tr := ctx.StartTrace("UsersPlanRepository.Add")
+	defer ctx.StopTrace(tr)
+
 	dbo := &UsersPlanDBO{}
 	dbo.FromUsersPlan(&domain.UsersPlan{UserId: userId, TopicName: topicName, PlanId: planId})
 	query := `INSERT INTO usersplans (userid, topic, planid) VALUES ($1, $2, $3);`
@@ -28,7 +31,9 @@ func (repo *usersPlanRepo) Add(userId string, topicName string, planId int) (boo
 	return tag.RowsAffected() > 0, nil
 }
 
-func (repo *usersPlanRepo) Remove(userId string, planId int) (bool, *core.AppError) {
+func (repo *usersPlanRepo) Remove(ctx core.ReqContext, userId string, planId int) (bool, *core.AppError) {
+	tr := ctx.StartTrace("UsersPlanRepository.Remove")
+	defer ctx.StopTrace(tr)
 	query := `DELETE FROM usersplans WHERE userid=$1 AND planid=$2;`
 	t, err := repo.Db.Conn.Exec(context.Background(), query, userId, planId)
 	if err != nil {
@@ -37,7 +42,9 @@ func (repo *usersPlanRepo) Remove(userId string, planId int) (bool, *core.AppErr
 	return t.RowsAffected() > 0, nil
 }
 
-func (repo *usersPlanRepo) GetByTopic(userId, topicName string) *domain.UsersPlan {
+func (repo *usersPlanRepo) GetByTopic(ctx core.ReqContext, userId, topicName string) *domain.UsersPlan {
+	tr := ctx.StartTrace("UsersPlanRepository.GetByTopic")
+	defer ctx.StopTrace(tr)
 	query := `SELECT userid, topic, planid FROM usersplans WHERE userid=$1 AND topic=$2`
 	row := repo.Db.Conn.QueryRow(context.Background(), query, userId, topicName)
 	dbo, err := repo.scanRow(row)
@@ -51,7 +58,10 @@ func (repo *usersPlanRepo) GetByTopic(userId, topicName string) *domain.UsersPla
 	return dbo.ToUsersPlan()
 }
 
-func (repo *usersPlanRepo) GetByUser(userId string) []domain.UsersPlan {
+func (repo *usersPlanRepo) GetByUser(ctx core.ReqContext, userId string) []domain.UsersPlan {
+	tr := ctx.StartTrace("UsersPlanRepository.GetByUser")
+	defer ctx.StopTrace(tr)
+
 	query := `SELECT userid, topic, planid FROM usersplans WHERE userid=$1`
 	rows, err := repo.Db.Conn.Query(context.Background(), query, userId)
 	if err == sql.ErrNoRows {

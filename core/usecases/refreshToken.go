@@ -25,6 +25,8 @@ type refreshToken struct {
 }
 
 func (usecase *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error) {
+	trace := ctx.StartTrace("refreshToken")
+	defer ctx.StopTrace(trace)
 
 	appErr := usecase.validate(authToken, refreshToken, fingerprint, useragent)
 	if appErr != nil {
@@ -40,7 +42,7 @@ func (usecase *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, fi
 
 	useragent = core.UserAgentFingerprint(useragent)
 
-	auth, refresh, err := usecase.tokenService.Refresh(authToken, refreshToken, fingerprint, useragent)
+	auth, refresh, err := usecase.tokenService.Refresh(ctx, authToken, refreshToken, fingerprint, useragent)
 
 	if err != nil {
 		usecase.log.Infow("Fail to refresh token",

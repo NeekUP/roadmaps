@@ -21,6 +21,9 @@ type loginUser struct {
 }
 
 func (usecase *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, useragent string) (*domain.User, string, string, error) {
+	trace := ctx.StartTrace("loginUser")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(ctx, email, password)
 	if appErr != nil {
 		usecase.log.Errorw("Not valid request",
@@ -33,7 +36,7 @@ func (usecase *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, 
 
 	useragent = core.UserAgentFingerprint(useragent)
 
-	user := usecase.userRepo.FindByEmail(email)
+	user := usecase.userRepo.FindByEmail(ctx, email)
 	if user == nil {
 		usecase.log.Infow("User not found",
 			"reqId", ctx.ReqId(),
@@ -55,7 +58,8 @@ func (usecase *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, 
 		return nil, "", "", core.NewError(core.AuthenticationError)
 	}
 
-	aToken, rToken, err := usecase.tokenService.Create(user, fingerprint, useragent)
+	trace.Point("validation")
+	aToken, rToken, err := usecase.tokenService.Create(ctx, user, fingerprint, useragent)
 	if err != nil {
 		usecase.log.Errorw("Fail to create token pair",
 			"reqId", ctx.ReqId(),

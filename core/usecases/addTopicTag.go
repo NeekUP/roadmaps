@@ -20,6 +20,9 @@ func NewAddTopicTag(topicRepo core.TopicRepository, changeLog core.ChangeLog, lo
 }
 
 func (usecase *addTopicTag) Do(ctx core.ReqContext, tagname, topicname string) (bool, error) {
+	trace := ctx.StartTrace("addTopicTag")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(tagname, topicname)
 	if appErr != nil {
 		usecase.log.Errorw("Not valid request",
@@ -30,12 +33,12 @@ func (usecase *addTopicTag) Do(ctx core.ReqContext, tagname, topicname string) (
 	}
 
 	userId := ctx.UserId()
-	topic := usecase.topicRepo.Get(topicname)
+	topic := usecase.topicRepo.Get(ctx, topicname)
 	if topic == nil {
 		return false, core.NewError(core.NotExists)
 	}
 
-	hasChanges := usecase.topicRepo.AddTag(tagname, topicname)
+	hasChanges := usecase.topicRepo.AddTag(ctx, tagname, topicname)
 	if hasChanges {
 		changedTopic := *topic
 		copy(changedTopic.Tags, topic.Tags)

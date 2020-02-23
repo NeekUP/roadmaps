@@ -19,8 +19,11 @@ func NewRemoveUserPlan(planRepo core.UsersPlanRepository, log core.AppLogger) Re
 }
 
 func (usecase *removeUserPlan) Do(ctx core.ReqContext, planId int) (bool, error) {
+	trace := ctx.StartTrace("removeUserPlan")
+	defer ctx.StopTrace(trace)
+
 	userId := ctx.UserId()
-	if _, err := usecase.usersPlanRepo.Remove(userId, planId); err != nil {
+	if _, err := usecase.usersPlanRepo.Remove(ctx, userId, planId); err != nil {
 		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", err.Error(),

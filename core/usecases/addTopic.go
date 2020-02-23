@@ -20,6 +20,9 @@ func NewAddTopic(topicRepo core.TopicRepository, changelog core.ChangeLog, log c
 }
 
 func (usecase *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool, tags []string) (*domain.Topic, error) {
+	trace := ctx.StartTrace("addTopic")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(title, tags)
 	if appErr != nil {
 		usecase.log.Errorw("Not valid request",
@@ -32,8 +35,8 @@ func (usecase *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool,
 	userId := ctx.UserId()
 	topic := domain.NewTopic(title, desc, userId)
 	topic.IsTag = istag
-	topic.Tags = usecase.topicRepo.GetTags(tags)
-	saved, err := usecase.topicRepo.Save(topic)
+	topic.Tags = usecase.topicRepo.GetTags(ctx, tags)
+	saved, err := usecase.topicRepo.Save(ctx, topic)
 	if err != nil {
 		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
@@ -45,7 +48,7 @@ func (usecase *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool,
 	if saved {
 		if len(topic.Tags) > 0 {
 			for _, tag := range topic.Tags {
-				usecase.topicRepo.AddTag(tag.Name, topic.Name)
+				usecase.topicRepo.AddTag(ctx, tag.Name, topic.Name)
 			}
 		}
 		usecase.changeLog.Added(domain.TopicEntity, int64(topic.Id), userId)

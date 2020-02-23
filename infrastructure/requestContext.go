@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+	"github.com/NeekUP/nptrace"
 	"github.com/NeekUP/roadmaps/core"
 	"time"
 )
@@ -70,4 +71,19 @@ func (reqCtx *requestContext) UserName() string {
 		return userName
 	}
 	return ""
+}
+
+func (reqCtx *requestContext) StartTrace(name string, args ...interface{}) *nptrace.Trace {
+	tr, ok := reqCtx.Value(Tracer).(*nptrace.Task)
+	if ok {
+		return tr.Start(name, args...)
+	}
+	return nil
+}
+
+func (reqCtx *requestContext) StopTrace(t *nptrace.Trace) {
+	if t == nil {
+		return
+	}
+	reqCtx.Value(Tracer).(*nptrace.Task).Stop(t)
 }

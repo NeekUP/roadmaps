@@ -1,63 +1,64 @@
 package core
 
 import (
+	"github.com/NeekUP/nptrace"
 	"github.com/NeekUP/roadmaps/domain"
 	"time"
 )
 
 type UserRepository interface {
-	Get(id string) *domain.User
-	GetList(id []string) []domain.User
-	Save(user *domain.User) (bool, *AppError)
-	Update(user *domain.User) (bool, *AppError)
-	ExistsName(name string) (exists bool, ok bool)
-	ExistsEmail(email string) (exists bool, ok bool)
-	FindByEmail(email string) *domain.User
-	Count() (count int, ok bool)
+	Get(ctx ReqContext, id string) *domain.User
+	GetList(ctx ReqContext, id []string) []domain.User
+	Save(ctx ReqContext, user *domain.User) (bool, *AppError)
+	Update(ctx ReqContext, user *domain.User) (bool, *AppError)
+	ExistsName(ctx ReqContext, name string) (exists bool, ok bool)
+	ExistsEmail(ctx ReqContext, email string) (exists bool, ok bool)
+	FindByEmail(ctx ReqContext, email string) *domain.User
+	Count(ctx ReqContext) (count int, ok bool)
 
 	//dev
 	All() []domain.User
 }
 
 type SourceRepository interface {
-	Get(id int64) *domain.Source
-	FindByIdentifier(identifier string) *domain.Source
-	Save(source *domain.Source) (bool, *AppError)
-	Update(source *domain.Source) (bool, *AppError)
-	GetOrAddByIdentifier(source *domain.Source) *domain.Source
+	Get(ctx ReqContext, id int64) *domain.Source
+	FindByIdentifier(ctx ReqContext, identifier string) *domain.Source
+	Save(ctx ReqContext, source *domain.Source) (bool, *AppError)
+	Update(ctx ReqContext, source *domain.Source) (bool, *AppError)
+	GetOrAddByIdentifier(ctx ReqContext, source *domain.Source) *domain.Source
 
 	//dev
 	All() []domain.Source
 }
 
 type TopicRepository interface {
-	Get(name string) *domain.Topic
-	GetById(id int) *domain.Topic
-	Save(source *domain.Topic) (bool, *AppError)
-	Update(source *domain.Topic) (bool, *AppError)
-	TitleLike(str string, count int) []domain.Topic
-	AddTag(tagname, topicname string) bool
-	DeleteTag(tagname, topicname string) bool
-	GetTags(topicnames []string) []domain.TopicTag
+	Get(ctx ReqContext, name string) *domain.Topic
+	GetById(ctx ReqContext, id int) *domain.Topic
+	Save(ctx ReqContext, source *domain.Topic) (bool, *AppError)
+	Update(ctx ReqContext, source *domain.Topic) (bool, *AppError)
+	TitleLike(ctx ReqContext, str string, count int) []domain.Topic
+	AddTag(ctx ReqContext, tagname, topicname string) bool
+	DeleteTag(ctx ReqContext, tagname, topicname string) bool
+	GetTags(ctx ReqContext, topicnames []string) []domain.TopicTag
 
 	//dev
 	All() []domain.Topic
 }
 
 type PlanRepository interface {
-	SaveWithSteps(plan *domain.Plan) (bool, *AppError)
+	SaveWithSteps(ctx ReqContext, plan *domain.Plan) (bool, *AppError)
 	// should includes steps
-	Get(id int) *domain.Plan
-	GetList(id []int) []domain.Plan
-	GetPopularByTopic(topic string, count int) []domain.Plan
-	Update(plan *domain.Plan) (bool, *AppError)
-	Delete(planId int) (bool, *AppError)
+	Get(ctx ReqContext, id int) *domain.Plan
+	GetList(ctx ReqContext, id []int) []domain.Plan
+	GetPopularByTopic(ctx ReqContext, topic string, count int) []domain.Plan
+	Update(ctx ReqContext, plan *domain.Plan) (bool, *AppError)
+	Delete(ctx ReqContext, planId int) (bool, *AppError)
 	//dev
 	All() []domain.Plan
 }
 
 type StepRepository interface {
-	GetByPlan(planid int) []domain.Step
+	GetByPlan(ctx ReqContext, planid int) []domain.Step
 	//dev
 	All() []domain.Step
 }
@@ -66,19 +67,19 @@ type UsersPlanRepository interface {
 	// true - if already exists and when added new row
 	// if same topic exists for user, delete exists and add new
 	// false only if db error
-	Add(userId string, topicName string, planId int) (bool, *AppError)
-	Remove(userId string, planId int) (bool, *AppError)
-	GetByTopic(userId, topicName string) *domain.UsersPlan
-	GetByUser(userId string) []domain.UsersPlan
+	Add(ctx ReqContext, userId string, topicName string, planId int) (bool, *AppError)
+	Remove(ctx ReqContext, userId string, planId int) (bool, *AppError)
+	GetByTopic(ctx ReqContext, userId, topicName string) *domain.UsersPlan
+	GetByUser(ctx ReqContext, userId string) []domain.UsersPlan
 }
 
 type CommentsRepository interface {
-	Add(comment *domain.Comment) (bool, error)
-	Update(id int64, text, title string) (bool, error)
-	Delete(id int64) (bool, error)
-	Get(id int64) *domain.Comment
-	GetThreadList(entityType int, entityId int64, count int, page int) []domain.Comment
-	GetThread(entityType int, entityId int64, threadId int64) []domain.Comment
+	Add(ctx ReqContext, comment *domain.Comment) (bool, error)
+	Update(ctx ReqContext, id int64, text, title string) (bool, error)
+	Delete(ctx ReqContext, id int64) (bool, error)
+	Get(ctx ReqContext, id int64) *domain.Comment
+	GetThreadList(ctx ReqContext, entityType int, entityId int64, count int, page int) []domain.Comment
+	GetThread(ctx ReqContext, entityType int, entityId int64, threadId int64) []domain.Comment
 }
 
 type ChangeLogRepository interface {
@@ -102,8 +103,8 @@ type EmailSender interface {
 }
 
 type TokenService interface {
-	Create(user *domain.User, fingerprint, useragent string) (auth string, refresh string, err error)
-	Refresh(authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error)
+	Create(ctx ReqContext, user *domain.User, fingerprint, useragent string) (auth string, refresh string, err error)
+	Refresh(ctx ReqContext, authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error)
 	Validate(authToken string) (userID string, userName string, rights int, err error)
 }
 
@@ -115,6 +116,8 @@ type ReqContext interface {
 	ReqId() string
 	UserId() string
 	UserName() string
+	StartTrace(name string, args ...interface{}) *nptrace.Trace
+	StopTrace(t *nptrace.Trace)
 }
 
 type ImageManager interface {

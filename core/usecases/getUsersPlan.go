@@ -24,6 +24,9 @@ type getUsersPlan struct {
 }
 
 func (usecase *getUsersPlan) Do(ctx core.ReqContext, topicName string) (*domain.Plan, error) {
+	trace := ctx.StartTrace("getUsersPlan")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(topicName)
 	if appErr != nil {
 		usecase.log.Errorw("Not valid request",
@@ -34,12 +37,12 @@ func (usecase *getUsersPlan) Do(ctx core.ReqContext, topicName string) (*domain.
 	}
 
 	userId := ctx.UserId()
-	userPlans := usecase.usersPlans.GetByTopic(userId, topicName)
+	userPlans := usecase.usersPlans.GetByTopic(ctx, userId, topicName)
 	if userPlans == nil {
 		return nil, nil
 	}
 
-	userPlan := usecase.planRepo.Get(userPlans.PlanId)
+	userPlan := usecase.planRepo.Get(ctx, userPlans.PlanId)
 	return userPlan, nil
 }
 

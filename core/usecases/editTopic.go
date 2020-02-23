@@ -20,8 +20,11 @@ func NewEditTopic(topicRepo core.TopicRepository, changelog core.ChangeLog, log 
 }
 
 func (usecase *editTopic) Do(ctx core.ReqContext, id int, title, desc string, istag bool) (bool, error) {
+	trace := ctx.StartTrace("editTopic")
+	defer ctx.StopTrace(trace)
+
 	userId := ctx.UserId()
-	old := usecase.repo.GetById(id)
+	old := usecase.repo.GetById(ctx, id)
 	appErr := usecase.validate(id, title, old, userId)
 
 	if appErr != nil {
@@ -35,7 +38,7 @@ func (usecase *editTopic) Do(ctx core.ReqContext, id int, title, desc string, is
 	topic := domain.NewTopic(title, desc, userId)
 	topic.Id = id
 	topic.IsTag = istag
-	saved, err := usecase.repo.Update(topic)
+	saved, err := usecase.repo.Update(ctx, topic)
 	if err != nil {
 		usecase.log.Errorw("Topic not updated",
 			"ReqId", ctx.ReqId(),

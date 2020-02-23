@@ -20,6 +20,9 @@ func NewRemoveTopicTag(topicRepo core.TopicRepository, changeLog core.ChangeLog,
 }
 
 func (usecase *removeTopicTag) Do(ctx core.ReqContext, tagname, topicname string) (bool, error) {
+	trace := ctx.StartTrace("removeTopicTag")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(tagname, topicname)
 	if appErr != nil {
 		usecase.log.Errorw("Not valid request",
@@ -30,12 +33,12 @@ func (usecase *removeTopicTag) Do(ctx core.ReqContext, tagname, topicname string
 	}
 
 	userId := ctx.UserId()
-	topic := usecase.topicRepo.Get(topicname)
+	topic := usecase.topicRepo.Get(ctx, topicname)
 	if topic == nil {
 		return false, core.NewError(core.NotExists)
 	}
 
-	result := usecase.topicRepo.DeleteTag(tagname, topicname)
+	result := usecase.topicRepo.DeleteTag(ctx, tagname, topicname)
 	if result {
 		changedTopic := *topic
 		if len(topic.Tags) > 1 {

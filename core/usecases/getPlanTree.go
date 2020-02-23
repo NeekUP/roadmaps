@@ -31,6 +31,9 @@ func NewGetPlanTree(planRepo core.PlanRepository, topics core.TopicRepository, s
 }
 
 func (usecase *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, error) {
+	trace := ctx.StartTrace("getPlanTree")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(ids)
 	if appErr != nil {
 		usecase.log.Errorw("Not valid request",
@@ -41,7 +44,7 @@ func (usecase *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, erro
 	}
 
 	// get plans
-	plans := usecase.planRepo.GetList(ids)
+	plans := usecase.planRepo.GetList(ctx, ids)
 	if len(plans) == 0 {
 		return nil, core.NewError(core.InvalidRequest)
 	}
@@ -51,7 +54,7 @@ func (usecase *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, erro
 	// for every plan
 	for i := 0; i < len(plans); i++ {
 		// get topic
-		t := usecase.topicRepo.Get(plans[i].TopicName)
+		t := usecase.topicRepo.Get(ctx, plans[i].TopicName)
 		if t == nil {
 			return nil, core.NewError(core.InvalidRequest)
 		}
@@ -64,19 +67,19 @@ func (usecase *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, erro
 		}
 
 		userId := ctx.UserId()
-		userFavorits := usecase.getUserFavoritsPlans(userId)
-		plans[i].Steps = usecase.stepsRepo.GetByPlan(plans[i].Id)
+		userFavorits := usecase.getUserFavoritsPlans(ctx, userId)
+		plans[i].Steps = usecase.stepsRepo.GetByPlan(ctx, plans[i].Id)
 		// for every plan step with topic
 		for j := 0; j < len(plans[i].Steps); j++ {
 			if plans[i].Steps[j].ReferenceType == domain.TopicReference {
 				// get topic
-				t := usecase.topicRepo.GetById(int(plans[i].Steps[j].ReferenceId))
+				t := usecase.topicRepo.GetById(ctx, int(plans[i].Steps[j].ReferenceId))
 				if t != nil {
 					if userFavorits[t.Name] != 0 {
-						plan := usecase.planRepo.Get(userFavorits[t.Name])
+						plan := usecase.planRepo.Get(ctx, userFavorits[t.Name])
 						t.Plans = []domain.Plan{*plan}
 					} else {
-						t.Plans = usecase.planRepo.GetPopularByTopic(t.Name, 1)
+						t.Plans = usecase.planRepo.GetPopularByTopic(ctx, t.Name, 1)
 					}
 					chPlanId := -1
 					chPlanTitle := ""
@@ -103,7 +106,7 @@ func (usecase *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, erro
 	return result, nil
 }
 
-func (usecase *getPlanTree) getUserFavoritsPlans(userid string) map[string]int {
+func (usecase *getPlanTree) getUserFavoritsPlans(ctx core.ReqContext, userid string) map[string]int {
 	userFavorits := make(map[string]int)
 	if userid == "" {
 		return userFavorits
@@ -111,7 +114,7 @@ func (usecase *getPlanTree) getUserFavoritsPlans(userid string) map[string]int {
 
 	userId := userid
 	if userId != "" {
-		uplans := usecase.usersPlans.GetByUser(userId)
+		uplans := usecase.usersPlans.GetByUser(ctx, userId)
 		for i := 0; i < len(uplans); i++ {
 			userFavorits[uplans[i].TopicName] = uplans[i].PlanId
 		}
@@ -121,17 +124,17 @@ func (usecase *getPlanTree) getUserFavoritsPlans(userid string) map[string]int {
 }
 
 func (usecase *getPlanTree) DoByTopic(ctx core.ReqContext, name string) ([]TreeNode, error) {
-	topic := usecase.topicRepo.Get(name)
+	topic := usecase.topicRepo.Get(ctx, name)
 	if topic == nil {
 		return nil, core.NewError(core.InvalidRequest)
 	}
 
-	up := usecase.usersPlans.GetByTopic(ctx.UserId(), topic.Name)
+	up := usecase.usersPlans.GetByTopic(ctx, ctx.UserId(), topic.Name)
 	if up != nil {
-		p := usecase.planRepo.Get(up.PlanId)
+		p := usecase.planRepo.Get(ctx, up.PlanId)
 		topic.Plans = []domain.Plan{*p}
 	} else {
-		topic.Plans = usecase.planRepo.GetPopularByTopic(topic.Name, 1)
+		topic.Plans = usecase.planRepo.GetPopularByTopic(ctx, topic.Name, 1)
 	}
 
 	if len(topic.Plans) == 0 {

@@ -44,7 +44,7 @@ func (tokenService *JwtTokenService) Validate(authToken string) (userID string, 
 	}
 }
 
-func (tokenService *JwtTokenService) Create(user *domain.User, fingerprint, useragent string) (auth string, refresh string, err error) {
+func (tokenService *JwtTokenService) Create(ctx core.ReqContext, user *domain.User, fingerprint, useragent string) (auth string, refresh string, err error) {
 	rid := uuid.New().String()
 	auth, err = tokenService.newAuthToken(user, rid, tokenService.Secret)
 	refresh, err = tokenService.newRefreshToken(user, rid, tokenService.Secret)
@@ -59,13 +59,13 @@ func (tokenService *JwtTokenService) Create(user *domain.User, fingerprint, user
 		UserAgent:   useragent,
 		Date:        time.Now()})
 
-	if ok, err := tokenService.UserRepo.Update(user); !ok || err != nil {
+	if ok, err := tokenService.UserRepo.Update(ctx, user); !ok || err != nil {
 		return "", "", err
 	}
 	return
 }
 
-func (tokenService *JwtTokenService) Refresh(authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error) {
+func (tokenService *JwtTokenService) Refresh(ctx core.ReqContext, authToken, refreshToken, fingerprint, useragent string) (aToken string, rToken string, err error) {
 
 	aClaims, err := tokenService.readAToken(authToken, tokenService.Secret)
 	if err != nil {
@@ -81,7 +81,7 @@ func (tokenService *JwtTokenService) Refresh(authToken, refreshToken, fingerprin
 		return "", "", fmt.Errorf("Refresh [%s] and Auth [%s] RID not equals", rClaims.RID, aClaims.RID)
 	}
 
-	user := tokenService.UserRepo.Get(rClaims.Id)
+	user := tokenService.UserRepo.Get(ctx, rClaims.Id)
 	if user == nil {
 		return "", "", fmt.Errorf("User not found by ID [%s]", rClaims.Id)
 	}
@@ -100,11 +100,11 @@ func (tokenService *JwtTokenService) Refresh(authToken, refreshToken, fingerprin
 
 	if !validMeta || !validRID || len(user.Tokens) >= 10 {
 		user.Tokens = user.Tokens[0:0]
-		tokenService.UserRepo.Update(user)
+		tokenService.UserRepo.Update(ctx, user)
 		return "", "", fmt.Errorf("Refresh token metadata from client and from db not equals")
 	}
 
-	return tokenService.Create(user, fingerprint, useragent)
+	return tokenService.Create(ctx, user, fingerprint, useragent)
 }
 
 func (tokenService *JwtTokenService) newAuthToken(user *domain.User, rid string, secret string) (token string, err error) {
