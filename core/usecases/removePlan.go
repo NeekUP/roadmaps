@@ -20,7 +20,10 @@ func NewRemovePlan(planRepo core.PlanRepository, changeLog core.ChangeLog, log c
 }
 
 func (usecase *removePlan) Do(ctx core.ReqContext, id int) (bool, error) {
-	plan := usecase.repo.Get(id)
+	trace := ctx.StartTrace("removePlan")
+	defer ctx.StopTrace(trace)
+
+	plan := usecase.repo.Get(ctx, id)
 	userId := ctx.UserId()
 	appErr := usecase.validate(id, userId, plan)
 	if appErr != nil {
@@ -31,7 +34,7 @@ func (usecase *removePlan) Do(ctx core.ReqContext, id int) (bool, error) {
 		return false, appErr
 	}
 
-	deleted, err := usecase.repo.Delete(id)
+	deleted, err := usecase.repo.Delete(ctx, id)
 	if err != nil {
 		return false, err
 	}

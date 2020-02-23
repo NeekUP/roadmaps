@@ -36,7 +36,9 @@ func (r stepRepo) All() []domain.Step {
 	return steps
 }
 
-func (r stepRepo) GetByPlan(planid int) []domain.Step {
+func (r stepRepo) GetByPlan(ctx core.ReqContext, planid int) []domain.Step {
+	tr := ctx.StartTrace("StepRepository.GetByPlan")
+	defer ctx.StopTrace(tr)
 	query := "SELECT id, planid, referenceid, referencetype, position FROM steps WHERE planid=$1;"
 	rows, err := r.Db.Conn.Query(context.Background(), query, planid)
 	if err != nil {

@@ -22,8 +22,10 @@ func NewEmailConfirmation(userRepo core.UserRepository, log core.AppLogger) Emai
 }
 
 func (usecase *emailConfirmation) Do(ctx core.ReqContext, id, secret string) (*domain.User, error) {
+	trace := ctx.StartTrace("emailConfirmation")
+	defer ctx.StopTrace(trace)
 
-	user := usecase.userRepo.Get(id)
+	user := usecase.userRepo.Get(ctx, id)
 	if user == nil {
 		return nil, core.NewError(core.AccessDenied)
 	}
@@ -35,6 +37,6 @@ func (usecase *emailConfirmation) Do(ctx core.ReqContext, id, secret string) (*d
 	user.EmailConfirmed = true
 	user.EmailConfirmation = ""
 
-	usecase.userRepo.Update(user)
+	usecase.userRepo.Update(ctx, user)
 	return user, nil
 }

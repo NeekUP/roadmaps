@@ -23,13 +23,16 @@ func NewAddUserPlan(planRepo core.PlanRepository, userPlanRepo core.UsersPlanRep
 }
 
 func (usecase *addUserPlan) Do(ctx core.ReqContext, planId int) (bool, error) {
-	plan := usecase.planRepo.Get(planId)
+	trace := ctx.StartTrace("addUserPlan")
+	defer ctx.StopTrace(trace)
+
+	plan := usecase.planRepo.Get(ctx, planId)
 	if plan == nil {
 		return false, core.NewError(core.InvalidRequest)
 	}
 
 	userId := ctx.UserId()
-	success, err := usecase.usersPlanRepo.Add(userId, plan.TopicName, planId)
+	success, err := usecase.usersPlanRepo.Add(ctx, userId, plan.TopicName, planId)
 	if err != nil {
 		usecase.log.Errorw("Invalid request",
 			"ReqId", ctx.ReqId(),

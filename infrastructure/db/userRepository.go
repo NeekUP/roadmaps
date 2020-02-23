@@ -20,8 +20,10 @@ func NewUserRepository(db *DbConnection) core.UserRepository {
 	return &userRepository{Db: db}
 }
 
-func (r *userRepository) Get(id string) *domain.User {
+func (r *userRepository) Get(ctx core.ReqContext, id string) *domain.User {
 	query := "SELECT id, name, normalizedname, email, emailconfirmed, emailconfirmation, img, tokens, rights, password, salt FROM users where id=$1"
+	tr := ctx.StartTrace("UserRepository.Get")
+	defer ctx.StopTrace(tr)
 	row := r.Db.Conn.QueryRow(context.Background(), query, id)
 	dbo, err := r.scanRow(row)
 	if err == sql.ErrNoRows {
@@ -34,7 +36,7 @@ func (r *userRepository) Get(id string) *domain.User {
 	return dbo.ToUser()
 }
 
-func (r *userRepository) Save(user *domain.User) (bool, *core.AppError) {
+func (r *userRepository) Save(ctx core.ReqContext, user *domain.User) (bool, *core.AppError) {
 	dbo := UserDBO{}
 	dbo.FromUser(user)
 	dbo.Id = uuid.New().String()
@@ -43,6 +45,9 @@ func (r *userRepository) Save(user *domain.User) (bool, *core.AppError) {
 		"VALUES " +
 		"	($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) " +
 		"RETURNING id;"
+
+	tr := ctx.StartTrace("UserRepository.Save")
+	defer ctx.StopTrace(tr)
 
 	row := r.Db.Conn.QueryRow(context.Background(), query, dbo.Id, dbo.Name, dbo.NormalizedName, dbo.Email, dbo.EmailConfirmed, dbo.EmailConfirmation, dbo.Img, dbo.Tokens, dbo.Rights, dbo.Pass, dbo.Salt)
 	err := row.Scan(&user.Id)
@@ -53,12 +58,15 @@ func (r *userRepository) Save(user *domain.User) (bool, *core.AppError) {
 	return true, nil
 }
 
-func (r *userRepository) Update(user *domain.User) (bool, *core.AppError) {
+func (r *userRepository) Update(ctx core.ReqContext, user *domain.User) (bool, *core.AppError) {
 	dbo := &UserDBO{}
 	dbo.FromUser(user)
 	query := "UPDATE users " +
 		"SET name=$1, normalizedname=$2, email=$3, emailconfirmed=$4, emailconfirmation=$5, img=$6, tokens=$7, rights=$8, password=$9, salt=$10 " +
 		"WHERE id = $11;"
+
+	tr := ctx.StartTrace("UserRepository.Update")
+	defer ctx.StopTrace(tr)
 
 	tag, err := r.Db.Conn.Exec(context.Background(), query, dbo.Name, dbo.NormalizedName, dbo.Email, dbo.EmailConfirmed, dbo.EmailConfirmation, dbo.Img, dbo.Tokens, dbo.Rights, dbo.Pass, dbo.Salt, dbo.Id)
 	if err != nil {
@@ -68,8 +76,11 @@ func (r *userRepository) Update(user *domain.User) (bool, *core.AppError) {
 	return tag.RowsAffected() > 0, nil
 }
 
-func (r *userRepository) ExistsName(name string) (exists bool, ok bool) {
+func (r *userRepository) ExistsName(ctx core.ReqContext, name string) (exists bool, ok bool) {
 	query := "select exists(select 1 from users where normalizedname=$1)"
+	tr := ctx.StartTrace("UserRepository.ExistsName")
+	defer ctx.StopTrace(tr)
+
 	err := r.Db.Conn.QueryRow(context.Background(), query, name).Scan(&exists)
 	if err == sql.ErrNoRows {
 		return false, true
@@ -81,8 +92,11 @@ func (r *userRepository) ExistsName(name string) (exists bool, ok bool) {
 	return exists, true
 }
 
-func (r *userRepository) ExistsEmail(email string) (exists bool, ok bool) {
+func (r *userRepository) ExistsEmail(ctx core.ReqContext, email string) (exists bool, ok bool) {
 	query := "select exists(select 1 from users where email=$1)"
+	tr := ctx.StartTrace("UserRepository.ExistsEmail")
+	defer ctx.StopTrace(tr)
+
 	err := r.Db.Conn.QueryRow(context.Background(), query, email).Scan(&exists)
 	if err == sql.ErrNoRows {
 		return false, true
@@ -94,9 +108,12 @@ func (r *userRepository) ExistsEmail(email string) (exists bool, ok bool) {
 	return exists, true
 }
 
-func (r *userRepository) FindByEmail(email string) *domain.User {
+func (r *userRepository) FindByEmail(ctx core.ReqContext, email string) *domain.User {
 	query := "SELECT id, name, normalizedname, email, emailconfirmed, emailconfirmation, img, tokens, rights, password, salt " +
 		"FROM users where email=$1"
+
+	tr := ctx.StartTrace("UserRepository.FindByEmail")
+	defer ctx.StopTrace(tr)
 
 	row := r.Db.Conn.QueryRow(context.Background(), query, email)
 	dbo, err := r.scanRow(row)
@@ -110,8 +127,10 @@ func (r *userRepository) FindByEmail(email string) *domain.User {
 	return dbo.ToUser()
 }
 
-func (r *userRepository) Count() (count int, ok bool) {
+func (r *userRepository) Count(ctx core.ReqContext) (count int, ok bool) {
 	query := "select count(id) from users;"
+	tr := ctx.StartTrace("UserRepository.Count")
+	defer ctx.StopTrace(tr)
 	err := r.Db.Conn.QueryRow(context.Background(), query).Scan(&count)
 	if err != nil {
 		r.Db.LogError(err, query)
@@ -123,6 +142,7 @@ func (r *userRepository) Count() (count int, ok bool) {
 func (r *userRepository) All() []domain.User {
 	query := "select id, name, normalizedname, email, emailconfirmed, emailconfirmation, img, tokens, rights, password, salt " +
 		"FROM users"
+
 	rows, err := r.Db.Conn.Query(context.Background(), query)
 	if err != nil {
 		r.Db.LogError(err, query)
@@ -145,9 +165,12 @@ func (r *userRepository) All() []domain.User {
 	return users
 }
 
-func (r *userRepository) GetList(id []string) []domain.User {
+func (r *userRepository) GetList(ctx core.ReqContext, id []string) []domain.User {
 	query := "select id, name, normalizedname, email, emailconfirmed, emailconfirmation, img, tokens, rights, password, salt " +
 		"FROM users WHERE Id IN ('%s')"
+	tr := ctx.StartTrace("UserRepository.GetList")
+	defer ctx.StopTrace(tr)
+
 	query = fmt.Sprintf(query, strings.Trim(strings.Join(strings.Fields(fmt.Sprint(id)), "','"), "[]"))
 	rows, err := r.Db.Conn.Query(context.Background(), query)
 	if err != nil {

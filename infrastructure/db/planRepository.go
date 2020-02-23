@@ -19,8 +19,9 @@ func NewPlansRepository(db *DbConnection) core.PlanRepository {
 		Db: db}
 }
 
-func (r *planRepo) SaveWithSteps(plan *domain.Plan) (bool, *core.AppError) {
-
+func (r *planRepo) SaveWithSteps(ctx core.ReqContext, plan *domain.Plan) (bool, *core.AppError) {
+	tr := ctx.StartTrace("PlanRepository.SaveWithSteps")
+	defer ctx.StopTrace(tr)
 	if len(plan.Steps) == 0 {
 		return false, core.NewError(core.InvalidRequest)
 	}
@@ -30,7 +31,9 @@ func (r *planRepo) SaveWithSteps(plan *domain.Plan) (bool, *core.AppError) {
 		DeferrableMode: pgx.NotDeferrable,
 	})
 	insertPlanQuery := "INSERT INTO plans(title, topic, owner, points) VALUES ($1, $2, $3, $4) RETURNING id;"
+
 	err = r.Db.Conn.QueryRow(context.Background(), insertPlanQuery, plan.Title, plan.TopicName, plan.OwnerId, plan.Points).Scan(&plan.Id)
+	tr.Point("insert plan")
 	if err != nil {
 		if e := tx.Rollback(context.Background()); e != nil {
 			r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
@@ -42,6 +45,7 @@ func (r *planRepo) SaveWithSteps(plan *domain.Plan) (bool, *core.AppError) {
 		plan.Steps[i].PlanId = plan.Id
 		query := "INSERT INTO steps( planid, referenceid, referencetype, position) VALUES ($1, $2, $3, $4) RETURNING id;"
 		err := r.Db.Conn.QueryRow(context.Background(), query, plan.Steps[i].PlanId, plan.Steps[i].ReferenceId, plan.Steps[i].ReferenceType, plan.Steps[i].Position).Scan(&plan.Steps[i].Id)
+		tr.Point("insert steps")
 		if err != nil {
 			if e := tx.Rollback(context.Background()); e != nil {
 				r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
@@ -58,13 +62,17 @@ func (r *planRepo) SaveWithSteps(plan *domain.Plan) (bool, *core.AppError) {
 	return true, nil
 }
 
-func (r *planRepo) Update(plan *domain.Plan) (bool, *core.AppError) {
+func (r *planRepo) Update(ctx core.ReqContext, plan *domain.Plan) (bool, *core.AppError) {
+	tr := ctx.StartTrace("PlanRepository.Update")
+	defer ctx.StopTrace(tr)
+
 	if len(plan.Steps) == 0 {
 		return false, core.NewError(core.InvalidRequest)
 	}
 
 	updatePlanQuery := `UPDATE plans SET title = $1, topic = $2 WHERE id = $3`
 	_, err := r.Db.Conn.Exec(context.Background(), updatePlanQuery, plan.Title, plan.TopicName, plan.Id)
+	tr.Point("update plans")
 	if err != nil {
 		return false, r.Db.LogError(err, updatePlanQuery)
 	}
@@ -76,6 +84,7 @@ func (r *planRepo) Update(plan *domain.Plan) (bool, *core.AppError) {
 	})
 	deleteStepsQuery := `DELETE FROM steps WHERE planid = $1`
 	_, err = r.Db.Conn.Exec(context.Background(), deleteStepsQuery, plan.Id)
+	tr.Point("delete steps")
 	if err != nil {
 		if e := tx.Rollback(context.Background()); e != nil {
 			r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
@@ -87,6 +96,7 @@ func (r *planRepo) Update(plan *domain.Plan) (bool, *core.AppError) {
 		plan.Steps[i].PlanId = plan.Id
 		query := "INSERT INTO steps( planid, referenceid, referencetype, position) VALUES ($1, $2, $3, $4) RETURNING id;"
 		err := r.Db.Conn.QueryRow(context.Background(), query, plan.Steps[i].PlanId, plan.Steps[i].ReferenceId, plan.Steps[i].ReferenceType, plan.Steps[i].Position).Scan(&plan.Steps[i].Id)
+		tr.Point("insert steps")
 		if err != nil {
 			if e := tx.Rollback(context.Background()); e != nil {
 				r.Db.Log.Errorw("Tx not rolled back", "err", e.Error())
@@ -104,7 +114,10 @@ func (r *planRepo) Update(plan *domain.Plan) (bool, *core.AppError) {
 	return true, nil
 }
 
-func (r *planRepo) Delete(planId int) (bool, *core.AppError) {
+func (r *planRepo) Delete(ctx core.ReqContext, planId int) (bool, *core.AppError) {
+	tr := ctx.StartTrace("PlanRepository.Delete")
+	defer ctx.StopTrace(tr)
+
 	deletePlanQuery := `DELETE FROM plans WHERE id = $1`
 	_, err := r.Db.Conn.Exec(context.Background(), deletePlanQuery, planId)
 	if err != nil {
@@ -118,7 +131,10 @@ func (r *planRepo) Delete(planId int) (bool, *core.AppError) {
 	return true, nil
 }
 
-func (r *planRepo) Get(id int) *domain.Plan {
+func (r *planRepo) Get(ctx core.ReqContext, id int) *domain.Plan {
+	tr := ctx.StartTrace("PlanRepository.Get")
+	defer ctx.StopTrace(tr)
+
 	query := `SELECT id, title, topic, owner, points FROM plans WHERE id=$1;`
 	row := r.Db.Conn.QueryRow(context.Background(), query, id)
 	p, err := r.scanRow(row)
@@ -132,7 +148,10 @@ func (r *planRepo) Get(id int) *domain.Plan {
 	return p.ToPlan()
 }
 
-func (r *planRepo) GetList(id []int) []domain.Plan {
+func (r *planRepo) GetList(ctx core.ReqContext, id []int) []domain.Plan {
+	tr := ctx.StartTrace("PlanRepository.GetList")
+	defer ctx.StopTrace(tr)
+
 	query := "SELECT id, title, topic, owner, points FROM plans WHERE id IN (%s);"
 	query = fmt.Sprintf(query, strings.Trim(strings.Join(strings.Fields(fmt.Sprint(id)), ","), "[]"))
 	rows, err := r.Db.Conn.Query(context.Background(), query)
@@ -144,7 +163,10 @@ func (r *planRepo) GetList(id []int) []domain.Plan {
 	return r.scanRows(rows)
 }
 
-func (r *planRepo) GetPopularByTopic(topic string, count int) []domain.Plan {
+func (r *planRepo) GetPopularByTopic(ctx core.ReqContext, topic string, count int) []domain.Plan {
+	tr := ctx.StartTrace("PlanRepository.GetPopularByTopic")
+	defer ctx.StopTrace(tr)
+
 	query := "SELECT id, title, topic, owner, points FROM plans WHERE topic=$1 ORDER BY points DESC LIMIT $2"
 	rows, err := r.Db.Conn.Query(context.Background(), query, topic, count)
 	if err != nil {
