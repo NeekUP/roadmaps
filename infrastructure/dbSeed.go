@@ -30,7 +30,8 @@ func (seed *dbSeedProd) Seed() {
 }
 
 func (seed *dbSeedProd) seedUsers() {
-	if count, ok := seed.UserRepo.Count(); ok && count == 0 {
+	ctx := NewContext(context.Background())
+	if count, ok := seed.UserRepo.Count(ctx); ok && count == 0 {
 		for _, e := range os.Environ() {
 			pair := strings.SplitN(e, "=", 2)
 			fmt.Println(pair[0])
@@ -40,7 +41,7 @@ func (seed *dbSeedProd) seedUsers() {
 			email := os.Getenv(fmt.Sprintf("adminemail%d", i))
 			pass := os.Getenv(fmt.Sprintf("adminpass%d", i))
 
-			exists, ok := seed.UserRepo.ExistsEmail(email)
+			exists, ok := seed.UserRepo.ExistsEmail(ctx, email)
 			if !exists && ok && name != "" && email != "" && pass != "" {
 				seed.RegUser.Do(NewContext(context.Background()), name, email, pass)
 			}

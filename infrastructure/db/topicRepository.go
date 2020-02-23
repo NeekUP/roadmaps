@@ -16,7 +16,9 @@ func NewTopicRepository(db *DbConnection) core.TopicRepository {
 	return &topicRepo{Db: db}
 }
 
-func (repo *topicRepo) Get(name string) *domain.Topic {
+func (repo *topicRepo) Get(ctx core.ReqContext, name string) *domain.Topic {
+	tr := ctx.StartTrace("TopicRepository.Get")
+	defer ctx.StopTrace(tr)
 	row := repo.Db.Conn.QueryRow(context.Background(), "SELECT id, name, title, description, creator, tags, istag FROM topics WHERE name=$1", name)
 	dbo, err := repo.scanRow(row)
 	if err == sql.ErrNoRows {
@@ -26,11 +28,13 @@ func (repo *topicRepo) Get(name string) *domain.Topic {
 		repo.Db.Log.Errorw("", "error", err.Error())
 	}
 
-	topic := dbo.ToTopic(repo.GetTags(dbo.Tags))
+	topic := dbo.ToTopic(repo.GetTags(ctx, dbo.Tags))
 	return topic
 }
 
-func (repo *topicRepo) GetById(id int) *domain.Topic {
+func (repo *topicRepo) GetById(ctx core.ReqContext, id int) *domain.Topic {
+	tr := ctx.StartTrace("TopicRepository.GetById")
+	defer ctx.StopTrace(tr)
 	row := repo.Db.Conn.QueryRow(context.Background(), "SELECT id, name, title, description, creator, tags, istag FROM topics WHERE id=$1", id)
 	dbo, err := repo.scanRow(row)
 
@@ -42,11 +46,13 @@ func (repo *topicRepo) GetById(id int) *domain.Topic {
 		return nil
 	}
 
-	topic := dbo.ToTopic(repo.GetTags(dbo.Tags))
+	topic := dbo.ToTopic(repo.GetTags(ctx, dbo.Tags))
 	return topic
 }
 
-func (repo *topicRepo) Save(topic *domain.Topic) (bool, *core.AppError) {
+func (repo *topicRepo) Save(ctx core.ReqContext, topic *domain.Topic) (bool, *core.AppError) {
+	tr := ctx.StartTrace("TopicRepository.Save")
+	defer ctx.StopTrace(tr)
 	dbo := TopicDBO{}
 	dbo.FromTopic(topic)
 	query := "INSERT INTO topics( name, title, description, creator, tags, istag) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;"
@@ -58,16 +64,18 @@ func (repo *topicRepo) Save(topic *domain.Topic) (bool, *core.AppError) {
 
 	if len(topic.Tags) > 0 {
 		for _, tag := range topic.Tags {
-			repo.AddTag(tag.Name, topic.Name)
+			repo.AddTag(ctx, tag.Name, topic.Name)
 		}
 	}
 	return true, nil
 }
 
-func (repo *topicRepo) Update(topic *domain.Topic) (bool, *core.AppError) {
+func (repo *topicRepo) Update(ctx core.ReqContext, topic *domain.Topic) (bool, *core.AppError) {
+	tr := ctx.StartTrace("TopicRepository.Update")
+	defer ctx.StopTrace(tr)
 	dbo := TopicDBO{}
 	dbo.FromTopic(topic)
-	oldTopic := repo.GetById(topic.Id)
+	oldTopic := repo.GetById(ctx, topic.Id)
 	if oldTopic == nil {
 		return false, core.NewError(core.InternalError)
 	}
@@ -131,7 +139,9 @@ func (repo *topicRepo) All() []domain.Topic {
 	return topics
 }
 
-func (repo *topicRepo) TitleLike(str string, count int) []domain.Topic {
+func (repo *topicRepo) TitleLike(ctx core.ReqContext, str string, count int) []domain.Topic {
+	tr := ctx.StartTrace("TopicRepository.TitleLike")
+	defer ctx.StopTrace(tr)
 	query := "SELECT id, name, title, description, creator, tags , istag FROM topics WHERE title ILIKE $1 LIMIT $2"
 	rows, err := repo.Db.Conn.Query(context.Background(), query, "%"+str+"%", count)
 	if err != nil {
@@ -145,14 +155,17 @@ func (repo *topicRepo) TitleLike(str string, count int) []domain.Topic {
 			repo.Db.LogError(err, query)
 			return []domain.Topic{}
 		}
-		topic := *dbo.ToTopic(repo.GetTags(dbo.Tags))
+		topic := *dbo.ToTopic(repo.GetTags(ctx, dbo.Tags))
 		topics = append(topics, topic)
 	}
 
 	return topics
 }
 
-func (repo *topicRepo) GetTags(topicNames []string) []domain.TopicTag {
+func (repo *topicRepo) GetTags(ctx core.ReqContext, topicNames []string) []domain.TopicTag {
+	tr := ctx.StartTrace("TopicRepository.GetTags")
+	defer ctx.StopTrace(tr)
+
 	if topicNames == nil || len(topicNames) == 0 {
 		return []domain.TopicTag{}
 	}
@@ -178,7 +191,10 @@ func (repo *topicRepo) GetTags(topicNames []string) []domain.TopicTag {
 	return tags
 }
 
-func (repo *topicRepo) AddTag(tagname, topicname string) bool {
+func (repo *topicRepo) AddTag(ctx core.ReqContext, tagname, topicname string) bool {
+	tr := ctx.StartTrace("TopicRepository.AddTag")
+	defer ctx.StopTrace(tr)
+
 	query := `UPDATE topics 
 SET tags = array_cat(tags, $1) 
 WHERE name=$2 
@@ -192,7 +208,10 @@ WHERE name=$2
 	return t.RowsAffected() > 0
 }
 
-func (repo *topicRepo) DeleteTag(tagname, topicname string) bool {
+func (repo *topicRepo) DeleteTag(ctx core.ReqContext, tagname, topicname string) bool {
+	tr := ctx.StartTrace("TopicRepository.DeleteTag")
+	defer ctx.StopTrace(tr)
+
 	query := `UPDATE topics SET tags = array_remove(tags, $1) WHERE name=$2;`
 	_, err := repo.Db.Conn.Exec(context.Background(), query, tagname, topicname)
 	if err != nil {

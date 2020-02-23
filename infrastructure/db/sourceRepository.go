@@ -17,7 +17,9 @@ func NewSourceRepository(db *DbConnection) core.SourceRepository {
 		Db: db}
 }
 
-func (repo *sourceRepo) Get(id int64) *domain.Source {
+func (repo *sourceRepo) Get(ctx core.ReqContext, id int64) *domain.Source {
+	tr := ctx.StartTrace("SourceRepository.Get")
+	defer ctx.StopTrace(tr)
 	query := "SELECT id, title, identifier, normalizedidentifier, type, properties, img, description FROM sources WHERE id=$1;"
 	row := repo.Db.Conn.QueryRow(context.Background(), query, id)
 	dbo, err := repo.scanRow(row)
@@ -31,7 +33,9 @@ func (repo *sourceRepo) Get(id int64) *domain.Source {
 	return dbo.ToSource()
 }
 
-func (repo *sourceRepo) FindByIdentifier(nIdentifier string) *domain.Source {
+func (repo *sourceRepo) FindByIdentifier(ctx core.ReqContext, nIdentifier string) *domain.Source {
+	tr := ctx.StartTrace("SourceRepository.FindByIdentifier")
+	defer ctx.StopTrace(tr)
 	query := "SELECT id, title, identifier, normalizedidentifier, type, properties, img, description FROM sources WHERE normalizedidentifier=$1;"
 	row := repo.Db.Conn.QueryRow(context.Background(), query, nIdentifier)
 	dbo, err := repo.scanRow(row)
@@ -46,7 +50,9 @@ func (repo *sourceRepo) FindByIdentifier(nIdentifier string) *domain.Source {
 	return dbo.ToSource()
 }
 
-func (repo *sourceRepo) Save(source *domain.Source) (bool, *core.AppError) {
+func (repo *sourceRepo) Save(ctx core.ReqContext, source *domain.Source) (bool, *core.AppError) {
+	tr := ctx.StartTrace("SourceRepository.Save")
+	defer ctx.StopTrace(tr)
 	dbo := &SourceDBO{}
 	dbo.FromSource(source)
 	query := `INSERT INTO sources(
@@ -60,7 +66,9 @@ func (repo *sourceRepo) Save(source *domain.Source) (bool, *core.AppError) {
 	return true, nil
 }
 
-func (repo *sourceRepo) Update(source *domain.Source) (bool, *core.AppError) {
+func (repo *sourceRepo) Update(ctx core.ReqContext, source *domain.Source) (bool, *core.AppError) {
+	tr := ctx.StartTrace("SourceRepository.Update")
+	defer ctx.StopTrace(tr)
 	dbo := &SourceDBO{}
 	dbo.FromSource(source)
 	query := `UPDATE sources
@@ -73,7 +81,9 @@ func (repo *sourceRepo) Update(source *domain.Source) (bool, *core.AppError) {
 	return tag.RowsAffected() > 0, nil
 }
 
-func (repo *sourceRepo) GetOrAddByIdentifier(source *domain.Source) *domain.Source {
+func (repo *sourceRepo) GetOrAddByIdentifier(ctx core.ReqContext, source *domain.Source) *domain.Source {
+	tr := ctx.StartTrace("SourceRepository.GetOrAddByIdentifier")
+	defer ctx.StopTrace(tr)
 	dbo := &SourceDBO{}
 	dbo.FromSource(source)
 	query := `
@@ -87,7 +97,7 @@ ON CONFLICT (normalizedidentifier) DO NOTHING;`
 		repo.Db.LogError(err, query)
 		return nil
 	}
-	return repo.FindByIdentifier(dbo.NormalizedIdentifier)
+	return repo.FindByIdentifier(ctx, dbo.NormalizedIdentifier)
 }
 
 func (repo *sourceRepo) All() []domain.Source {

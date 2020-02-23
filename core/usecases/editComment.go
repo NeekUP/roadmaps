@@ -22,6 +22,9 @@ func NewEditComment(commentsRepo core.CommentsRepository, changeLog core.ChangeL
 }
 
 func (usecase *editComment) Do(ctx core.ReqContext, id int64, text string, title string) (bool, error) {
+	trace := ctx.StartTrace("editComment")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(id, text, title)
 	if appErr != nil {
 		usecase.log.Errorw("Invalid request",
@@ -32,7 +35,7 @@ func (usecase *editComment) Do(ctx core.ReqContext, id int64, text string, title
 	}
 
 	userId := ctx.UserId()
-	comment := usecase.commentsRepo.Get(id)
+	comment := usecase.commentsRepo.Get(ctx, id)
 	if comment == nil || comment.Deleted {
 		usecase.log.Errorw("Invalid request",
 			"ReqId", ctx.ReqId(),
@@ -51,7 +54,7 @@ func (usecase *editComment) Do(ctx core.ReqContext, id int64, text string, title
 		return false, core.NewError(core.AccessDenied)
 	}
 
-	if ok, err := usecase.commentsRepo.Update(id, text, title); !ok {
+	if ok, err := usecase.commentsRepo.Update(ctx, id, text, title); !ok {
 		if err != nil {
 			usecase.log.Errorw("Invalid request",
 				"ReqId", ctx.ReqId(),

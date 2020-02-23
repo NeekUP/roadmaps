@@ -31,7 +31,8 @@ func NewAddPlan(planRepo core.PlanRepository, changeLog core.ChangeLog, log core
 }
 
 func (usecase *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, error) {
-
+	trace := ctx.StartTrace("addPlan")
+	defer ctx.StopTrace(trace)
 	appErr := usecase.validate(req)
 	if appErr != nil {
 		usecase.log.Errorw("Invalid request",
@@ -61,7 +62,7 @@ func (usecase *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, e
 		Steps:     steps,
 	}
 
-	if ok, err := usecase.planRepo.SaveWithSteps(plan); !ok {
+	if ok, err := usecase.planRepo.SaveWithSteps(ctx, plan); !ok {
 		if err != nil {
 			usecase.log.Errorw("Invalid request",
 				"ReqId", ctx.ReqId(),
