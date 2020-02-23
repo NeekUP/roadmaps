@@ -22,9 +22,11 @@ func NewRemoveComments(commentsRepo core.CommentsRepository, changeLog core.Chan
 }
 
 func (usecase removeComment) Do(ctx core.ReqContext, id int64) (bool, error) {
+	trace := ctx.StartTrace("removeComment")
+	defer ctx.StopTrace(trace)
 
 	userId := ctx.UserId()
-	comment := usecase.commentsRepo.Get(id)
+	comment := usecase.commentsRepo.Get(ctx, id)
 	if comment == nil || comment.UserId != userId {
 		usecase.log.Errorw("Invalid request",
 			"ReqId", ctx.ReqId(),
@@ -34,7 +36,7 @@ func (usecase removeComment) Do(ctx core.ReqContext, id int64) (bool, error) {
 		return false, core.NewError(core.AccessDenied)
 	}
 
-	ok, err := usecase.commentsRepo.Delete(id)
+	ok, err := usecase.commentsRepo.Delete(ctx, id)
 	if ok {
 		changedComment := *comment
 		changedComment.Deleted = true

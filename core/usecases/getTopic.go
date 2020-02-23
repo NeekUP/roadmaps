@@ -22,6 +22,9 @@ func NewGetTopic(topicRepo core.TopicRepository, planRepo core.PlanRepository, u
 }
 
 func (usecase *getTopic) Do(ctx core.ReqContext, name string, planCount int) (*domain.Topic, error) {
+	trace := ctx.StartTrace("getTopic")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(name, planCount)
 	if appErr != nil {
 		usecase.log.Errorw("Not valid request",
@@ -31,7 +34,7 @@ func (usecase *getTopic) Do(ctx core.ReqContext, name string, planCount int) (*d
 		return nil, appErr
 	}
 
-	topic := usecase.topicRepo.Get(name)
+	topic := usecase.topicRepo.Get(ctx, name)
 	if topic == nil {
 		return nil, core.NewError(core.NotExists)
 	}

@@ -2,8 +2,10 @@ package main
 
 import "C"
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/NeekUP/nptrace"
 	"github.com/NeekUP/roadmaps/api"
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/core/usecases"
@@ -16,6 +18,8 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -61,10 +65,15 @@ func main() {
 
 	r.Use(cors.Handler)
 	r.Use(infrastructure.RequestID)
+
+	tracer := initTracer()
+	if tracer != nil {
+		r.Use(traceMiddleware(tracer))
+	}
+
 	r.Use(middleware.RealIP)
 	r.Use(httpLogger(newLogger("http")))
 	r.Use(recoverer(newLogger("recoverer")))
-	r.Use(contentTypeMiddleware)
 
 	/*
 		Infrastructure initialization
@@ -257,6 +266,31 @@ func main() {
 	log.Fatal(srv.ListenAndServe())
 }
 
+func initTracer() *nptrace.NPTrace {
+	filename := fmt.Sprintf("%s/trace.log", Cfg.Logger.Path)
+	outCfg := nptrace.NewJsonEncoderConfig(time.StampMicro, func(d time.Duration) []byte {
+		return []byte(strconv.FormatInt(d.Nanoseconds()/1000, 10))
+	})
+	cfg := nptrace.NewJsonEncoder(outCfg)
+	var traceFile *os.File
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		traceFile, err = os.Create(filename)
+		if err != nil {
+			AppLog.Errorw("Fail to create file for performance tracing.", "file", filename, "err", err.Error())
+		}
+	} else {
+		traceFile, err = os.OpenFile(filename, os.O_WRONLY, 0666)
+		if err != nil {
+			AppLog.Errorw("Fail to open file for performance tracing.", "file", filename, "err", err.Error())
+		}
+	}
+	if traceFile != nil {
+		return nptrace.NewTracer(cfg, traceFile)
+	}
+
+	return nil
+}
+
 func initConfig(dat []byte) *infrastructure.Config {
 	var cfg infrastructure.Config
 	err := json.Unmarshal(dat, &cfg)
@@ -341,11 +375,18 @@ func recoverer(l core.AppLogger) func(next http.Handler) http.Handler {
 	}
 }
 
-func contentTypeMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//w.Header().Add("Content-Type", "application/json")
-		next.ServeHTTP(w, r)
-	})
+func traceMiddleware(npTrace *nptrace.NPTrace) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			tracer := npTrace.New(ctx.Value(infrastructure.ReqId).(string), strings.Trim(r.URL.Path, "/"))
+			defer npTrace.Close(tracer)
+
+			ctx = context.WithValue(ctx, infrastructure.Tracer, tracer)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+		return http.HandlerFunc(fn)
+	}
 }
 
 func panicError(err error) {

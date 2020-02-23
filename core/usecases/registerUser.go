@@ -30,6 +30,8 @@ func NewRegisterUser(userRepo core.UserRepository, emailService core.EmailSender
 }
 
 func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, password string) (*domain.User, error) {
+	trace := ctx.StartTrace("registerUser")
+	defer ctx.StopTrace(trace)
 
 	appErr := usecase.validate(ctx, name, email, password)
 	if appErr != nil {
@@ -74,7 +76,7 @@ func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, 
 		EmailConfirmation: uuid.New().String(),
 	}
 
-	if _, err := usecase.userRepo.Save(user); err != nil {
+	if _, err := usecase.userRepo.Save(ctx, user); err != nil {
 		usecase.log.Errorw("Not valid request",
 			"ReqId", ctx.ReqId(),
 			"Error", err.Error(),
@@ -103,11 +105,11 @@ func (usecase *registerUser) validate(ctx core.ReqContext, name string, email st
 		errors["pass"] = core.InvalidFormat.String()
 	}
 
-	if exists, ok := usecase.userRepo.ExistsName(name); ok && exists {
+	if exists, ok := usecase.userRepo.ExistsName(ctx, name); ok && exists {
 		errors["name"] = core.AlreadyExists.String()
 	}
 
-	if exists, ok := usecase.userRepo.ExistsEmail(email); ok && exists {
+	if exists, ok := usecase.userRepo.ExistsEmail(ctx, email); ok && exists {
 		errors["email"] = core.AlreadyExists.String()
 	}
 

@@ -17,11 +17,13 @@ func NewCommentsRepository(db *DbConnection) core.CommentsRepository {
 	return &commentsRepo{Db: db}
 }
 
-func (r *commentsRepo) Add(comment *domain.Comment) (bool, error) {
+func (r *commentsRepo) Add(ctx core.ReqContext, comment *domain.Comment) (bool, error) {
 	dbo := &CommentDBO{}
 	dbo.FromComment(comment)
 	query := `INSERT INTO comments (entitytype, entityid, date, parentid, threadid, userid, text, title, deleted)
 		VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id;`
+	tr := ctx.StartTrace("CommentsRepository.Add")
+	defer ctx.StopTrace(tr)
 	row := r.Db.Conn.QueryRow(context.Background(), query, dbo.EntityType, dbo.EntityId, dbo.Date, dbo.ParentId, dbo.ThreadId, dbo.UserId, dbo.Text, dbo.Title, dbo.Deleted)
 	err := row.Scan(&comment.Id)
 	if err != nil {
@@ -30,8 +32,10 @@ func (r *commentsRepo) Add(comment *domain.Comment) (bool, error) {
 	return true, nil
 }
 
-func (r *commentsRepo) Update(id int64, text, title string) (bool, error) {
+func (r *commentsRepo) Update(ctx core.ReqContext, id int64, text, title string) (bool, error) {
 	query := `UPDATE comments SET text=$1, title=$2, WHERE id=$3;`
+	tr := ctx.StartTrace("CommentsRepository.Update")
+	defer ctx.StopTrace(tr)
 	tag, err := r.Db.Conn.Exec(context.Background(), query, text, ToNullString(title), id)
 	if err != nil {
 		return false, r.Db.LogError(err, query)
@@ -40,8 +44,10 @@ func (r *commentsRepo) Update(id int64, text, title string) (bool, error) {
 	return tag.RowsAffected() > 0, nil
 }
 
-func (r *commentsRepo) Delete(id int64) (bool, error) {
+func (r *commentsRepo) Delete(ctx core.ReqContext, id int64) (bool, error) {
 	query := `UPDATE comments SET deleted=$1 WHERE id=$2;`
+	tr := ctx.StartTrace("CommentsRepository.Delete")
+	defer ctx.StopTrace(tr)
 	tag, err := r.Db.Conn.Exec(context.Background(), query, true, id)
 	if err != nil {
 		return false, r.Db.LogError(err, query)
@@ -50,8 +56,10 @@ func (r *commentsRepo) Delete(id int64) (bool, error) {
 	return tag.RowsAffected() > 0, nil
 }
 
-func (r *commentsRepo) Get(id int64) *domain.Comment {
+func (r *commentsRepo) Get(ctx core.ReqContext, id int64) *domain.Comment {
 	query := `SELECT id, entitytype, entityid, date, parentid, threadid, userid, text, title, deleted, points FROM comments WHERE id=$1;`
+	tr := ctx.StartTrace("CommentsRepository.Get")
+	defer ctx.StopTrace(tr)
 	row := r.Db.Conn.QueryRow(context.Background(), query, id)
 	p, err := r.scanRow(row)
 	if err == sql.ErrNoRows {
@@ -64,7 +72,7 @@ func (r *commentsRepo) Get(id int64) *domain.Comment {
 	return p.ToComment()
 }
 
-func (r *commentsRepo) GetThreadList(entityType int, entityId int64, count int, page int) []domain.Comment {
+func (r *commentsRepo) GetThreadList(ctx core.ReqContext, entityType int, entityId int64, count int, page int) []domain.Comment {
 	query := `SELECT id, entitytype, entityid, date, parentid, threadid, userid, text, title, deleted, points 
 	FROM comments 
 	WHERE entitytype=$1 
@@ -72,6 +80,8 @@ func (r *commentsRepo) GetThreadList(entityType int, entityId int64, count int, 
 		AND threadId is null
 	ORDER BY id, points DESC
 	LIMIT $3 OFFSET $4;`
+	tr := ctx.StartTrace("CommentsRepository.GetThreadList")
+	defer ctx.StopTrace(tr)
 	rows, err := r.Db.Conn.Query(context.Background(), query, entityType, entityId, count, page*count)
 	if err != nil {
 		r.Db.LogError(err, query)
@@ -81,13 +91,15 @@ func (r *commentsRepo) GetThreadList(entityType int, entityId int64, count int, 
 	return r.scanRows(rows)
 }
 
-func (r *commentsRepo) GetThread(entityType int, entityId int64, threadId int64) []domain.Comment {
+func (r *commentsRepo) GetThread(ctx core.ReqContext, entityType int, entityId int64, threadId int64) []domain.Comment {
 	query := `SELECT id, entitytype, entityid, date, parentid, threadid, userid, text, title, deleted, points 
 	FROM comments 
 	WHERE entitytype = $1 
 		AND entityid = $2 
 		AND threadId = $3
 	ORDER BY id;`
+	tr := ctx.StartTrace("CommentsRepository.GetThread")
+	defer ctx.StopTrace(tr)
 	rows, err := r.Db.Conn.Query(context.Background(), query, entityType, entityId, threadId)
 	if err != nil {
 		r.Db.LogError(err, query)

@@ -20,6 +20,9 @@ func NewGetCommentsThreads(commentsRepo core.CommentsRepository, usersRepo core.
 }
 
 func (usecase *getCommentsThreads) Do(ctx core.ReqContext, entityType domain.EntityType, entityId int64, count int, page int) (comments []domain.Comment, hasMore bool, err error) {
+	trace := ctx.StartTrace("getCommentsThreads")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(entityType, entityId, count, page)
 	if appErr != nil {
 		usecase.log.Errorw("Invalid request",
@@ -29,7 +32,7 @@ func (usecase *getCommentsThreads) Do(ctx core.ReqContext, entityType domain.Ent
 		return nil, false, appErr
 	}
 
-	list := usecase.commentsRepo.GetThreadList(int(entityType), entityId, count, page)
+	list := usecase.commentsRepo.GetThreadList(ctx, int(entityType), entityId, count, page)
 	userIds := make(map[string]*domain.User)
 	for i := 0; i < len(list); i++ {
 		if _, ok := userIds[list[i].UserId]; !ok {
@@ -42,7 +45,7 @@ func (usecase *getCommentsThreads) Do(ctx core.ReqContext, entityType domain.Ent
 		idList = append(idList, k)
 	}
 
-	for _, v := range usecase.usersRepo.GetList(idList) {
+	for _, v := range usecase.usersRepo.GetList(ctx, idList) {
 		userIds[v.Id] = &v
 	}
 

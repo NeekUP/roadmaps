@@ -62,6 +62,9 @@ type bookSummary struct {
 
 // Должен возвращать или уже созданный ранее или новый объект
 func (usecase *addSource) Do(ctx core.ReqContext, identifier string, props map[string]string, sourceType domain.SourceType) (*domain.Source, error) {
+	trace := ctx.StartTrace("addSource")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(identifier, props, sourceType)
 	userId := ctx.UserId()
 	if props == nil {
@@ -93,7 +96,7 @@ func (usecase *addSource) Do(ctx core.ReqContext, identifier string, props map[s
 	}
 
 	// Find exists source by normalized identifier
-	source := usecase.sourceRepo.FindByIdentifier(s.NormalizedIdentifier)
+	source := usecase.sourceRepo.FindByIdentifier(ctx, s.NormalizedIdentifier)
 	if source != nil {
 		return source, nil
 	}
@@ -155,7 +158,7 @@ func (usecase *addSource) Do(ctx core.ReqContext, identifier string, props map[s
 	}
 
 	s.Properties = string(p)
-	s = usecase.sourceRepo.GetOrAddByIdentifier(s)
+	s = usecase.sourceRepo.GetOrAddByIdentifier(ctx, s)
 
 	usecase.changeLog.Added(domain.ResourceEntity, s.Id, userId)
 	return s, nil

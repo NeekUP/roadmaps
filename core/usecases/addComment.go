@@ -23,7 +23,9 @@ func NewAddComment(commentsRepo core.CommentsRepository, planRepo core.PlanRepos
 }
 
 func (usecase *addComment) Do(ctx core.ReqContext, entityType domain.EntityType, entityId int64, parentId int64, text string, title string) (*domain.Comment, error) {
-	appErr := usecase.validate(entityType, entityId, parentId, text, title)
+	trace := ctx.StartTrace("addComment")
+	defer ctx.StopTrace(trace)
+	appErr := usecase.validate(ctx, entityType, entityId, parentId, text, title)
 	if appErr != nil {
 		usecase.log.Errorw("Invalid request",
 			"ReqId", ctx.ReqId(),
@@ -34,7 +36,7 @@ func (usecase *addComment) Do(ctx core.ReqContext, entityType domain.EntityType,
 
 	var threadId int64 = 0
 	if parentId > 0 {
-		parent := usecase.commentsRepo.Get(parentId)
+		parent := usecase.commentsRepo.Get(ctx, parentId)
 		if parent == nil {
 			errors := make(map[string]string)
 			errors["parentId"] = core.InvalidValue.String()
@@ -59,7 +61,7 @@ func (usecase *addComment) Do(ctx core.ReqContext, entityType domain.EntityType,
 		Deleted:    false,
 	}
 
-	if ok, err := usecase.commentsRepo.Add(comment); !ok {
+	if ok, err := usecase.commentsRepo.Add(ctx, comment); !ok {
 		if err != nil {
 			usecase.log.Errorw("Invalid request",
 				"ReqId", ctx.ReqId(),
@@ -73,7 +75,7 @@ func (usecase *addComment) Do(ctx core.ReqContext, entityType domain.EntityType,
 	return comment, nil
 }
 
-func (ac *addComment) validate(entityType domain.EntityType, entityId int64, parentId int64, text string, title string) *core.AppError {
+func (ac *addComment) validate(ctx core.ReqContext, entityType domain.EntityType, entityId int64, parentId int64, text string, title string) *core.AppError {
 	errors := make(map[string]string)
 	if !entityType.IsValid() {
 		errors["entityType"] = core.InvalidValue.String()
@@ -85,7 +87,7 @@ func (ac *addComment) validate(entityType domain.EntityType, entityId int64, par
 
 	switch entityType {
 	case domain.PlanEntity:
-		if ac.planRepo.Get(int(entityId)) == nil {
+		if ac.planRepo.Get(ctx, int(entityId)) == nil {
 			errors["entityId"] = core.InvalidValue.String()
 		}
 	default:

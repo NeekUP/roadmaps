@@ -19,6 +19,9 @@ func NewSearchTopic(topicRepo core.TopicRepository, log core.AppLogger) SearchTo
 }
 
 func (usecase *searchTopic) Do(ctx core.ReqContext, str string, count int) []domain.Topic {
+	trace := ctx.StartTrace("searchTopic")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(str)
 	if appErr != nil {
 		usecase.log.Errorw("Not valid request",
@@ -28,7 +31,7 @@ func (usecase *searchTopic) Do(ctx core.ReqContext, str string, count int) []dom
 		return []domain.Topic{}
 	}
 
-	return usecase.topicRepo.TitleLike(str, count)
+	return usecase.topicRepo.TitleLike(ctx, str, count)
 }
 
 func (usecase *searchTopic) validate(str string) *core.AppError {

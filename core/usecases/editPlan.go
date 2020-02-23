@@ -27,7 +27,10 @@ func NewEditPlan(planRepo core.PlanRepository, changeLog core.ChangeLog, log cor
 }
 
 func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) {
-	old := usecase.planRepo.Get(req.Id)
+	trace := ctx.StartTrace("editPlan")
+	defer ctx.StopTrace(trace)
+
+	old := usecase.planRepo.Get(ctx, req.Id)
 	userId := ctx.UserId()
 	appErr := usecase.validate(req, userId, old)
 	if appErr != nil {
@@ -58,7 +61,7 @@ func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) 
 		Steps:     steps,
 	}
 
-	if ok, err := usecase.planRepo.Update(plan); !ok {
+	if ok, err := usecase.planRepo.Update(ctx, plan); !ok {
 		if err != nil {
 			usecase.log.Errorw("Invalid request",
 				"ReqId", ctx.ReqId(),

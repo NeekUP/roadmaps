@@ -24,6 +24,9 @@ type getPlanList struct {
 }
 
 func (usecase *getPlanList) Do(ctx core.ReqContext, topicName string, count int) ([]domain.Plan, error) {
+	trace := ctx.StartTrace("getPlanList")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(topicName, count)
 	if appErr != nil {
 		usecase.log.Errorw("Not valid request",
@@ -33,10 +36,10 @@ func (usecase *getPlanList) Do(ctx core.ReqContext, topicName string, count int)
 		return nil, appErr
 	}
 
-	list := usecase.planRepo.GetPopularByTopic(topicName, count)
+	list := usecase.planRepo.GetPopularByTopic(ctx, topicName, count)
 
 	for i := 0; i < len(list); i++ {
-		list[i].Owner = usecase.userRepo.Get(list[i].OwnerId)
+		list[i].Owner = usecase.userRepo.Get(ctx, list[i].OwnerId)
 	}
 	return list, nil
 }

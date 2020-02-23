@@ -37,6 +37,9 @@ type getPlan struct {
 }
 
 func (usecase *getPlan) Do(ctx core.ReqContext, id int) (*domain.Plan, error) {
+	trace := ctx.StartTrace("getPlan")
+	defer ctx.StopTrace(trace)
+
 	appErr := usecase.validate(id)
 	if appErr != nil {
 		usecase.log.Errorw("Not valid request",
@@ -46,19 +49,19 @@ func (usecase *getPlan) Do(ctx core.ReqContext, id int) (*domain.Plan, error) {
 		return nil, appErr
 	}
 
-	plan := usecase.planRepo.Get(id)
+	plan := usecase.planRepo.Get(ctx, id)
 	if plan != nil {
-		plan.Steps = usecase.stepRepo.GetByPlan(plan.Id)
-		plan.Owner = usecase.userRepo.Get(plan.OwnerId)
-		usecase.fillSteps(plan)
+		plan.Steps = usecase.stepRepo.GetByPlan(ctx, plan.Id)
+		plan.Owner = usecase.userRepo.Get(ctx, plan.OwnerId)
+		usecase.fillSteps(ctx, plan)
 	}
 	return plan, nil
 }
 
-func (usecase *getPlan) fillSteps(plan *domain.Plan) {
+func (usecase *getPlan) fillSteps(ctx core.ReqContext, plan *domain.Plan) {
 	for i := 0; i < len(plan.Steps); i++ {
 		if plan.Steps[i].ReferenceType == domain.TopicReference {
-			t := usecase.topicRepo.GetById(int(plan.Steps[i].ReferenceId))
+			t := usecase.topicRepo.GetById(ctx, int(plan.Steps[i].ReferenceId))
 			if t == nil {
 				break
 			}
@@ -70,7 +73,7 @@ func (usecase *getPlan) fillSteps(plan *domain.Plan) {
 				Desc:       "Not implementer yet",
 			}
 		} else {
-			s := usecase.sourceRepo.Get(plan.Steps[i].ReferenceId)
+			s := usecase.sourceRepo.Get(ctx, plan.Steps[i].ReferenceId)
 			if s == nil {
 				break
 			}
