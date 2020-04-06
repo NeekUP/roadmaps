@@ -35,9 +35,9 @@ func (usecase *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, e
 	defer ctx.StopTrace(trace)
 	appErr := usecase.validate(req)
 	if appErr != nil {
-		usecase.log.Errorw("Invalid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return nil, appErr
 	}
@@ -64,9 +64,9 @@ func (usecase *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, e
 
 	if ok, err := usecase.planRepo.SaveWithSteps(ctx, plan); !ok {
 		if err != nil {
-			usecase.log.Errorw("Invalid request",
-				"ReqId", ctx.ReqId(),
-				"Error", err.Error(),
+			usecase.log.Errorw("invalid request",
+				"reqid", ctx.ReqId(),
+				"error", err.Error(),
 			)
 		}
 		return nil, err

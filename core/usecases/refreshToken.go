@@ -31,7 +31,7 @@ func (usecase *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, fi
 	appErr := usecase.validate(authToken, refreshToken, fingerprint, useragent)
 	if appErr != nil {
 		usecase.log.Infow("Not valid data",
-			"reqId", ctx.ReqId(),
+			"reqid", ctx.ReqId(),
 			"authToken", authToken,
 			"refreshToken", refreshToken,
 			"fingerprint", fingerprint,
@@ -46,7 +46,7 @@ func (usecase *refreshToken) Do(ctx core.ReqContext, authToken, refreshToken, fi
 
 	if err != nil {
 		usecase.log.Infow("Fail to refresh token",
-			"reqId", ctx.ReqId(),
+			"reqid", ctx.ReqId(),
 			"authToken", authToken,
 			"refreshToken", refreshToken,
 			"fingerprint", fingerprint,

@@ -35,8 +35,8 @@ func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, 
 
 	appErr := usecase.validate(ctx, name, email, password)
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"reqId", ctx.ReqId(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
 			"email", email,
 			"error", appErr.Error(),
 		)
@@ -46,7 +46,7 @@ func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, 
 	if ok := core.IsValidEmailHost(email); !ok {
 		err := core.NewError(core.BadEmail)
 		usecase.log.Errorw("Not valid email host",
-			"reqId", ctx.ReqId(),
+			"reqid", ctx.ReqId(),
 			"email", email,
 			"error", err.Error(),
 		)
@@ -56,7 +56,7 @@ func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, 
 	//if ok, err := core.IsExistsEmail(email); !ok {
 	//	if err != nil {
 	//		usecase.log.Errorw("Not exists email",
-	//			"reqId", ctx.ReqId(),
+	//			"reqid", ctx.ReqId(),
 	//			"email", email,
 	//			"error", err.Error(),
 	//		)
@@ -77,9 +77,9 @@ func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, 
 	}
 
 	if _, err := usecase.userRepo.Save(ctx, user); err != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", err.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", err.Error(),
 		)
 		return nil, err
 	}

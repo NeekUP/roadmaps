@@ -34,9 +34,9 @@ func (usecase *addUserPlan) Do(ctx core.ReqContext, planId int) (bool, error) {
 	userId := ctx.UserId()
 	success, err := usecase.usersPlanRepo.Add(ctx, userId, plan.TopicName, planId)
 	if err != nil {
-		usecase.log.Errorw("Invalid request",
-			"ReqId", ctx.ReqId(),
-			"Error", err.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", err.Error(),
 		)
 		return false, err
 	}

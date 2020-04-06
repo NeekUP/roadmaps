@@ -28,9 +28,9 @@ func (usecase *editTopic) Do(ctx core.ReqContext, id int, title, desc string, is
 	appErr := usecase.validate(id, title, old, userId)
 
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return false, appErr
 	}
@@ -41,8 +41,8 @@ func (usecase *editTopic) Do(ctx core.ReqContext, id int, title, desc string, is
 	saved, err := usecase.repo.Update(ctx, topic)
 	if err != nil {
 		usecase.log.Errorw("Topic not updated",
-			"ReqId", ctx.ReqId(),
-			"Error", err.Error(),
+			"reqid", ctx.ReqId(),
+			"error", err.Error(),
 		)
 		return false, err
 	}

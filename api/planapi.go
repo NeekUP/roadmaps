@@ -2,13 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"net/http"
-	"strconv"
-
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/core/usecases"
 	"github.com/NeekUP/roadmaps/domain"
 	"github.com/NeekUP/roadmaps/infrastructure"
+	"net/http"
 )
 
 type addPlanRequest struct {
@@ -69,7 +67,6 @@ func AddPlan(addPlan usecases.AddPlan, log core.AppLogger) func(w http.ResponseW
 			Title:     plan.Title,
 			Id:        core.EncodeNumToString(plan.Id),
 		})
-
 	}
 }
 
@@ -158,21 +155,17 @@ func GetPlanTree(getPlanTree usecases.GetPlanTree, log core.AppLogger) func(w ht
 		defer r.Body.Close()
 
 		if err != nil {
-			log.Errorf("%s", err.Error())
+			log.Errorw("Fail to deserialize getPlanRequest", "error", err.Error())
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
 		data.Sanitize()
-		// TODO: Remove this
-		id, err := strconv.Atoi(data.Id)
+		id, err := core.DecodeStringToNum(data.Id)
 		if err != nil {
-			id, err = core.DecodeStringToNum(data.Id)
-			if err != nil {
-				errors := make(map[string]string)
-				errors["id"] = core.InvalidValue.String()
-				badRequest(w, core.ValidationError(errors))
-				return
-			}
+			errors := make(map[string]string)
+			errors["id"] = core.InvalidValue.String()
+			badRequest(w, core.ValidationError(errors))
+			return
 		}
 
 		trees, err := getPlanTree.Do(infrastructure.NewContext(r.Context()), []int{id})
@@ -204,16 +197,16 @@ func newPlanTree(node usecases.TreeNode, tree *treeNode) {
 	tree.PlanId = core.EncodeNumToString(node.PlanId)
 
 	if len(node.Child) > 0 {
-		childs := make([]treeNode, len(node.Child))
+		child := make([]treeNode, len(node.Child))
 		for i := 0; i < len(node.Child); i++ {
-			childs[i] = treeNode{}
-			newPlanTree(node.Child[i], &childs[i])
+			child[i] = treeNode{}
+			newPlanTree(node.Child[i], &child[i])
 		}
-		tree.Child = childs
+		tree.Child = child
 	}
 }
 
-func GetPlan(getPlan usecases.GetPlan, getUsersPlan usecases.GetUsersPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+func GetPlan(getPlan usecases.GetPlan, getUsersPlan usecases.GetUsersPlan, getPoints usecases.GetPoints, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		data := new(getPlanRequest)
@@ -225,19 +218,16 @@ func GetPlan(getPlan usecases.GetPlan, getUsersPlan usecases.GetUsersPlan, log c
 			return
 		}
 
-		// TODO: Remove this
-		id, err := strconv.Atoi(data.Id)
+		id, err := core.DecodeStringToNum(data.Id)
 		if err != nil {
-			id, err = core.DecodeStringToNum(data.Id)
-			if err != nil {
-				errors := make(map[string]string)
-				errors["id"] = core.InvalidValue.String()
-				badRequest(w, core.ValidationError(errors))
-				return
-			}
+			errors := make(map[string]string)
+			errors["id"] = core.InvalidValue.String()
+			badRequest(w, core.ValidationError(errors))
+			return
 		}
 
-		plan, err := getPlan.Do(infrastructure.NewContext(r.Context()), id)
+		ctx := infrastructure.NewContext(r.Context())
+		plan, err := getPlan.Do(ctx, id)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
@@ -247,7 +237,7 @@ func GetPlan(getPlan usecases.GetPlan, getUsersPlan usecases.GetUsersPlan, log c
 			return
 		}
 
-		usersPlan, err := getUsersPlan.Do(infrastructure.NewContext(r.Context()), plan.TopicName)
+		usersPlan, err := getUsersPlan.Do(ctx, plan.TopicName)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
@@ -257,6 +247,14 @@ func GetPlan(getPlan usecases.GetPlan, getUsersPlan usecases.GetUsersPlan, log c
 			return
 		}
 
+		points, err := getPoints.Do(ctx, domain.PlanEntity, int64(plan.Id))
+		if err != nil {
+			log.Errorw("fail to retrieve points for plan",
+				"reqid", ctx.ReqId(),
+				"error", "see db log")
+		}
+
+		plan.Points = points
 		isFavorite := false
 		if usersPlan != nil {
 			isFavorite = plan.Id == usersPlan.Id
@@ -273,7 +271,7 @@ func (req *getPlanListRequest) Sanitize() {
 	req.TopicName = StrictSanitize(req.TopicName)
 }
 
-func GetPlanList(getPlanList usecases.GetPlanList, getUsersPlan usecases.GetUsersPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+func GetPlanList(getPlanList usecases.GetPlanList, getUsersPlan usecases.GetUsersPlan, getPointsList usecases.GetPointsList, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		data := new(getPlanListRequest)
@@ -286,7 +284,8 @@ func GetPlanList(getPlanList usecases.GetPlanList, getUsersPlan usecases.GetUser
 		}
 
 		data.Sanitize()
-		list, err := getPlanList.Do(infrastructure.NewContext(r.Context()), data.TopicName, 100)
+		ctx := infrastructure.NewContext(r.Context())
+		list, err := getPlanList.Do(ctx, data.TopicName, 100)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
@@ -296,7 +295,7 @@ func GetPlanList(getPlanList usecases.GetPlanList, getUsersPlan usecases.GetUser
 			return
 		}
 
-		usersPlan, err := getUsersPlan.Do(infrastructure.NewContext(r.Context()), data.TopicName)
+		usersPlan, err := getUsersPlan.Do(ctx, data.TopicName)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
@@ -304,6 +303,27 @@ func GetPlanList(getPlanList usecases.GetPlanList, getUsersPlan usecases.GetUser
 				statusResponse(w, &status{Code: 500})
 			}
 			return
+		}
+
+		idList := make([]int64, len(list))
+		for i := 0; i < len(list); i++ {
+			idList[i] = int64(list[i].Id)
+		}
+
+		points, err := getPointsList.Do(ctx, domain.PlanEntity, idList)
+		if err != nil {
+			log.Errorw("fail to retrieve points for plan",
+				"reqid", ctx.ReqId(),
+				"error", "see db log")
+		} else {
+			for i := 0; i < len(list); i++ {
+				for j := 0; j < len(list); j++ {
+					if int64(list[j].Id) == points[i].Id {
+						list[j].Points = &points[i]
+						break
+					}
+				}
+			}
 		}
 
 		pl := make(map[int]bool)

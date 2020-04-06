@@ -14,6 +14,6 @@ type Comment struct {
 	Text       string
 	Title      string
 	Deleted    bool
-	Points     int
+	Points     *Points
 	Childs     []Comment
 }

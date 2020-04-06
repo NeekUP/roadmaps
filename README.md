@@ -37,6 +37,8 @@ On the first start, app should be able to create default users. For allow this, 
 - [Threads list](#thread-list)
 - [Thread comments](#thread-comments)
 
+## [Points](#points)
+- [Add](#add-points)
 ---
 
 ## Types
@@ -276,7 +278,12 @@ Responses
         "name": "string",
         "img": "string(relative url)"
     },
-    "points": int,
+    "points": {
+            "count": int, // count of votes
+            "avg": float, // average points per vote
+            "value": float, // rating value (used for determine order in list)
+            "voted": bool // current user already voted fot this entity
+     },
     "inFavorites": bool,
     "steps": [
         {
@@ -347,7 +354,12 @@ Response
             "name": "string",
             "img": "string"
         },
-        "points": int,
+        "points": {
+                "count": int, // count of votes
+                "avg": float, // average points per vote
+                "value": float, // rating value (used for determine order in list)
+                "voted": bool // current user already voted fot this entity
+         },
         "inFavorites": bool
     }
 ]
@@ -731,7 +743,7 @@ NoBody
 Request
 ```javascript
 {
-	"entityType": int, // see EntityType
+	"entityType": "string", // see EntityType
 	"entityId": "string", // string for planId and int for other
 	"parentId": int,
 	"text": "string",
@@ -792,7 +804,7 @@ NoBody
 Request
 ```javascript
 {
-	"entityType": int,  // see EntityType
+	"entityType": "string",  // see EntityType
 	"entityId": "string", // string for planId and int for other
 	"count": int, // count per page
 	"page": int // start from zero
@@ -807,7 +819,7 @@ Request
     "comments": [
         {
             "Id": 1,
-            "EntityType": 1,
+            "EntityType": "plan",
             "EntityId": "e",
             "ThreadId": 0,
             "ParentId": 0,
@@ -820,7 +832,12 @@ Request
             "Text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
             "Title": "wft man!",
             "Deleted": false,
-            "Points": 0
+            "points": {
+                    "count": int, // count of votes
+                    "avg": float, // average points per vote
+                    "value": float, // rating value (used for determine order in list)
+                    "voted": bool // current user already voted fot this entity
+             },
         }
     ]
 }
@@ -844,7 +861,7 @@ Request
 Request
 ```javascript
 {
-	"entityType": int,  // see EntityType
+	"entityType": "string",  // see EntityType
 	"entityId": "string", // string for planId and int for other
 	"threadId": int, 
 }
@@ -855,7 +872,7 @@ Request
 [
     {
         "Id": 3,
-        "EntityType": 1,
+        "EntityType": "plan",
         "EntityId": "e",
         "ThreadId": 1,
         "ParentId": 1,
@@ -868,11 +885,16 @@ Request
         "Text": "anim id est laborum",
         "Title": "",
         "Deleted": false,
-        "Points": 0,
+        "points": {
+                "count": int, // count of votes
+                "avg": float, // average points per vote
+                "value": float, // rating value (used for determine order in list)
+                "voted": bool // current user already voted fot this entity
+         },
         "Childs": [
             {
                 "Id": 5,
-                "EntityType": 1,
+                "EntityType": "plan",
                 "EntityId": "e",
                 "ThreadId": 1,
                 "ParentId": 3,
@@ -885,7 +907,12 @@ Request
                 "Text": "!!!!! 3-",
                 "Title": "",
                 "Deleted": false,
-                "Points": 0,
+                "points": {
+                        "count": int, 
+                        "avg": float, 
+                        "value": float, 
+                        "voted": bool
+                 },
                 "Childs": []
             }
         ]
@@ -905,13 +932,49 @@ Request
 ```
 
 
+## Points
+### Add points
+#### /api/points/add
+Request
+```javascript
+{
+	"id": "string",
+	"type": "string",// see EntityType
+	"value": int     // [0-10]
+}
+```
+Response
+### 200 - OK
+```javascript
+{
+    "success": bool 
+}
+```
+
+### 400 - BadRequest
+if value has invalid value
+```javascript
+{
+    "error": "INTERNAL_ERROR | INVALID_REQUEST",
+    "validation":{
+        "value": "INVALID_VALUE"
+    }
+}
+```
+otherwise
+NoBody
+
+
+
 ## EntityType
 | Name                      | Value |
 | ------------------------  | ----------- |
-| Plan                      | 1
-| Topic                     | 2
-| Project                   | 3
-| Resource                  | 4
+| Plan                      | plan
+| Topic                     | topic
+| Project                   | project
+| Resource                  | resource
+| Comment                   | comment
+| User                      | user
 
 ## Errors
 | Error                    | Description |
@@ -937,4 +1000,5 @@ Request
 | "SOURCE_NOT_FOUND"       |
 | "INVALID_COUNT"          |
 | "NOT_EXISTS"             |
+
 ```

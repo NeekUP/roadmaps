@@ -27,9 +27,9 @@ func (usecase *getTopic) Do(ctx core.ReqContext, name string, planCount int) (*d
 
 	appErr := usecase.validate(name, planCount)
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return nil, appErr
 	}
