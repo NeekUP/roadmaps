@@ -25,9 +25,9 @@ func (usecase *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool,
 
 	appErr := usecase.validate(title, tags)
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return nil, appErr
 	}
@@ -38,9 +38,9 @@ func (usecase *addTopic) Do(ctx core.ReqContext, title, desc string, istag bool,
 	topic.Tags = usecase.topicRepo.GetTags(ctx, tags)
 	saved, err := usecase.topicRepo.Save(ctx, topic)
 	if err != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", err.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", err.Error(),
 		)
 		return nil, err
 	}

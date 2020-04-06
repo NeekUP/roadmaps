@@ -86,6 +86,18 @@ type ChangeLogRepository interface {
 	Add(record *domain.ChangeLogRecord) bool
 }
 
+type ProjectsRepository interface {
+	Add(ctx ReqContext, project *domain.Project) (bool, error)
+	Update(ctx ReqContext, project *domain.Project) (bool, error)
+	Get(ctx ReqContext, id int) *domain.Project
+}
+
+type PointsRepository interface {
+	Add(ctx ReqContext, entityType domain.EntityType, entityId int64, userId string, value int) bool
+	Get(ctx ReqContext, userid string, entityType domain.EntityType, entityId int64) *domain.Points
+	GetList(ctx ReqContext, userid string, entityType domain.EntityType, entityId []int64) []domain.Points
+}
+
 type ChangeLog interface {
 	Added(entityType domain.EntityType, entityId int64, userId string)
 	Edited(entityType domain.EntityType, entityId int64, userId string, before interface{}, after interface{})

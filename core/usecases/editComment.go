@@ -27,9 +27,9 @@ func (usecase *editComment) Do(ctx core.ReqContext, id int64, text string, title
 
 	appErr := usecase.validate(id, text, title)
 	if appErr != nil {
-		usecase.log.Errorw("Invalid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return false, appErr
 	}
@@ -37,28 +37,28 @@ func (usecase *editComment) Do(ctx core.ReqContext, id int64, text string, title
 	userId := ctx.UserId()
 	comment := usecase.commentsRepo.Get(ctx, id)
 	if comment == nil || comment.Deleted {
-		usecase.log.Errorw("Invalid request",
-			"ReqId", ctx.ReqId(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
 			"UserId", userId,
-			"Error", fmt.Sprintf("comment deleted or not existed. id: %v", id),
+			"error", fmt.Sprintf("comment deleted or not existed. id: %v", id),
 		)
 		return false, core.NewError(core.NotExists)
 	}
 
 	if comment.UserId != userId {
-		usecase.log.Errorw("Invalid request",
-			"ReqId", ctx.ReqId(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
 			"UserId", userId,
-			"Error", fmt.Sprintf("access denied. id: %v", id),
+			"error", fmt.Sprintf("access denied. id: %v", id),
 		)
 		return false, core.NewError(core.AccessDenied)
 	}
 
 	if ok, err := usecase.commentsRepo.Update(ctx, id, text, title); !ok {
 		if err != nil {
-			usecase.log.Errorw("Invalid request",
-				"ReqId", ctx.ReqId(),
-				"Error", err.Error(),
+			usecase.log.Errorw("invalid request",
+				"reqid", ctx.ReqId(),
+				"error", err.Error(),
 			)
 		}
 		return false, err

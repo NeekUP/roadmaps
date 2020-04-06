@@ -25,9 +25,9 @@ func (usecase *addTopicTag) Do(ctx core.ReqContext, tagname, topicname string) (
 
 	appErr := usecase.validate(tagname, topicname)
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return false, appErr
 	}

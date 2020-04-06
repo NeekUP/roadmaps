@@ -12,7 +12,7 @@ import (
 )
 
 type addCommentRequest struct {
-	EntityType int    `json:"entityType"`
+	EntityType string `json:"entityType"`
 	EntityId   string `json:"entityId"`
 	ParentId   int64  `json:"parentId"`
 	Text       string `json:"text"`
@@ -42,9 +42,15 @@ func AddComment(addComment usecases.AddComment, log core.AppLogger) func(w http.
 		}
 
 		data.Sanitize()
+		var entityType domain.EntityType
+		var isValidType bool
+		if isValidType, entityType = domain.EntityTypeFromString(data.EntityType); !isValidType {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
 
 		entityId, err := strconv.ParseInt(data.EntityId, 10, 64)
-		if err != nil || data.EntityType == int(domain.PlanEntity) {
+		if err != nil || entityType == domain.PlanEntity {
 			id, err := core.DecodeStringToNum(data.EntityId)
 			if err != nil {
 				errors := make(map[string]string)
@@ -55,7 +61,7 @@ func AddComment(addComment usecases.AddComment, log core.AppLogger) func(w http.
 			entityId = int64(id)
 		}
 
-		comment, err := addComment.Do(infrastructure.NewContext(r.Context()), domain.EntityType(data.EntityType), entityId, data.ParentId, data.Text, data.Title)
+		comment, err := addComment.Do(infrastructure.NewContext(r.Context()), entityType, entityId, data.ParentId, data.Text, data.Title)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
@@ -139,7 +145,7 @@ func DeleteComment(removeComment usecases.RemoveComment, log core.AppLogger) fun
 }
 
 type getCommentThreadsRequest struct {
-	EntityType int    `json:"entityType"`
+	EntityType string `json:"entityType"`
 	EntityId   string `json:"entityId"`
 	Count      int    `json:"count"`
 	Page       int    `json:"page"`
@@ -155,7 +161,7 @@ type getCommentThreadsResponse struct {
 	Comments []comment `json:"comments"`
 }
 
-func GetThreads(getThreads usecases.GetCommentsThreads, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+func GetThreads(getThreads usecases.GetCommentsThreads, getPointsList usecases.GetPointsList, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		data := new(getCommentThreadsRequest)
@@ -167,8 +173,15 @@ func GetThreads(getThreads usecases.GetCommentsThreads, log core.AppLogger) func
 			return
 		}
 		data.Sanitize()
+		var entityType domain.EntityType
+		var isValidType bool
+		if isValidType, entityType = domain.EntityTypeFromString(data.EntityType); !isValidType {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
 		entityId, err := strconv.ParseInt(data.EntityId, 10, 64)
-		if err != nil || data.EntityType == int(domain.PlanEntity) {
+		if err != nil || entityType == domain.PlanEntity {
 			id, err := core.DecodeStringToNum(data.EntityId)
 			if err != nil {
 				errors := make(map[string]string)
@@ -179,7 +192,8 @@ func GetThreads(getThreads usecases.GetCommentsThreads, log core.AppLogger) func
 			entityId = int64(id)
 		}
 
-		comments, hasMore, err := getThreads.Do(infrastructure.NewContext(r.Context()), domain.EntityType(data.EntityType), entityId, data.Count, data.Page)
+		ctx := infrastructure.NewContext(r.Context())
+		comments, hasMore, err := getThreads.Do(ctx, entityType, entityId, data.Count, data.Page)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
@@ -188,6 +202,8 @@ func GetThreads(getThreads usecases.GetCommentsThreads, log core.AppLogger) func
 			}
 			return
 		}
+
+		attachePoints(comments, getPointsList, ctx, log)
 
 		c := make([]comment, len(comments))
 		for i := 0; i < len(comments); i++ {
@@ -203,7 +219,7 @@ func GetThreads(getThreads usecases.GetCommentsThreads, log core.AppLogger) func
 }
 
 type getCommentThreadRequest struct {
-	EntityType int    `json:"entityType"`
+	EntityType string `json:"entityType"`
 	EntityId   string `json:"entityId"`
 	ThreadId   int64  `json:"threadId"`
 }
@@ -216,7 +232,7 @@ type getCommentThreadResponse struct {
 	Comments []comment `json:"comments"`
 }
 
-func GetThread(getThread usecases.GetCommentsThread, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+func GetThread(getThread usecases.GetCommentsThread, getPointsList usecases.GetPointsList, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		data := new(getCommentThreadRequest)
@@ -228,8 +244,15 @@ func GetThread(getThread usecases.GetCommentsThread, log core.AppLogger) func(w 
 			return
 		}
 		data.Sanitize()
+		var entityType domain.EntityType
+		var isValidType bool
+		if isValidType, entityType = domain.EntityTypeFromString(data.EntityType); !isValidType {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
 		entityId, err := strconv.ParseInt(data.EntityId, 10, 64)
-		if err != nil || data.EntityType == int(domain.PlanEntity) {
+		if err != nil || entityType == domain.PlanEntity {
 			id, err := core.DecodeStringToNum(data.EntityId)
 			if err != nil {
 				errors := make(map[string]string)
@@ -240,7 +263,8 @@ func GetThread(getThread usecases.GetCommentsThread, log core.AppLogger) func(w 
 			entityId = int64(id)
 		}
 
-		comments, err := getThread.Do(infrastructure.NewContext(r.Context()), domain.EntityType(data.EntityType), entityId, data.ThreadId)
+		ctx := infrastructure.NewContext(r.Context())
+		comments, err := getThread.Do(ctx, entityType, entityId, data.ThreadId)
 		if err != nil {
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
@@ -250,11 +274,36 @@ func GetThread(getThread usecases.GetCommentsThread, log core.AppLogger) func(w 
 			return
 		}
 
+		attachePoints(comments, getPointsList, ctx, log)
+
 		c := make([]comment, len(comments))
 		for i := 0; i < len(comments); i++ {
 			c[i] = *NewCommentDto(&comments[i])
 		}
 
 		valueResponse(w, c)
+	}
+}
+
+func attachePoints(comments []domain.Comment, getPointsList usecases.GetPointsList, ctx core.ReqContext, log core.AppLogger) {
+	idList := make([]int64, len(comments))
+	for i := 0; i < len(comments); i++ {
+		idList[i] = int64(comments[i].Id)
+	}
+
+	points, err := getPointsList.Do(ctx, domain.PlanEntity, idList)
+	if err != nil {
+		log.Errorw("fail to retrieve points for comments",
+			"reqid", ctx.ReqId(),
+			"error", "see db log")
+	} else {
+		for i := 0; i < len(comments); i++ {
+			for j := 0; j < len(comments); j++ {
+				if int64(comments[j].Id) == points[i].Id {
+					comments[j].Points = &points[i]
+					break
+				}
+			}
+		}
 	}
 }

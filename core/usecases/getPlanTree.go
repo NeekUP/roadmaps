@@ -36,9 +36,9 @@ func (usecase *getPlanTree) Do(ctx core.ReqContext, ids []int) ([]TreeNode, erro
 
 	appErr := usecase.validate(ids)
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return nil, appErr
 	}
