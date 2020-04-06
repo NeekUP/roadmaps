@@ -91,6 +91,7 @@ func main() {
 	imageManager := infrastructure.NewImageManager(Cfg.ImgSaver.LocalFolder, Cfg.ImgSaver.UriPath)
 	stepRepo := db.NewStepsRepository(dbConnection)
 	commentsRepo := db.NewCommentsRepository(dbConnection)
+	pointsRepo := db.NewPointsRepository(dbConnection)
 	changesRepository := db.NewChangeLogRepository(dbConnection)
 	changeLog := infrastructure.NewChangesCollector(changesRepository, newLogger("changeLog"))
 	emailService := infrastructure.NewEmailSender(Cfg.SiteHost, Cfg.SMTP.SenderEmail, Cfg.SMTP.SenderName, Cfg.SMTP.Host, Cfg.SMTP.Pass, Cfg.SMTP.Port, newLogger("emails"))
@@ -136,6 +137,11 @@ func main() {
 	removeComment := usecases.NewRemoveComments(commentsRepo, changeLog, newLogger("removeComment"))
 	getCommentsThreads := usecases.NewGetCommentsThreads(commentsRepo, userRepo, newLogger("getCommentsThreads"))
 	getCommentsThread := usecases.NewGetCommentsThread(commentsRepo, userRepo, newLogger("getCommentsThread"))
+
+	// Vote
+	addPoints := usecases.NewAddPoints(pointsRepo, newLogger("addPoints"))
+	getPoints := usecases.NewGetPoints(pointsRepo, newLogger("getPoints"))
+	getPointsList := usecases.NewGetPointsList(pointsRepo, newLogger("getPointsList"))
 	/*
 		Api methods
 	**************************************/
@@ -158,8 +164,8 @@ func main() {
 	// Plans
 	apiAddPlan := api.AddPlan(addPlan, newLogger("addPlan"))
 	apiGetPlanTree := api.GetPlanTree(getPlanTree, newLogger("getPlanTree"))
-	apiGetPlan := api.GetPlan(getPlan, getUsersPlans, newLogger("getPlan"))
-	apiGetPlanList := api.GetPlanList(getPlanList, getUsersPlans, newLogger("getPlanList"))
+	apiGetPlan := api.GetPlan(getPlan, getUsersPlans, getPoints, newLogger("getPlan"))
+	apiGetPlanList := api.GetPlanList(getPlanList, getUsersPlans, getPointsList, newLogger("getPlanList"))
 	apiEditPlan := api.EditPlan(editPlan, newLogger("editPlan"))
 	apiRemovePlan := api.RemovePlan(removePlan, newLogger("removePlan"))
 
@@ -175,9 +181,11 @@ func main() {
 	apiAddComment := api.AddComment(addComment, newLogger("addComment"))
 	apiEditComment := api.EditComment(editComment, newLogger("editComment"))
 	apiRemoveComment := api.DeleteComment(removeComment, newLogger("removeComment"))
-	apiGetCommentsThreads := api.GetThreads(getCommentsThreads, newLogger("getCommentsThreads"))
-	apiGetCommentsThread := api.GetThread(getCommentsThread, newLogger("getCommentsThread"))
+	apiGetCommentsThreads := api.GetThreads(getCommentsThreads, getPointsList, newLogger("getCommentsThreads"))
+	apiGetCommentsThread := api.GetThread(getCommentsThread, getPointsList, newLogger("getCommentsThread"))
 
+	// Vote
+	apiAddPoints := api.AddPoints(addPoints, newLogger("addPoints"))
 	/*
 		Database
 	**************************************/
@@ -191,7 +199,7 @@ func main() {
 
 	// for all
 	r.Group(func(r chi.Router) {
-		r.Use(api.Auth(domain.God, tokenService))
+		r.Use(api.Auth(domain.All, tokenService, newLogger("auth")))
 		r.Post("/api/topic/tree", apiGetTopicTree)
 		r.Post("/api/topic/get", apiGetTopic)
 		r.Post("/api/topic/search", apiSearchTopic)
@@ -210,7 +218,7 @@ func main() {
 
 	// for users
 	r.Group(func(r chi.Router) {
-		r.Use(api.Auth(domain.U, tokenService))
+		r.Use(api.Auth(domain.U, tokenService, newLogger("auth")))
 		r.Post("/api/source/add", apiAddSource)
 		r.Post("/api/topic/add", apiAddTopic)
 		r.Post("/api/plan/add", apiAddPlan)
@@ -221,11 +229,12 @@ func main() {
 		r.Post("/api/comment/add", apiAddComment)
 		r.Post("/api/comment/edit", apiEditComment)
 		r.Post("/api/comment/delete", apiRemoveComment)
+		r.Post("/api/points/add", apiAddPoints)
 	})
 
 	// for moderators
 	r.Group(func(r chi.Router) {
-		r.Use(api.Auth(domain.M, tokenService))
+		r.Use(api.Auth(domain.M, tokenService, newLogger("auth")))
 		r.Post("/api/topic/tag/add", apiAddTopicTag)
 		r.Post("/api/topic/tag/remove", apiRemoveTopicTag)
 		r.Post("/api/topic/edit", apiEditTopic)
@@ -245,7 +254,7 @@ func main() {
 	apiListUsersDev := api.ListUsers(listUsersDev)
 
 	r.Group(func(r chi.Router) {
-		r.Use(api.Auth(domain.A, tokenService))
+		r.Use(api.Auth(domain.A, tokenService, newLogger("auth")))
 		r.Post("/api/dev/list/topics", apiListTopicsDev)
 		r.Post("/api/dev/list/plans", apiListPlansDev)
 		r.Post("/api/dev/list/steps", apiListStepsDev)
@@ -337,7 +346,7 @@ func httpLogger(l core.AppLogger) func(next http.Handler) http.Handler {
 			defer func() {
 				l.Info("",
 					zap.Int("status", ww.Status()),
-					zap.String("reqId", middleware.GetReqID(r.Context())),
+					zap.String("reqid", middleware.GetReqID(r.Context())),
 					zap.String("proto", r.Proto),
 					zap.String("path", r.URL.Path),
 					zap.Duration("elapsed", time.Since(t1)),
@@ -356,9 +365,8 @@ func recoverer(l core.AppLogger) func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if rvr := recover(); rvr != nil {
-
 					if l != nil {
-						l.Panic(rvr, string(debug.Stack()))
+						l.Error(rvr, string(debug.Stack()))
 					} else {
 						fmt.Fprintf(os.Stderr, "Panic:%v \r\n%s", rvr, string(debug.Stack()))
 						debug.PrintStack()

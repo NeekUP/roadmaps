@@ -24,9 +24,9 @@ func (usecase *searchTopic) Do(ctx core.ReqContext, str string, count int) []dom
 
 	appErr := usecase.validate(str)
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return []domain.Topic{}
 	}

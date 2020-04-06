@@ -30,9 +30,9 @@ func (r *planRepo) SaveWithSteps(ctx core.ReqContext, plan *domain.Plan) (bool, 
 		AccessMode:     pgx.ReadWrite,
 		DeferrableMode: pgx.NotDeferrable,
 	})
-	insertPlanQuery := "INSERT INTO plans(title, topic, owner, points) VALUES ($1, $2, $3, $4) RETURNING id;"
+	insertPlanQuery := "INSERT INTO plans(title, topic, owner) VALUES ($1, $2, $3) RETURNING id;"
 
-	err = r.Db.Conn.QueryRow(context.Background(), insertPlanQuery, plan.Title, plan.TopicName, plan.OwnerId, plan.Points).Scan(&plan.Id)
+	err = r.Db.Conn.QueryRow(context.Background(), insertPlanQuery, plan.Title, plan.TopicName, plan.OwnerId).Scan(&plan.Id)
 	tr.Point("insert plan")
 	if err != nil {
 		if e := tx.Rollback(context.Background()); e != nil {
@@ -135,7 +135,7 @@ func (r *planRepo) Get(ctx core.ReqContext, id int) *domain.Plan {
 	tr := ctx.StartTrace("PlanRepository.Get")
 	defer ctx.StopTrace(tr)
 
-	query := `SELECT id, title, topic, owner, points FROM plans WHERE id=$1;`
+	query := `SELECT id, title, topic, owner FROM plans WHERE id=$1;`
 	row := r.Db.Conn.QueryRow(context.Background(), query, id)
 	p, err := r.scanRow(row)
 	if err == sql.ErrNoRows {
@@ -152,7 +152,7 @@ func (r *planRepo) GetList(ctx core.ReqContext, id []int) []domain.Plan {
 	tr := ctx.StartTrace("PlanRepository.GetList")
 	defer ctx.StopTrace(tr)
 
-	query := "SELECT id, title, topic, owner, points FROM plans WHERE id IN (%s);"
+	query := "SELECT id, title, topic, owner FROM plans WHERE id IN (%s);"
 	query = fmt.Sprintf(query, strings.Trim(strings.Join(strings.Fields(fmt.Sprint(id)), ","), "[]"))
 	rows, err := r.Db.Conn.Query(context.Background(), query)
 	if err != nil {
@@ -167,7 +167,7 @@ func (r *planRepo) GetPopularByTopic(ctx core.ReqContext, topic string, count in
 	tr := ctx.StartTrace("PlanRepository.GetPopularByTopic")
 	defer ctx.StopTrace(tr)
 
-	query := "SELECT id, title, topic, owner, points FROM plans WHERE topic=$1 ORDER BY points DESC LIMIT $2"
+	query := "SELECT p.id, p.title, p.topic, p.owner FROM plans p LEFT JOIN points_aggregated_plans ps ON p.id=ps.entityid WHERE p.topic=$1 ORDER BY ps.value DESC LIMIT $2"
 	rows, err := r.Db.Conn.Query(context.Background(), query, topic, count)
 	if err != nil {
 		r.Db.LogError(err, query)
@@ -190,7 +190,7 @@ func (r *planRepo) scanRows(rows pgx.Rows) []domain.Plan {
 }
 
 func (r *planRepo) All() []domain.Plan {
-	query := "SELECT id, title, topic, owner, points FROM plans"
+	query := "SELECT id, title, topic, owner FROM plans"
 	rows, err := r.Db.Conn.Query(context.Background(), query)
 	if err != nil {
 		r.Db.LogError(err, query)
@@ -202,7 +202,7 @@ func (r *planRepo) All() []domain.Plan {
 
 func (r *planRepo) scanRow(row pgx.Row) (*PlanDBO, error) {
 	dbo := PlanDBO{}
-	err := row.Scan(&dbo.Id, &dbo.Title, &dbo.TopicName, &dbo.OwnerId, &dbo.Points)
+	err := row.Scan(&dbo.Id, &dbo.Title, &dbo.TopicName, &dbo.OwnerId)
 	if err != nil && err.Error() == "no rows in result set" {
 		return &dbo, sql.ErrNoRows
 	}

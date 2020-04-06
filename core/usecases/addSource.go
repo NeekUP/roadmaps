@@ -71,9 +71,9 @@ func (usecase *addSource) Do(ctx core.ReqContext, identifier string, props map[s
 		props = map[string]string{}
 	}
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return nil, appErr
 	}
@@ -89,8 +89,8 @@ func (usecase *addSource) Do(ctx core.ReqContext, identifier string, props map[s
 	s.NormalizedIdentifier, err = usecase.normalizeIdentifier(sourceType, identifier)
 	if err != nil {
 		usecase.log.Errorw("Identifier contain not valid value",
-			"ReqId", ctx.ReqId(),
-			"Error", err,
+			"reqid", ctx.ReqId(),
+			"error", err,
 			"Identifier", identifier)
 		return nil, core.ValidationError(map[string]string{"identifier": core.InvalidFormat.String()})
 	}
@@ -109,8 +109,8 @@ func (usecase *addSource) Do(ctx core.ReqContext, identifier string, props map[s
 		bookMeta, err := usecase.getBookMeta(s.NormalizedIdentifier)
 		if err != nil {
 			usecase.log.Errorw("Book summary not parsed",
-				"ReqId", ctx.ReqId(),
-				"Error", err.Error(),
+				"reqid", ctx.ReqId(),
+				"error", err.Error(),
 				"Identifier", identifier)
 			return nil, core.ValidationError(map[string]string{"identifier": core.SourceNotFound.String()})
 		}
@@ -126,8 +126,8 @@ func (usecase *addSource) Do(ctx core.ReqContext, identifier string, props map[s
 		pageMeta, err := usecase.getWebPageMeta(identifier)
 		if err != nil {
 			usecase.log.Errorw("Fail to get page summary",
-				"ReqId", ctx.ReqId(),
-				"Error", err.Error(),
+				"reqid", ctx.ReqId(),
+				"error", err.Error(),
 				"Identifier", identifier)
 			return nil, core.ValidationError(map[string]string{"identifier": core.SourceNotFound.String()})
 		}
@@ -146,8 +146,8 @@ func (usecase *addSource) Do(ctx core.ReqContext, identifier string, props map[s
 		if err != nil {
 			s.Img = ""
 			usecase.log.Errorw("Fail to save image",
-				"ReqId", ctx.ReqId(),
-				"Error", err.Error(),
+				"reqid", ctx.ReqId(),
+				"error", err.Error(),
 				"Identifier", identifier)
 		}
 	}
@@ -284,7 +284,7 @@ func (usecase *addSource) getBookMetaFromGoogle(isbn13 string) (*bookSummary, er
 						summary.Img, err = usecase.getImage(item.VolumeInfo.ImageLinks.Thumbnail)
 						if err != nil {
 							usecase.log.Errorw("Fail to download image from",
-								"Error", err.Error(),
+								"error", err.Error(),
 								"Url", item.VolumeInfo.ImageLinks.Thumbnail)
 						}
 					}
@@ -351,7 +351,7 @@ func (usecase *addSource) getBookMetaFromOpenLibrary(isbn13 string) (*bookSummar
 			if err != nil {
 				usecase.log.Errorw("Fail to download image",
 					"Url", value.Cover.Large,
-					"Error", err.Error())
+					"error", err.Error())
 			}
 		}
 		break

@@ -27,9 +27,9 @@ func (usecase *removePlan) Do(ctx core.ReqContext, id int) (bool, error) {
 	userId := ctx.UserId()
 	appErr := usecase.validate(id, userId, plan)
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return false, appErr
 	}

@@ -27,9 +27,9 @@ func (usecase *addComment) Do(ctx core.ReqContext, entityType domain.EntityType,
 	defer ctx.StopTrace(trace)
 	appErr := usecase.validate(ctx, entityType, entityId, parentId, text, title)
 	if appErr != nil {
-		usecase.log.Errorw("Invalid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return nil, appErr
 	}
@@ -63,9 +63,9 @@ func (usecase *addComment) Do(ctx core.ReqContext, entityType domain.EntityType,
 
 	if ok, err := usecase.commentsRepo.Add(ctx, comment); !ok {
 		if err != nil {
-			usecase.log.Errorw("Invalid request",
-				"ReqId", ctx.ReqId(),
-				"Error", err.Error(),
+			usecase.log.Errorw("invalid request",
+				"reqid", ctx.ReqId(),
+				"error", err.Error(),
 			)
 		}
 		return nil, err

@@ -28,10 +28,10 @@ func (usecase removeComment) Do(ctx core.ReqContext, id int64) (bool, error) {
 	userId := ctx.UserId()
 	comment := usecase.commentsRepo.Get(ctx, id)
 	if comment == nil || comment.UserId != userId {
-		usecase.log.Errorw("Invalid request",
-			"ReqId", ctx.ReqId(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
 			"UserId", userId,
-			"Error", fmt.Sprintf("access denied or not comment existed. id: %v", id),
+			"error", fmt.Sprintf("access denied or not comment existed. id: %v", id),
 		)
 		return false, core.NewError(core.AccessDenied)
 	}

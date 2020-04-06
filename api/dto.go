@@ -41,20 +41,20 @@ func NewTopicDto(t *domain.Topic) *topic {
 }
 
 type plan struct {
-	Id          string `json:"id"`
-	Title       string `json:"title"`
-	TopicName   string `json:"topicName"`
-	Owner       *user  `json:"owner,omitempty"`
-	Points      int    `json:"points"`
-	InFavorites bool   `json:"inFavorites"`
-	Steps       []step `json:"steps,omitempty"`
+	Id          string  `json:"id"`
+	Title       string  `json:"title"`
+	TopicName   string  `json:"topicName"`
+	Owner       *user   `json:"owner,omitempty"`
+	Points      *points `json:"points"`
+	InFavorites bool    `json:"inFavorites"`
+	Steps       []step  `json:"steps,omitempty"`
 }
 
 func NewPlanDto(p *domain.Plan, inFavorites bool) *plan {
 	np := &plan{
 		Id:          core.EncodeNumToString(p.Id),
 		Title:       p.Title,
-		Points:      p.Points,
+		Points:      NewPointsDTO(p.Points),
 		TopicName:   p.TopicName,
 		Owner:       NewUserDto(p.Owner),
 		InFavorites: inFavorites,
@@ -171,7 +171,7 @@ func NewCommentDto(c *domain.Comment) *comment {
 
 	return &comment{
 		Id:         c.Id,
-		EntityType: int(c.EntityType),
+		EntityType: domain.EntityTypeToString(c.EntityType),
 		EntityId:   entityId,
 		ThreadId:   c.ThreadId,
 		ParentId:   c.ParentId,
@@ -180,14 +180,14 @@ func NewCommentDto(c *domain.Comment) *comment {
 		Text:       c.Text,
 		Title:      c.Title,
 		Deleted:    c.Deleted,
-		Points:     c.Points,
+		Points:     NewPointsDTO(c.Points),
 		Childs:     childs,
 	}
 }
 
 type comment struct {
 	Id         int64
-	EntityType int
+	EntityType string
 	EntityId   string
 	ThreadId   int64
 	ParentId   int64
@@ -196,7 +196,7 @@ type comment struct {
 	Text       string
 	Title      string
 	Deleted    bool
-	Points     int
+	Points     *points
 	Childs     []comment
 }
 
@@ -204,5 +204,54 @@ func NewTopicTag(t *domain.TopicTag) *topicTag {
 	return &topicTag{
 		Name:  t.Name,
 		Title: t.Title,
+	}
+}
+
+type project struct {
+	Id     int        `json:"id"`
+	Title  string     `json:"title"`
+	Text   string     `json:"text"`
+	Tags   []topicTag `json:"tags"`
+	Owner  *user      `json:"owner"`
+	Points *points    `json:"points"`
+}
+
+func NewProjectDto(p *domain.Project) *project {
+	if p == nil {
+		return nil
+	}
+
+	pr := &project{
+		Id:     p.Id,
+		Title:  p.Title,
+		Text:   p.Text,
+		Tags:   make([]topicTag, len(p.Tags)),
+		Owner:  NewUserDto(p.Owner),
+		Points: NewPointsDTO(p.Points),
+	}
+
+	for i := 0; i < len(p.Tags); i++ {
+		pr.Tags[i] = *NewTopicTag(&p.Tags[i])
+	}
+
+	return pr
+}
+
+type points struct {
+	Count int     `json:"count"`
+	Avg   float32 `json:"avg"`
+	Value float32 `json:"value"`
+	Voted bool    `json:"voted"`
+}
+
+func NewPointsDTO(p *domain.Points) *points {
+	if p == nil {
+		return nil
+	}
+
+	return &points{
+		Count: p.Count,
+		Avg:   p.Avg,
+		Value: p.Value,
 	}
 }

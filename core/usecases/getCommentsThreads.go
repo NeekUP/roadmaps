@@ -25,9 +25,9 @@ func (usecase *getCommentsThreads) Do(ctx core.ReqContext, entityType domain.Ent
 
 	appErr := usecase.validate(entityType, entityId, count, page)
 	if appErr != nil {
-		usecase.log.Errorw("Invalid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return nil, false, appErr
 	}

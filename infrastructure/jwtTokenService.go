@@ -53,6 +53,15 @@ func (tokenService *JwtTokenService) Create(ctx core.ReqContext, user *domain.Us
 		user.Tokens = []domain.UserToken{}
 	}
 
+	i := 0
+	for _, t := range user.Tokens {
+		if t.Fingerprint != fingerprint {
+			user.Tokens[i] = t
+			i++
+		}
+	}
+	user.Tokens = user.Tokens[i:]
+
 	user.Tokens = append(user.Tokens, domain.UserToken{
 		Id:          rid,
 		Fingerprint: fingerprint,
