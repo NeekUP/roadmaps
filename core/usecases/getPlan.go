@@ -14,7 +14,7 @@ func NewGetPlan(plans core.PlanRepository,
 	steps core.StepRepository,
 	sources core.SourceRepository,
 	topics core.TopicRepository,
-	//usersPlans core.UsersPlanRepository,
+	//projectRepo core.ProjectsRepository,
 	logger core.AppLogger) GetPlan {
 	return &getPlan{
 		planRepo:   plans,
@@ -22,7 +22,7 @@ func NewGetPlan(plans core.PlanRepository,
 		userRepo:   users,
 		sourceRepo: sources,
 		topicRepo:  topics,
-		//UsersPlansRepo: usersPlans,
+		//projectRepo: projectRepo,
 		log: logger,
 	}
 }
@@ -33,7 +33,8 @@ type getPlan struct {
 	sourceRepo core.SourceRepository
 	topicRepo  core.TopicRepository
 	userRepo   core.UserRepository
-	log        core.AppLogger
+	//projectRepo core.ProjectsRepository
+	log core.AppLogger
 }
 
 func (usecase *getPlan) Do(ctx core.ReqContext, id int) (*domain.Plan, error) {
@@ -42,9 +43,9 @@ func (usecase *getPlan) Do(ctx core.ReqContext, id int) (*domain.Plan, error) {
 
 	appErr := usecase.validate(id)
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return nil, appErr
 	}
@@ -54,24 +55,20 @@ func (usecase *getPlan) Do(ctx core.ReqContext, id int) (*domain.Plan, error) {
 		plan.Steps = usecase.stepRepo.GetByPlan(ctx, plan.Id)
 		plan.Owner = usecase.userRepo.Get(ctx, plan.OwnerId)
 		usecase.fillSteps(ctx, plan)
+		return plan, nil
 	}
-	return plan, nil
+
+	return nil, core.NewError(core.NotExists)
 }
 
 func (usecase *getPlan) fillSteps(ctx core.ReqContext, plan *domain.Plan) {
 	for i := 0; i < len(plan.Steps); i++ {
 		if plan.Steps[i].ReferenceType == domain.TopicReference {
 			t := usecase.topicRepo.GetById(ctx, int(plan.Steps[i].ReferenceId))
-			if t == nil {
-				break
-			}
 			plan.Steps[i].Source = t
-		} else if plan.Steps[i].ReferenceType == domain.TestReference {
-			plan.Steps[i].Source = &domain.Source{
-				Title:      "Test",
-				Identifier: "Test",
-				Desc:       "Not implementer yet",
-			}
+		} else if plan.Steps[i].ReferenceType == domain.ProjectReference {
+			//p := usecase.projectRepo.Get(ctx, int(plan.Steps[i].ReferenceId))
+			//plan.Steps[i].Source = p
 		} else {
 			s := usecase.sourceRepo.Get(ctx, plan.Steps[i].ReferenceId)
 			if s == nil {

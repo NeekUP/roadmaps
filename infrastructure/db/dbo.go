@@ -56,7 +56,6 @@ type PlanDBO struct {
 	Title     string
 	TopicName string
 	OwnerId   string
-	Points    int
 }
 
 func (dbo *PlanDBO) ToPlan() *domain.Plan {
@@ -65,7 +64,6 @@ func (dbo *PlanDBO) ToPlan() *domain.Plan {
 		Title:     dbo.Title,
 		TopicName: dbo.TopicName,
 		OwnerId:   dbo.OwnerId,
-		Points:    dbo.Points,
 	}
 }
 
@@ -74,7 +72,6 @@ func (dbo *PlanDBO) FromPlan(plan *domain.Plan) {
 	dbo.Title = plan.Title
 	dbo.TopicName = plan.TopicName
 	dbo.OwnerId = plan.OwnerId
-	dbo.Points = plan.Points
 }
 
 /*
@@ -252,7 +249,6 @@ type CommentDBO struct {
 	Text       string
 	Title      sql.NullString
 	Deleted    bool
-	Points     int
 }
 
 func (dbo *CommentDBO) ToComment() *domain.Comment {
@@ -267,7 +263,6 @@ func (dbo *CommentDBO) ToComment() *domain.Comment {
 		Text:       dbo.Text,
 		Title:      dbo.Title.String,
 		Deleted:    dbo.Deleted,
-		Points:     dbo.Points,
 		Childs:     []domain.Comment{},
 	}
 }
@@ -283,13 +278,12 @@ func (dbo *CommentDBO) FromComment(c *domain.Comment) {
 	dbo.Text = c.Text
 	dbo.Title = ToNullString(c.Title)
 	dbo.Deleted = c.Deleted
-	dbo.Points = c.Points
 }
 
 /*
 	ChangeLogRecord
 *******************/
-type ChangeLogRecordDTO struct {
+type ChangeLogRecordDBO struct {
 	Id         int64
 	Date       time.Time
 	Action     int
@@ -300,7 +294,7 @@ type ChangeLogRecordDTO struct {
 	Points     int
 }
 
-func (dbo *ChangeLogRecordDTO) ToChangeLogRecord() *domain.ChangeLogRecord {
+func (dbo *ChangeLogRecordDBO) ToChangeLogRecord() *domain.ChangeLogRecord {
 	return &domain.ChangeLogRecord{
 		Id:         dbo.Id,
 		Date:       dbo.Date,
@@ -313,7 +307,7 @@ func (dbo *ChangeLogRecordDTO) ToChangeLogRecord() *domain.ChangeLogRecord {
 	}
 }
 
-func (dbo *ChangeLogRecordDTO) FromChangeLogRecord(c *domain.ChangeLogRecord) {
+func (dbo *ChangeLogRecordDBO) FromChangeLogRecord(c *domain.ChangeLogRecord) {
 	dbo.Id = c.Id
 	dbo.Date = c.Date
 	dbo.Action = int(c.Action)
@@ -322,6 +316,67 @@ func (dbo *ChangeLogRecordDTO) FromChangeLogRecord(c *domain.ChangeLogRecord) {
 	dbo.EntityId = c.EntityId
 	dbo.Diff = ToNullString(c.Diff)
 	dbo.Points = c.Points
+}
+
+/*
+	Project
+*******************/
+
+type ProjectDBO struct {
+	Id      int
+	Title   string
+	Text    string
+	Tags    []string
+	OwnerId string
+}
+
+func (dbo *ProjectDBO) ToProject(tags []domain.TopicTag) *domain.Project {
+	return &domain.Project{
+		Id:      dbo.Id,
+		Title:   dbo.Title,
+		Text:    dbo.Text,
+		Tags:    tags,
+		OwnerId: dbo.OwnerId,
+	}
+}
+
+func (dbo *ProjectDBO) FromProject(p *domain.Project) {
+	dbo.Id = p.Id
+	dbo.Title = p.Title
+	dbo.Text = p.Text
+	dbo.Tags = make([]string, len(p.Tags))
+	dbo.OwnerId = p.OwnerId
+
+	for i, tag := range p.Tags {
+		dbo.Tags[i] = tag.Name
+	}
+}
+
+type PointsDBO struct {
+	Id     int64
+	Update time.Time
+	Count  int
+	Avg    float32
+	Value  float32
+	Voted  bool
+}
+
+func (dbo *PointsDBO) ToPoints() *domain.Points {
+	return &domain.Points{
+		Id:    dbo.Id,
+		Count: dbo.Count,
+		Avg:   dbo.Avg,
+		Value: dbo.Value,
+		Voted: dbo.Voted,
+	}
+}
+
+func (dbo *PointsDBO) FromPoints(p *domain.Points) {
+	dbo.Id = p.Id
+	dbo.Count = p.Count
+	dbo.Avg = p.Avg
+	dbo.Value = p.Value
+	dbo.Voted = p.Voted
 }
 
 func ToNullString(s string) sql.NullString {

@@ -5,7 +5,7 @@ type Plan struct {
 	Title     string
 	TopicName string
 	OwnerId   string
-	Points    int
 	Steps     []Step
 	Owner     *User
+	Points    *Points
 }

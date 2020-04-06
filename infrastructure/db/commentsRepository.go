@@ -57,7 +57,7 @@ func (r *commentsRepo) Delete(ctx core.ReqContext, id int64) (bool, error) {
 }
 
 func (r *commentsRepo) Get(ctx core.ReqContext, id int64) *domain.Comment {
-	query := `SELECT id, entitytype, entityid, date, parentid, threadid, userid, text, title, deleted, points FROM comments WHERE id=$1;`
+	query := `SELECT id, entitytype, entityid, date, parentid, threadid, userid, text, title, deleted FROM comments WHERE id=$1;`
 	tr := ctx.StartTrace("CommentsRepository.Get")
 	defer ctx.StopTrace(tr)
 	row := r.Db.Conn.QueryRow(context.Background(), query, id)
@@ -73,12 +73,12 @@ func (r *commentsRepo) Get(ctx core.ReqContext, id int64) *domain.Comment {
 }
 
 func (r *commentsRepo) GetThreadList(ctx core.ReqContext, entityType int, entityId int64, count int, page int) []domain.Comment {
-	query := `SELECT id, entitytype, entityid, date, parentid, threadid, userid, text, title, deleted, points 
+	query := `SELECT id, entitytype, entityid, date, parentid, threadid, userid, text, title, deleted 
 	FROM comments 
 	WHERE entitytype=$1 
 		AND entityid=$2 
 		AND threadId is null
-	ORDER BY id, points DESC
+	ORDER BY id DESC
 	LIMIT $3 OFFSET $4;`
 	tr := ctx.StartTrace("CommentsRepository.GetThreadList")
 	defer ctx.StopTrace(tr)
@@ -92,7 +92,7 @@ func (r *commentsRepo) GetThreadList(ctx core.ReqContext, entityType int, entity
 }
 
 func (r *commentsRepo) GetThread(ctx core.ReqContext, entityType int, entityId int64, threadId int64) []domain.Comment {
-	query := `SELECT id, entitytype, entityid, date, parentid, threadid, userid, text, title, deleted, points 
+	query := `SELECT id, entitytype, entityid, date, parentid, threadid, userid, text, title, deleted 
 	FROM comments 
 	WHERE entitytype = $1 
 		AND entityid = $2 
@@ -123,7 +123,7 @@ func (r *commentsRepo) scanRows(rows pgx.Rows) []domain.Comment {
 
 func (r *commentsRepo) scanRow(row pgx.Row) (*CommentDBO, error) {
 	dbo := CommentDBO{}
-	err := row.Scan(&dbo.Id, &dbo.EntityType, &dbo.EntityId, &dbo.Date, &dbo.ParentId, &dbo.ThreadId, &dbo.UserId, &dbo.Text, &dbo.Title, &dbo.Deleted, &dbo.Points)
+	err := row.Scan(&dbo.Id, &dbo.EntityType, &dbo.EntityId, &dbo.Date, &dbo.ParentId, &dbo.ThreadId, &dbo.UserId, &dbo.Text, &dbo.Title, &dbo.Deleted)
 	if err != nil && err.Error() == "no rows in result set" {
 		return &dbo, sql.ErrNoRows
 	}

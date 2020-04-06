@@ -17,7 +17,7 @@ func NewChangeLogRepository(db *DbConnection) core.ChangeLogRepository {
 
 // TODO: add indexes int db!
 func (r *changeLogRepo) Add(record *domain.ChangeLogRecord) bool {
-	dbo := &ChangeLogRecordDTO{}
+	dbo := &ChangeLogRecordDBO{}
 	dbo.FromChangeLogRecord(record)
 	query := `INSERT INTO changelog(date, action, userid, entitytype, entityid, diff, points)
 		VALUES (now(), $1, $2, $3, $4, $5, 0);`

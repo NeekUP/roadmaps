@@ -34,9 +34,9 @@ func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) 
 	userId := ctx.UserId()
 	appErr := usecase.validate(req, userId, old)
 	if appErr != nil {
-		usecase.log.Errorw("Invalid request",
-			"ReqId", ctx.ReqId(),
-			"Error", appErr.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", appErr.Error(),
 		)
 		return false, appErr
 	}
@@ -63,9 +63,9 @@ func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) 
 
 	if ok, err := usecase.planRepo.Update(ctx, plan); !ok {
 		if err != nil {
-			usecase.log.Errorw("Invalid request",
-				"ReqId", ctx.ReqId(),
-				"Error", err.Error(),
+			usecase.log.Errorw("invalid request",
+				"reqid", ctx.ReqId(),
+				"error", err.Error(),
 			)
 		}
 		return false, err

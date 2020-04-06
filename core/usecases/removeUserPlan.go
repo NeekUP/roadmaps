@@ -24,9 +24,9 @@ func (usecase *removeUserPlan) Do(ctx core.ReqContext, planId int) (bool, error)
 
 	userId := ctx.UserId()
 	if _, err := usecase.usersPlanRepo.Remove(ctx, userId, planId); err != nil {
-		usecase.log.Errorw("Not valid request",
-			"ReqId", ctx.ReqId(),
-			"Error", err.Error(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
+			"error", err.Error(),
 		)
 		return false, err
 	}

@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"github.com/NeekUP/roadmaps/domain"
 	"github.com/badoux/checkmail"
 	"net"
 	"regexp"
@@ -72,12 +73,6 @@ func IsValidUserID(id string) bool {
 	return err == nil
 }
 
-// func IsJson(str string) bool {
-// 	// TODO: add more tests
-// 	var js map[string]interface{}
-// 	return json.Unmarshal([]byte(str), &js) == nil
-// }
-
 func IsValidDscription(desc string) bool {
 	l := len(desc)
 	return l < 8000
@@ -86,6 +81,20 @@ func IsValidDscription(desc string) bool {
 func IsValidTopicTitle(title string) bool {
 	l := utf8.RuneCountInString(title)
 	return l > 0 && l < 100
+}
+
+func IsValidProjectTitle(title string) bool {
+	l := utf8.RuneCountInString(title)
+	return l > 0 && l < 100
+}
+
+func IsValidEntityType(entityType domain.EntityType) bool {
+	return entityType.IsValid()
+}
+
+func IsValidProjectText(title string) bool {
+	l := utf8.RuneCountInString(title)
+	return l > 0 && l < 10000
 }
 
 func IsValidTopicName(name string) bool {

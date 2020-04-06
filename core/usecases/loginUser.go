@@ -26,8 +26,8 @@ func (usecase *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, 
 
 	appErr := usecase.validate(ctx, email, password)
 	if appErr != nil {
-		usecase.log.Errorw("Not valid request",
-			"reqId", ctx.ReqId(),
+		usecase.log.Errorw("invalid request",
+			"reqid", ctx.ReqId(),
 			"email", email,
 			"error", appErr.Error(),
 		)
@@ -39,21 +39,21 @@ func (usecase *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, 
 	user := usecase.userRepo.FindByEmail(ctx, email)
 	if user == nil {
 		usecase.log.Infow("User not found",
-			"reqId", ctx.ReqId(),
+			"reqid", ctx.ReqId(),
 			"email", email)
 		return nil, "", "", core.NewError(core.AuthenticationError)
 	}
 
 	if !user.EmailConfirmed {
 		usecase.log.Infow("Email not confirmed",
-			"reqId", ctx.ReqId(),
+			"reqid", ctx.ReqId(),
 			"email", email)
 		return nil, "", "", core.NewError(core.AuthenticationError)
 	}
 
 	if !usecase.hash.CheckPassword(password, user.Pass, user.Salt) {
 		usecase.log.Infow("Password is wrong",
-			"reqId", ctx.ReqId(),
+			"reqid", ctx.ReqId(),
 			"email", email)
 		return nil, "", "", core.NewError(core.AuthenticationError)
 	}
@@ -62,7 +62,7 @@ func (usecase *loginUser) Do(ctx core.ReqContext, email, password, fingerprint, 
 	aToken, rToken, err := usecase.tokenService.Create(ctx, user, fingerprint, useragent)
 	if err != nil {
 		usecase.log.Errorw("Fail to create token pair",
-			"reqId", ctx.ReqId(),
+			"reqid", ctx.ReqId(),
 			"email", email,
 			"error", err.Error())
 		return nil, "", "", core.NewError(core.AuthenticationError)
