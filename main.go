@@ -95,12 +95,14 @@ func main() {
 	changesRepository := db.NewChangeLogRepository(dbConnection)
 	changeLog := infrastructure.NewChangesCollector(changesRepository, newLogger("changeLog"))
 	emailService := infrastructure.NewEmailSender(Cfg.SiteHost, Cfg.SMTP.SenderEmail, Cfg.SMTP.SenderName, Cfg.SMTP.Host, Cfg.SMTP.Pass, Cfg.SMTP.Port, newLogger("emails"))
+
+	api.ImgManager = imageManager
 	/*
 		Usecases
 	**************************************/
 
 	// Users
-	regUser := usecases.NewRegisterUser(userRepo, emailService, hashProvider, newLogger("registerUser"))
+	regUser := usecases.NewRegisterUser(userRepo, emailService, hashProvider, imageManager, newLogger("registerUser"))
 	loginUser := usecases.NewLoginUser(userRepo, newLogger("loginUser"), hashProvider, tokenService)
 	refreshToken := usecases.NewRefreshToken(userRepo, newLogger("refreshToken"), tokenService, JwtSecret)
 	emailConfirmation := usecases.NewEmailConfirmation(userRepo, newLogger("emailConfirmation"))
