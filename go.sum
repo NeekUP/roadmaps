@@ -1,10 +1,5 @@
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/NeekUP/nptrace v0.1.1 h1:au/xI+Fk1ZLW6VPMj5ipFs8saHDcEbktX0WAQZVmp/0=
-github.com/NeekUP/nptrace v0.1.1/go.mod h1:GdjpsJmdFCCK4ynDif8YNgczERDYCS/2XdQojAvxbjE=
-github.com/NeekUP/nptrace v0.1.2/go.mod h1:GdjpsJmdFCCK4ynDif8YNgczERDYCS/2XdQojAvxbjE=
-github.com/NeekUP/nptrace v0.1.3 h1:dso+HqgUlz7uD95iI9u7l5Zho0ITKTG3vMafDSNxVso=
-github.com/NeekUP/nptrace v0.1.3/go.mod h1:GdjpsJmdFCCK4ynDif8YNgczERDYCS/2XdQojAvxbjE=
 github.com/NeekUP/nptrace v0.1.4 h1:aDN59bFF2J7m8hNbq8J0E0aJv4qSV5UppYmFZbZuYKQ=
 github.com/NeekUP/nptrace v0.1.4/go.mod h1:GdjpsJmdFCCK4ynDif8YNgczERDYCS/2XdQojAvxbjE=
 github.com/PuerkitoBio/goquery v1.5.0 h1:uGvmFXOA73IKluu/F84Xd1tt/z07GYm8X49XKHP7EJk=
@@ -98,6 +93,8 @@ github.com/mssola/user_agent v0.5.0 h1:gRF7/x8cKt8qzAosYGsBNyirta+F8fvYDlJrgXws9
 github.com/mssola/user_agent v0.5.0/go.mod h1:UFiKPVaShrJGW93n4uo8dpPdg1BSVpw2P9bneo0Mtp8=
 github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 h1:zYyBkD/k9seD2A7fsi6Oo2LfFZAehjjQMERAvZLEDnQ=
 github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646/go.mod h1:jpp1/29i3P1S/RLdc7JQKbRpFeM1dOBd8T9ki5s+AY8=
+github.com/nullrocks/identicon v0.0.0-20180626043057-7875f45b0022 h1:Ys0rDzh8s4UMlGaDa1UTA0sfKgvF0hQZzTYX8ktjiDc=
+github.com/nullrocks/identicon v0.0.0-20180626043057-7875f45b0022/go.mod h1:x4NsS+uc7ecH/Cbm9xKQ6XzmJM57rWTkjywjfB2yQ18=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

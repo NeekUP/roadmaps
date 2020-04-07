@@ -2,10 +2,15 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/NeekUP/roadmaps/core"
 	"github.com/microcosm-cc/bluemonday"
 	"net/http"
 	"regexp"
 	"text/template"
+)
+
+var (
+	ImgManager core.ImageManager
 )
 
 type status struct {
