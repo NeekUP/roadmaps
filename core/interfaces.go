@@ -133,6 +133,9 @@ type ReqContext interface {
 }
 
 type ImageManager interface {
-	Save(data []byte, name string) error
-	GetUrl(name string) string
+	SaveResourceCover(data []byte, name string) error
+	GetResourceCoverUrl(name string) string
+	GetAvatarUrl(name string) string
+	GenerateAvatar(username string) ([]byte, error)
+	SaveAvatar(data []byte, name string) error
 }

@@ -109,7 +109,7 @@ func NewSourceDto(s interface{}) interface{} {
 			Title:      v.Title,
 			Type:       v.Type,
 			Properties: v.Properties,
-			Img:        v.Img,
+			Img:        ImgManager.GetAvatarUrl(v.Img),
 			Desc:       v.Desc,
 		}
 
@@ -145,7 +145,7 @@ func NewUserDto(u *domain.User) *user {
 	return &user{
 		Id:   u.Id,
 		Name: u.Name,
-		Img:  u.Img,
+		Img:  ImgManager.GetAvatarUrl(u.Img),
 	}
 }
 

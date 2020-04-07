@@ -171,7 +171,7 @@ func (usecase *addSource) resizeAndSaveImage(img image.Image) (string, error) {
 	}
 
 	name := usecase.generateFileName("jpg")
-	err = usecase.imageManager.Save(resized, name)
+	err = usecase.imageManager.SaveResourceCover(resized, name)
 	if err != nil {
 		return "", err
 	}
