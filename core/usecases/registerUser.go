@@ -18,13 +18,15 @@ type registerUser struct {
 	log          core.AppLogger
 	hash         core.HashProvider
 	emailService core.EmailSender
+	imgManage    core.ImageManager
 }
 
-func NewRegisterUser(userRepo core.UserRepository, emailService core.EmailSender, hash core.HashProvider, log core.AppLogger) RegisterUser {
+func NewRegisterUser(userRepo core.UserRepository, emailService core.EmailSender, hash core.HashProvider, imgManager core.ImageManager, log core.AppLogger) RegisterUser {
 	return &registerUser{
 		userRepo:     userRepo,
 		emailService: emailService,
 		hash:         hash,
+		imgManage:    imgManager,
 		log:          log,
 	}
 }
@@ -53,26 +55,29 @@ func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, 
 		return nil, appErr
 	}
 
-	//if ok, err := core.IsExistsEmail(email); !ok {
-	//	if err != nil {
-	//		usecase.log.Errorw("Not exists email",
-	//			"reqid", ctx.ReqId(),
-	//			"email", email,
-	//			"error", err.Error(),
-	//		)
-	//	}
-	//	return nil, core.NewError(core.BadEmail)
-	//}
+	var avatarName string
+	avatar, err := usecase.imgManage.GenerateAvatar(name)
+	if err != nil {
+		usecase.log.Errorw("Fail to generate avatar",
+			"reqid", ctx.ReqId(),
+			"email", email,
+			"error", err.Error(),
+			"name", name,
+		)
+	} else {
+		avatarName = uuid.New().String() + ".png"
+	}
 
 	hash, salt := usecase.hash.HashPassword(password)
 	user := &domain.User{
-		Id:                uuid.New().String(),
+		Id:                name,
 		Name:              name,
 		NormalizedName:    strings.ToUpper(name),
 		Email:             email,
 		Rights:            domain.U,
 		Pass:              hash,
 		Salt:              salt,
+		Img:               avatarName,
 		EmailConfirmation: uuid.New().String(),
 	}
 
@@ -82,6 +87,18 @@ func (usecase *registerUser) Do(ctx core.ReqContext, name string, email string, 
 			"error", err.Error(),
 		)
 		return nil, err
+	}
+
+	if avatarName != "" {
+		err = usecase.imgManage.SaveAvatar(avatar, avatarName)
+		if err != nil {
+			usecase.log.Errorw("Fail to generate avatar",
+				"reqid", ctx.ReqId(),
+				"email", email,
+				"error", err.Error(),
+				"name", name,
+			)
+		}
 	}
 
 	go usecase.emailService.Registration(email, user.Id, user.EmailConfirmation)

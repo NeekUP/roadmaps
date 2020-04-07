@@ -2,7 +2,7 @@ package tests
 
 type fakeImageManager struct{}
 
-func (this *fakeImageManager) Save(data []byte, name string) error {
+func (this *fakeImageManager) SaveResourceCover(data []byte, name string) error {
 	return nil
 }
 
