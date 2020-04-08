@@ -109,7 +109,7 @@ func NewSourceDto(s interface{}) interface{} {
 			Title:      v.Title,
 			Type:       v.Type,
 			Properties: v.Properties,
-			Img:        ImgManager.GetAvatarUrl(v.Img),
+			Img:        ImgManager.GetResourceCoverUrl(v.Img),
 			Desc:       v.Desc,
 		}
 
