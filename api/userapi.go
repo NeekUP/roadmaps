@@ -8,11 +8,11 @@ import (
 	"net/http"
 )
 
-type publicUser struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	Img  string `json:"img"`
-}
+//type publicUser struct {
+//	Id   string `json:"id"`
+//	Name string `json:"name"`
+//	Img  string `json:"img"`
+//}
 
 /*
 	Register User
@@ -86,9 +86,9 @@ func (req *loginUserReq) Sanitize() {
 }
 
 type loginUserRes struct {
-	AToken string      `json:"atoken"`
-	RToken string      `json:"rtoken"`
-	User   *publicUser `json:"user"`
+	AToken string `json:"atoken"`
+	RToken string `json:"rtoken"`
+	User   *user  `json:"user"`
 }
 
 func Login(loginUsr usecases.LoginUser, log core.AppLogger, captcha Captcha) func(w http.ResponseWriter, r *http.Request) {
@@ -121,10 +121,7 @@ func Login(loginUsr usecases.LoginUser, log core.AppLogger, captcha Captcha) fun
 		}
 
 		valueResponse(w, &loginUserRes{
-			User: &publicUser{
-				Id:   user.Id,
-				Name: user.Name,
-				Img:  user.Img},
+			User:   NewUserDto(user),
 			AToken: aToken,
 			RToken: rToken})
 	}

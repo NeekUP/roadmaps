@@ -8,7 +8,7 @@
     "path": "./log"
   },
   "imgSaver": {
-    "localFolder": "/static/img",
+    "localFolder": "static/img",
     "uriPath": "/path/to/img"
   },
   "httpserver": {
