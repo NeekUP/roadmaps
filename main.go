@@ -80,6 +80,8 @@ func main() {
 	**************************************/
 
 	dbConnection := db.NewDbConnection(Cfg.Db, newLogger("database"))
+	cache := infrastructure.NewInMemoryCache()
+	openAuthenticator := infrastructure.NewOpenAuthenticator(cache, Cfg.OAuth.ReturnUrl)
 	hashProvider := infrastructure.NewSha256HashProvider()
 	userRepo := db.NewUserRepository(dbConnection)
 	sourceRepo := db.NewSourceRepository(dbConnection)
@@ -97,6 +99,10 @@ func main() {
 	emailService := infrastructure.NewEmailSender(Cfg.SiteHost, Cfg.SMTP.SenderEmail, Cfg.SMTP.SenderName, Cfg.SMTP.Host, Cfg.SMTP.Pass, Cfg.SMTP.Port, newLogger("emails"))
 
 	api.ImgManager = imageManager
+
+	for _, v := range Cfg.OAuth.Providers {
+		openAuthenticator.AddProvider(v.Name, v.ClientId, v.Secret, v.Scope)
+	}
 	/*
 		Usecases
 	**************************************/
@@ -106,7 +112,9 @@ func main() {
 	loginUser := usecases.NewLoginUser(userRepo, newLogger("loginUser"), hashProvider, tokenService)
 	refreshToken := usecases.NewRefreshToken(userRepo, newLogger("refreshToken"), tokenService, JwtSecret)
 	emailConfirmation := usecases.NewEmailConfirmation(userRepo, newLogger("emailConfirmation"))
-
+	checkUser := usecases.NewCheckUser(userRepo, newLogger("checkUser"))
+	registerUserOauth := usecases.NewRegisterUserOauth(userRepo, hashProvider, imageManager, newLogger("registerUserOauth"))
+	loginUserOauth := usecases.NewLoginUserOauth(userRepo, tokenService, newLogger("loginUserOauth"))
 	// Sources
 	addSource := usecases.NewAddSource(sourceRepo, newLogger("addSource"), imageManager, changeLog)
 
@@ -153,6 +161,12 @@ func main() {
 	apiLoginUser := api.Login(loginUser, newLogger("loginUser"), captcha)
 	apiRefreshToken := api.RefreshToken(refreshToken, newLogger("refreshToken"), captcha)
 	apiEmailConfirmation := api.EmailConfirmation(emailConfirmation, newLogger("emailConfirmation"))
+	apiCheckUser := api.CheckUser(checkUser, newLogger("checkUser"))
+	apiRegisterUserOauthLink := api.RegisterOAuthLink(checkUser, openAuthenticator, newLogger("registerUserOauth"))
+	apiRegisterUserOauth := api.RegisterOAuth(registerUserOauth, loginUserOauth, openAuthenticator, newLogger("registerUserOauth"))
+	apiLoginUserOauthLink := api.LoginOAuthLink(openAuthenticator, newLogger("loginUserOauth"))
+	apiLoginUserOauth := api.LoginOauth(loginUserOauth, openAuthenticator, newLogger("loginUserOauth"))
+
 	// Sources
 	apiAddSource := api.AddSource(addSource, newLogger("addSource"))
 
@@ -188,6 +202,7 @@ func main() {
 
 	// Vote
 	apiAddPoints := api.AddPoints(addPoints, newLogger("addPoints"))
+
 	/*
 		Database
 	**************************************/
@@ -213,6 +228,11 @@ func main() {
 		r.Post("/api/user/registration", apiReqUser)
 		r.Post("/api/user/login", apiLoginUser)
 		r.Post("/api/user/refresh", apiRefreshToken)
+		r.Post("/api/user/check", apiCheckUser)
+		r.Post("/api/user/oauth/registrationStart", apiRegisterUserOauthLink)
+		r.Post("/api/user/oauth/registrationEnd", apiRegisterUserOauth)
+		r.Post("/api/user/oauth/loginStart", apiLoginUserOauthLink)
+		r.Post("/api/user/oauth/loginEnd", apiLoginUserOauth)
 		r.Post("/api/comment/threads", apiGetCommentsThreads)
 		r.Post("/api/comment/thread", apiGetCommentsThread)
 		r.Get("/s/confirm", apiEmailConfirmation)

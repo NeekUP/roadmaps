@@ -1,5 +1,16 @@
 {
   "siteHost": "http://localhost:8080",
+  "OAuth": {
+    "returnUrl": "http://localhost:8080/OAuthReturnUrl",
+    "providers": [
+      {
+        "name": "facebook",
+        "clientId": "655330364498423",
+        "secret": "76f31102687f2e14c0e934458aa3af00",
+        "scope": ["public_profile","email"]
+      }
+    ]
+  },
   "Db": {
     "connString": "user=postgres password=1004287 host=localhost port=5432 database=roadmaps sslmode=disable",
     "logLevel": "none"

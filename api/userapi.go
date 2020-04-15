@@ -8,12 +8,6 @@ import (
 	"net/http"
 )
 
-//type publicUser struct {
-//	Id   string `json:"id"`
-//	Name string `json:"name"`
-//	Img  string `json:"img"`
-//}
-
 /*
 	Register User
 ******************************************************************/
@@ -25,9 +19,8 @@ type regUserReq struct {
 }
 
 type regUserResp struct {
-	Name             string `json:"name"`
-	Email            string `json:"email"`
-	NeedConfirmation bool   `json:"confirmation"`
+	User             *user `json:"name"`
+	NeedConfirmation bool  `json:"confirmation"`
 }
 
 func (req *regUserReq) Sanitize() {
@@ -53,8 +46,10 @@ func RegUser(regUsr usecases.RegisterUser, log core.AppLogger, captcha Captcha) 
 		}
 
 		data.Sanitize()
-		u, err := regUsr.Do(infrastructure.NewContext(r.Context()), data.Name, data.Email, data.Pass)
+		ctx := infrastructure.NewContext(r.Context())
+		u, err := regUsr.Do(ctx, data.Name, data.Email, data.Pass)
 		if err != nil {
+			log.Errorw("usecase err", "error", err.Error(), "reqid", ctx.ReqId())
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
 			} else {
@@ -64,8 +59,7 @@ func RegUser(regUsr usecases.RegisterUser, log core.AppLogger, captcha Captcha) 
 		}
 
 		valueResponse(w, &regUserResp{
-			Name:             u.Name,
-			Email:            u.Email,
+			User:             NewUserDto(u),
 			NeedConfirmation: !u.EmailConfirmed,
 		})
 	}
@@ -104,14 +98,17 @@ func Login(loginUsr usecases.LoginUser, log core.AppLogger, captcha Captcha) fun
 		err := decoder.Decode(data)
 		defer r.Body.Close()
 
+		ctx := infrastructure.NewContext(r.Context())
 		if err != nil {
+			log.Errorw("parse request", "error", err.Error(), "reqid", ctx.ReqId())
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
 		data.Sanitize()
-		user, aToken, rToken, err := loginUsr.Do(infrastructure.NewContext(r.Context()), data.Email, data.Pass, data.Fingerprint, r.UserAgent())
+		user, aToken, rToken, err := loginUsr.Do(ctx, data.Email, data.Pass, data.Fingerprint, r.UserAgent())
 
 		if err != nil {
+			log.Errorw("login", "error", err.Error(), "reqid", ctx.ReqId())
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
 			} else {
@@ -124,6 +121,274 @@ func Login(loginUsr usecases.LoginUser, log core.AppLogger, captcha Captcha) fun
 			User:   NewUserDto(user),
 			AToken: aToken,
 			RToken: rToken})
+	}
+}
+
+type registerOauthLinkRequest struct {
+	ProviderName string `json:"provider"`
+	Name         string `json:"name"`
+}
+
+type registerOauthLinkResponse struct {
+	Url string `json:"url"`
+}
+
+func RegisterOAuthLink(checkUser usecases.CheckUser, openAuth core.OpenAuthenticator, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		decoder := json.NewDecoder(r.Body)
+		data := new(registerOauthLinkRequest)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		ctx := infrastructure.NewContext(r.Context())
+
+		if err != nil {
+			log.Errorw("parse request", "error", err.Error(), "reqid", ctx.ReqId())
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		if !openAuth.HasProvider(data.ProviderName) {
+			errors := make(map[string]string)
+			errors["provider"] = core.InvalidValue.String()
+			badRequest(w, core.ValidationError(errors))
+			return
+		}
+
+		nameExists, err := checkUser.Do(ctx, data.Name)
+		if err != nil {
+			log.Errorw("checkUser", "error", err.Error(), "reqid", ctx.ReqId())
+			statusResponse(w, &status{Code: http.StatusInternalServerError})
+			return
+		}
+
+		if nameExists {
+			errors := make(map[string]string)
+			errors["name"] = core.AlreadyExists.String()
+			badRequest(w, core.ValidationError(errors))
+			return
+		}
+
+		url, err := openAuth.RegisterLink(data.Name, data.ProviderName)
+		if err != nil {
+			log.Errorw("oauth registerLink", "error", err.Error(), "reqid", ctx.ReqId())
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		valueResponse(w, &registerOauthLinkResponse{Url: url})
+	}
+}
+
+type registerOauthRequest struct {
+	ProviderName string `json:"provider"`
+	Token        string `json:"token"`
+	State        string `json:"state"`
+	Fingerprint  string `json:"fp"`
+}
+
+type registerOauthResp struct {
+	User             *user  `json:"name"`
+	NeedConfirmation bool   `json:"confirmation"`
+	AToken           string `json:"atoken"`
+	RToken           string `json:"rtoken"`
+}
+
+func RegisterOAuth(reqOauth usecases.RegisterUserOauth, loginOauth usecases.LoginUserOauth, openAuth core.OpenAuthenticator, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		data := new(registerOauthRequest)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		ctx := infrastructure.NewContext(r.Context())
+
+		if err != nil {
+			log.Errorw("parse request", "error", err.Error(), "reqid", ctx.ReqId())
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		if !openAuth.HasProvider(data.ProviderName) {
+			errors := make(map[string]string)
+			errors["provider"] = core.InvalidValue.String()
+			badRequest(w, core.ValidationError(errors))
+			return
+		}
+
+		name, email, openid, err := openAuth.Auth(data.ProviderName, data.State, data.Token)
+		if err != nil {
+			log.Errorw("oauth auth", "error", err.Error(), "reqid", ctx.ReqId())
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		user, err := reqOauth.Do(ctx, name, email, data.ProviderName, openid)
+		if err != nil {
+			log.Errorw("register oauth", "error", err.Error(), "reqid", ctx.ReqId())
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		_, aToken, rToken, err := loginOauth.Do(ctx, data.ProviderName, openid, data.Fingerprint, r.UserAgent())
+		if err != nil {
+			log.Errorw("login oauth", "error", err.Error(), "reqid", ctx.ReqId())
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+		}
+		valueResponse(w, &registerOauthResp{
+			User:             NewUserDto(user),
+			NeedConfirmation: true,
+			AToken:           aToken,
+			RToken:           rToken,
+		})
+	}
+}
+
+type loginOauthLinkRequest struct {
+	ProviderName string `json:"provider"`
+}
+
+type loginOauthLinkResponse struct {
+	Url string `json:"url"`
+}
+
+func LoginOAuthLink(openAuth core.OpenAuthenticator, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		decoder := json.NewDecoder(r.Body)
+		data := new(loginOauthLinkRequest)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+		ctx := infrastructure.NewContext(r.Context())
+
+		if err != nil {
+			log.Errorw("parse request", "error", err.Error(), "reqid", ctx.ReqId())
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		if !openAuth.HasProvider(data.ProviderName) {
+			errors := make(map[string]string)
+			errors["provider"] = core.InvalidValue.String()
+			badRequest(w, core.ValidationError(errors))
+			return
+		}
+
+		url, err := openAuth.LoginLink(data.ProviderName)
+		if err != nil {
+			log.Errorw("oauth login link", "error", err.Error(), "reqid", ctx.ReqId())
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		valueResponse(w, &loginOauthLinkResponse{Url: url})
+	}
+}
+
+type loginOauthRequest struct {
+	ProviderName string `json:"provider"`
+	Token        string `json:"token"`
+	State        string `json:"state"`
+	Fingerpring  string `json:"fp"`
+}
+
+func LoginOauth(loginUsr usecases.LoginUserOauth, openAuth core.OpenAuthenticator, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		data := new(loginOauthRequest)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+		ctx := infrastructure.NewContext(r.Context())
+
+		if err != nil {
+			log.Errorw("parse request", "error", err.Error(), "reqid", ctx.ReqId())
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		if !openAuth.HasProvider(data.ProviderName) {
+			errors := make(map[string]string)
+			errors["provider"] = core.InvalidValue.String()
+			badRequest(w, core.ValidationError(errors))
+			return
+		}
+
+		_, _, openid, err := openAuth.Auth(data.ProviderName, data.State, data.Token)
+		if err != nil {
+			log.Errorw("oauth auth", "error", err.Error(), "reqid", ctx.ReqId())
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		user, aToken, rToken, err := loginUsr.Do(ctx, data.ProviderName, openid, data.Fingerpring, r.UserAgent())
+		if err != nil {
+			log.Errorw("oauth login", "error", err.Error(), "reqid", ctx.ReqId())
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+		}
+
+		valueResponse(w, &loginUserRes{
+			User:   NewUserDto(user),
+			AToken: aToken,
+			RToken: rToken})
+	}
+}
+
+type checkUsernameRequest struct {
+	Username string `json:"name"`
+}
+
+type checkUsernameResponse struct {
+	IsFree bool `json:"isFree"`
+}
+
+func CheckUser(checkUser usecases.CheckUser, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		decoder := json.NewDecoder(r.Body)
+		data := new(checkUsernameRequest)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+		ctx := infrastructure.NewContext(r.Context())
+
+		if err != nil {
+			log.Errorw("parse request", "error", err.Error(), "reqid", ctx.ReqId())
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		nameExists, err := checkUser.Do(ctx, data.Username)
+		if err != nil {
+			log.Errorw("check user", "error", err.Error(), "reqid", ctx.ReqId())
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		valueResponse(w, &checkUsernameResponse{nameExists})
 	}
 }
 
@@ -149,15 +414,18 @@ func RefreshToken(refreshToken usecases.RefreshToken, log core.AppLogger, captch
 		data := new(refreshTokenReq)
 		err := decoder.Decode(data)
 		defer r.Body.Close()
+		ctx := infrastructure.NewContext(r.Context())
 
 		if err != nil {
+			log.Errorw("parse request", "error", err.Error(), "reqid", ctx.ReqId())
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
 
-		aToken, rToken, err := refreshToken.Do(infrastructure.NewContext(r.Context()), data.AToken, data.RToken, data.Fingerprint, r.UserAgent())
+		aToken, rToken, err := refreshToken.Do(ctx, data.AToken, data.RToken, data.Fingerprint, r.UserAgent())
 
 		if err != nil {
+			log.Errorw("refresh token", "error", err.Error(), "reqid", ctx.ReqId())
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
 			} else {
@@ -171,10 +439,6 @@ func RefreshToken(refreshToken usecases.RefreshToken, log core.AppLogger, captch
 			RToken: rToken})
 	}
 }
-
-/*
-	TODO: Validate email
-******************************************************************/
 
 type userPlanReq struct {
 	PlanId string `json:"planId"`
@@ -195,16 +459,17 @@ func AddUserPlan(addUserPlan usecases.AddUserPlan, log core.AppLogger) func(w ht
 		data := new(userPlanReq)
 		err := decoder.Decode(data)
 		defer r.Body.Close()
+		ctx := infrastructure.NewContext(r.Context())
 
 		if err != nil {
+			log.Errorw("parse request", "error", err.Error(), "reqid", ctx.ReqId())
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
 		data.Sanitize()
-		ctx := infrastructure.NewContext(r.Context())
 		planId, err := core.DecodeStringToNum(data.PlanId)
 		if err != nil {
-			log.Errorw("Bad request", "UserId", ctx.UserId(), "Error", err.Error())
+			log.Errorw("Bad request", "userid", ctx.UserId(), "error", err.Error(), "reqid", ctx.ReqId())
 			statusResponse(w, &status{Code: 400, Message: core.InvalidRequest.String()})
 			return
 		}
@@ -212,6 +477,7 @@ func AddUserPlan(addUserPlan usecases.AddUserPlan, log core.AppLogger) func(w ht
 		success, err := addUserPlan.Do(ctx, planId)
 
 		if err != nil {
+			log.Errorw("add users plan", "error", err.Error(), "reqid", ctx.ReqId())
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
 			} else {
@@ -240,7 +506,7 @@ func RemoveUserPlan(removeUserPlan usecases.RemoveUserPlan, log core.AppLogger) 
 		ctx := infrastructure.NewContext(r.Context())
 		planId, err := core.DecodeStringToNum(data.PlanId)
 		if err != nil {
-			log.Errorw("Bad request", "UserId", ctx.UserId(), "Error", err.Error())
+			log.Errorw("Bad request", "userid", ctx.UserId(), "error", err.Error(), "reqid", ctx.ReqId())
 			statusResponse(w, &status{Code: 400, Message: core.InvalidRequest.String()})
 			return
 		}
@@ -248,6 +514,7 @@ func RemoveUserPlan(removeUserPlan usecases.RemoveUserPlan, log core.AppLogger) 
 		success, err := removeUserPlan.Do(ctx, planId)
 
 		if err != nil {
+			log.Errorw("remove users plan", "error", err.Error(), "reqid", ctx.ReqId())
 			if err.Error() != core.InternalError.String() {
 				badRequest(w, err)
 			} else {
