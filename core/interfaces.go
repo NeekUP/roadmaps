@@ -10,12 +10,14 @@ type UserRepository interface {
 	Get(ctx ReqContext, id string) *domain.User
 	GetList(ctx ReqContext, id []string) []domain.User
 	Save(ctx ReqContext, user *domain.User) (bool, *AppError)
+	AddOauth(ctx ReqContext, userid, provider, openid string) (bool, *AppError)
 	Update(ctx ReqContext, user *domain.User) (bool, *AppError)
 	ExistsName(ctx ReqContext, name string) (exists bool, ok bool)
 	ExistsEmail(ctx ReqContext, email string) (exists bool, ok bool)
 	FindByEmail(ctx ReqContext, email string) *domain.User
+	FindByOauth(ctx ReqContext, provider, id string) *domain.User
 	Count(ctx ReqContext) (count int, ok bool)
-
+	Delete(ctx ReqContext, id string) (bool, *AppError)
 	//dev
 	All() []domain.User
 }
@@ -138,4 +140,18 @@ type ImageManager interface {
 	GetAvatarUrl(name string) string
 	GenerateAvatar(username string) ([]byte, error)
 	SaveAvatar(data []byte, name string) error
+}
+
+type DistributedCache interface {
+	Save(key string, item interface{}, duration time.Duration) error
+	Get(key string) (interface{}, bool)
+	Delete(key string)
+}
+
+type OpenAuthenticator interface {
+	AddProvider(providerName, clientId, clientSecret string, scope []string)
+	HasProvider(providerName string) bool
+	RegisterLink(username, providerName string) (string, error)
+	LoginLink(providerName string) (string, error)
+	Auth(providerName, state, code string) (user, email, openid string, err error)
 }
