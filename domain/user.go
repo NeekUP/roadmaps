@@ -14,6 +14,7 @@ type User struct {
 	Rights            Rights
 	Pass              []byte
 	Salt              []byte
+	OAuth             bool
 }
 
 type UserToken struct {

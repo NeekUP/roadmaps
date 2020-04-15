@@ -18,9 +18,11 @@ require (
 	github.com/mssola/user_agent v0.5.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/nullrocks/identicon v0.0.0-20180626043057-7875f45b0022
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/r3labs/diff v0.0.0-20191120142937-b4ed99a31f5a
 	github.com/sergi/go-diff v1.1.0
 	go.uber.org/zap v1.13.0
 	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )

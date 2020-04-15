@@ -8,6 +8,11 @@ On the first start, app should be able to create default users. For allow this, 
 - [Registration](#registration)
 - [Login](#login)
 - [Refresh token](#refresh-token)
+- [Register start (oauth)](#oauth-register-link)
+- [Register finish (oauth)](#oauth-register)
+- [Login start (oauth)](#oauth-login-link)
+- [Login finish (oauth)](#oauth-login)
+- [Check user name](#check-user-name)
 
 ## [Plans](#plans)
 - [Add](#add-plan)
@@ -163,6 +168,191 @@ Response
 		"rtoken": "INVALID_FORMAT",
 		"fp": "INVALID_FORMAT",
 		"useragent": "INVALID_FORMAT"
+    }
+}
+```
+### 500 - Internal Error
+No Body
+
+---
+
+### OAuth Register link
+#### /api/user/oauth/registrationStart
+Пользователь выбирает имя, проверяемое /api/user/check, и получает связанную с ним ссылку на выбранный метод авторизации.
+
+После прохождения авторизации на стороннем сервсе, он возвращается на заранее известный нам url с get-параметрами
+Их надо будет собрать и отправить на /api/user/oauth/registrationEnd
+
+Request
+```json
+{
+	"provider": "string",
+    "username": "string"
+}
+```
+Response
+### 200 - OK
+```json
+{
+	"url": "string",
+}
+```
+
+### 400 - BadRequest
+```json
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
+    "validation": {
+        "provider": "INVALID_VALUE",
+        "name": "ALREADY_EXISTS"
+    }
+}
+```
+### 500 - Internal Error
+No Body
+
+---
+
+### OAuth Register
+#### /api/user/oauth/registrationEnd
+Request
+```json
+{
+    "provider": "string",   // вернется в get-параметре как provider
+    "token": "string",      // вернется в get-параметре как code
+    "state": "string"       // вернется в get-параметре как state
+    "fp": "string"          // фингерпринт
+}
+```
+Response
+### 200 - OK
+```json
+{
+	"user":{
+        "id": "string",
+        "name": "string",
+        "img": "string(relative url)"
+    },
+    "confirmation":false,
+    "atoken": string,
+    "rtoken": string
+}
+```
+
+### 400 - BadRequest
+```json
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
+    "validation": {
+        "provider": "INVALID_VALUE",
+        "name": "ALREADY_EXISTS",
+        "email": "INVALID_FORMAT | ALREADY_EXISTS",
+    }
+}
+```
+
+### 500 - Internal Error
+No Body
+
+---
+
+### OAuth Login Link
+#### /api/user/oauth/loginStart
+Всё как при регистрации только не надо передавать имя пользователя
+Request
+```json
+{
+	"provider": "string",
+}
+```
+Response
+### 200 - OK
+```json
+{
+	"url": "string",
+}
+```
+
+### 400 - BadRequest
+```json
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
+    "validation": {
+        "provider": "INVALID_VALUE"
+    }
+}
+```
+### 500 - Internal Error
+No Body
+
+---
+
+### OAuth Login
+#### /api/user/oauth/loginEnd
+
+Request
+```json
+{
+    "provider": "string",   // вернется в get-параметре
+    "token": "string",      // вернется в get-параметре
+    "state": "string"       // вернется в get-параметре
+    "fp": "string"          // фингерпринт
+}
+```
+Response
+### 200 - OK
+```json
+{
+	"user":{
+        "id": "string",
+        "name": "string",
+        "img": "string"
+    },
+    "atoken": string,
+    "rtoken": string
+}
+```
+
+### 400 - BadRequest
+```json
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
+    "validation": {
+        "provider": "INVALID_VALUE"
+    }
+}
+```
+
+### 500 - Internal Error
+No Body
+
+---
+
+### Check user name
+#### /api/user/check
+Request
+```json
+{
+    "name": "string",
+}
+```
+
+### 200 - OK
+```json
+{
+    "isFree": bool
+}
+```
+
+### 400 - BadRequest
+if name not a string
+    NoBody
+else
+```json
+{
+    "error": "INVALID_REQUEST",
+    "validation": {
+        "name": "INVALID_FORMAT"
     }
 }
 ```
