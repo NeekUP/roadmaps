@@ -29,6 +29,10 @@ type Config struct {
 		Port        int    `json:"port"`
 		Pass        string `json:"pass"`
 	}
+	OAuth struct {
+		ReturnUrl string           `json:"returnUrl"`
+		Providers []OauthProviders `json:"providers"`
+	}
 	//Cache struct {
 	//	Enable    bool   `json:"enable"`
 	//	host      string `json:"host"`
@@ -46,6 +50,13 @@ type Config struct {
 	//		Tag        int `json:"tag"`
 	//	}
 	//}
+}
+
+type OauthProviders struct {
+	Name     string   `json:"name"`
+	ClientId string   `json:"clientId"`
+	Secret   string   `json:"secret"`
+	Scope    []string `json:"scope"`
 }
 
 type DbConf struct {

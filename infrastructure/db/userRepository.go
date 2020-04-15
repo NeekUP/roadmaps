@@ -81,7 +81,7 @@ func (r *userRepository) ExistsName(ctx core.ReqContext, name string) (exists bo
 	tr := ctx.StartTrace("UserRepository.ExistsName")
 	defer ctx.StopTrace(tr)
 
-	err := r.Db.Conn.QueryRow(context.Background(), query, name).Scan(&exists)
+	err := r.Db.Conn.QueryRow(context.Background(), query, strings.ToUpper(name)).Scan(&exists)
 	if err == sql.ErrNoRows {
 		return false, true
 	}
@@ -192,6 +192,54 @@ func (r *userRepository) GetList(ctx core.ReqContext, id []string) []domain.User
 	}
 
 	return users
+}
+
+func (r *userRepository) AddOauth(ctx core.ReqContext, userid, provider, openid string) (bool, *core.AppError) {
+	query := "INSERT INTO users_oauth( userid, provider, id, date) VALUES ($1, $2, $3, now());"
+	tr := ctx.StartTrace("UserRepository.AddOauth")
+	defer ctx.StopTrace(tr)
+
+	tag, err := r.Db.Conn.Exec(ctx, query, userid, provider, openid)
+	if err != nil {
+		return false, r.Db.LogError(err, query)
+	}
+
+	return tag.RowsAffected() > 0, nil
+}
+
+func (r *userRepository) Delete(ctx core.ReqContext, id string) (bool, *core.AppError) {
+	query := "DELETE FROM users_oauth WHERE id=$1;"
+	tr := ctx.StartTrace("UserRepository.Delete")
+	defer ctx.StopTrace(tr)
+
+	tag, err := r.Db.Conn.Exec(ctx, query, id)
+	if err != nil {
+		return false, r.Db.LogError(err, query)
+	}
+
+	return tag.RowsAffected() > 0, nil
+}
+
+func (r *userRepository) FindByOauth(ctx core.ReqContext, provider, id string) *domain.User {
+	query := "SELECT u.id, u.name, u.normalizedname, u.email, u.emailconfirmed, u.emailconfirmation, u.img, u.tokens, u.rights, u.password, u.salt " +
+		"FROM users u INNER JOIN users_oauth ua ON ua.userid = u.id " +
+		"WHERE ua.provider=$1 AND ua.id=$2"
+	tr := ctx.StartTrace("UserRepository.FindByOauth")
+	defer ctx.StopTrace(tr)
+
+	row := r.Db.Conn.QueryRow(context.Background(), query, provider, id)
+	dbo, err := r.scanRow(row)
+	if err == sql.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		r.Db.LogError(err, query)
+		return nil
+	}
+
+	user := dbo.ToUser()
+	user.OAuth = true
+	return user
 }
 
 func (r *userRepository) scanRow(row pgx.Row) (*UserDBO, error) {

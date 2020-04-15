@@ -132,9 +132,10 @@ func NewSourceDto(s interface{}) interface{} {
 }
 
 type user struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	Img  string `json:"img"`
+	Id    string `json:"id"`
+	Name  string `json:"name"`
+	Img   string `json:"img"`
+	Oauth bool   `json:"oauth"`
 }
 
 func NewUserDto(u *domain.User) *user {
@@ -143,9 +144,10 @@ func NewUserDto(u *domain.User) *user {
 	}
 
 	return &user{
-		Id:   u.Id,
-		Name: u.Name,
-		Img:  ImgManager.GetAvatarUrl(u.Img),
+		Id:    u.Id,
+		Name:  u.Name,
+		Img:   ImgManager.GetAvatarUrl(u.Img),
+		Oauth: u.OAuth,
 	}
 }
 
