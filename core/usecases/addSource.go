@@ -407,7 +407,7 @@ func (usecase *addSource) getOpenGraphMeta(doc *goquery.Document) *webPageSummar
 func (usecase *addSource) getRawHtmlMeta(doc *goquery.Document) *webPageSummary {
 	meta := new(webPageSummary)
 	titles := doc.Find("title")
-	if titles.Length() != 1 {
+	if titles.Length() == 0 {
 		return nil
 	}
 
