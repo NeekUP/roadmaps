@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -116,7 +117,7 @@ func (auth *openAuthenticator) Auth(providerName, state, code string) (name, ema
 		return "", "", "", errors.New("Name not found by state: " + state)
 	}
 
-	token, err := provider.Exchange(oauth2.NoContext, code)
+	token, err := provider.Exchange(context.Background(), code)
 	if err != nil {
 		return "", "", "", err
 	}
