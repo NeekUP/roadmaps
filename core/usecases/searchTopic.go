@@ -5,8 +5,10 @@ import (
 	"github.com/NeekUP/roadmaps/domain"
 )
 
+const MAX_TOPIC_SEARCH_RESULTS_SOUNT = 30
+
 type SearchTopic interface {
-	Do(ctx core.ReqContext, str string, count int) []domain.Topic
+	Do(ctx core.ReqContext, str string, tags []string, count int) []domain.Topic
 }
 
 type searchTopic struct {
@@ -18,9 +20,11 @@ func NewSearchTopic(topicRepo core.TopicRepository, log core.AppLogger) SearchTo
 	return &searchTopic{topicRepo: topicRepo, log: log}
 }
 
-func (usecase *searchTopic) Do(ctx core.ReqContext, str string, count int) []domain.Topic {
+func (usecase *searchTopic) Do(ctx core.ReqContext, str string, tags []string, count int) []domain.Topic {
 	trace := ctx.StartTrace("searchTopic")
 	defer ctx.StopTrace(trace)
+
+	count = usecase.adjustResultsCount(count)
 
 	appErr := usecase.validate(str)
 	if appErr != nil {
@@ -31,7 +35,16 @@ func (usecase *searchTopic) Do(ctx core.ReqContext, str string, count int) []dom
 		return []domain.Topic{}
 	}
 
-	return usecase.topicRepo.TitleLike(ctx, str, count)
+	return usecase.topicRepo.Search(ctx, str, tags, count)
+}
+
+func (usecase *searchTopic) adjustResultsCount(count int) int {
+	if count == 0 {
+		count = 10
+	} else if count > MAX_TOPIC_SEARCH_RESULTS_SOUNT {
+		count = MAX_TOPIC_SEARCH_RESULTS_SOUNT
+	}
+	return count
 }
 
 func (usecase *searchTopic) validate(str string) *core.AppError {

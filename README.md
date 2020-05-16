@@ -842,10 +842,15 @@ No Body
 
 ### Topic search
 #### /api/topic/search
+
+Поиск не более _сount_ тем у которых есть в тегах все перечисленные в _tags_ теги (topic.name) и есть совпадения _query_ в title
+Чем раньше встречается _query_ в имени темы, тем она выше в списке
 Request
 ```javascript
 {
-	"query": "string"
+    "query": "string"
+    "count": int,
+    "tags": []string 
 }
 ```
 Response

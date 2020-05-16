@@ -1,8 +1,10 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/domain"
 	"github.com/jackc/pgx/v4"
@@ -123,6 +125,7 @@ func (repo *topicRepo) All() []domain.Topic {
 	query := "SELECT id, name, title, description, creator, tags, istag FROM topics"
 	rows, err := repo.Db.Conn.Query(context.Background(), query)
 	if err != nil {
+		repo.Db.LogError(err, query)
 		return []domain.Topic{}
 	}
 	defer rows.Close()
@@ -139,24 +142,44 @@ func (repo *topicRepo) All() []domain.Topic {
 	return topics
 }
 
-func (repo *topicRepo) TitleLike(ctx core.ReqContext, str string, count int) []domain.Topic {
+func (repo *topicRepo) Search(ctx core.ReqContext, str string, tags []string, count int) []domain.Topic {
 	tr := ctx.StartTrace("TopicRepository.TitleLike")
 	defer ctx.StopTrace(tr)
-	query := "SELECT id, name, title, description, creator, tags , istag FROM topics WHERE title ILIKE $1 LIMIT $2"
-	rows, err := repo.Db.Conn.Query(context.Background(), query, "%"+str+"%", count)
+
+	var buffer bytes.Buffer
+	buffer.WriteString("SELECT id, name, title, description, creator, tags, istag FROM topics WHERE title ILIKE $1 ")
+	params := make([]interface{}, len(tags)+3)
+	params[0] = "%" + str + "%"
+	params[1] = str
+	params[2] = count
+	for i, tag := range tags {
+		buffer.WriteString(fmt.Sprintf(" AND array_position(tags,$%d) IS NOT NULL ", i+4))
+		params[i+3] = tag
+	}
+	buffer.WriteString(" ORDER BY POSITION(LOWER($2) in LOWER(title)) LIMIT $3")
+	query := buffer.String()
+	rows, err := repo.Db.Conn.Query(context.Background(), query, params...)
 	if err != nil {
+		repo.Db.LogError(err, query)
 		return []domain.Topic{}
 	}
 	defer rows.Close()
-	topics := make([]domain.Topic, 0)
+
+	dbos := make([]TopicDBO, 0)
 	for rows.Next() {
 		dbo, err := repo.scanRow(rows)
 		if err != nil {
 			repo.Db.LogError(err, query)
 			return []domain.Topic{}
 		}
-		topic := *dbo.ToTopic(repo.GetTags(ctx, dbo.Tags))
-		topics = append(topics, topic)
+		dbos = append(dbos, *dbo)
+
+	}
+
+	topics := make([]domain.Topic, len(dbos))
+	for i := 0; i < len(dbos); i++ {
+		topic := *dbos[i].ToTopic(repo.GetTags(ctx, dbos[i].Tags))
+		topics[i] = topic
 	}
 
 	return topics
@@ -174,6 +197,7 @@ func (repo *topicRepo) GetTags(ctx core.ReqContext, topicNames []string) []domai
 
 	rows, err := repo.Db.Conn.Query(context.Background(), query, topicNames)
 	if err != nil {
+		repo.Db.LogError(err, query)
 		return []domain.TopicTag{}
 	}
 	defer rows.Close()
