@@ -182,11 +182,16 @@ func GetTopic(getTopic usecases.GetTopic, log core.AppLogger) func(w http.Respon
 }
 
 type searchTopicReq struct {
-	Query string `json:"query"`
+	Tags  []string `json:"tags"`
+	Query string   `json:"query"`
+	Count int      `json:"count"`
 }
 
 func (req *searchTopicReq) Sanitize() {
 	req.Query = StrictSanitize(req.Query)
+	for i, tag := range req.Tags {
+		req.Tags[i] = StrictSanitize(tag)
+	}
 }
 
 type searchTopicRes struct {
@@ -205,8 +210,12 @@ func SearchTopic(searchTopic usecases.SearchTopic, log core.AppLogger) func(w ht
 			statusResponse(w, &status{Code: http.StatusBadRequest})
 			return
 		}
+		if data.Tags == nil {
+			data.Tags = []string{}
+		}
+
 		data.Sanitize()
-		topics := searchTopic.Do(infrastructure.NewContext(r.Context()), data.Query, 10)
+		topics := searchTopic.Do(infrastructure.NewContext(r.Context()), data.Query, data.Tags, data.Count)
 		dtos := make([]topic, len(topics))
 		for i, t := range topics {
 			dtos[i] = *NewTopicDto(&t)

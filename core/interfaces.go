@@ -38,7 +38,8 @@ type TopicRepository interface {
 	GetById(ctx ReqContext, id int) *domain.Topic
 	Save(ctx ReqContext, source *domain.Topic) (bool, *AppError)
 	Update(ctx ReqContext, source *domain.Topic) (bool, *AppError)
-	TitleLike(ctx ReqContext, str string, count int) []domain.Topic
+	//TitleLike(ctx ReqContext, str string, count int) []domain.Topic
+	Search(ctx ReqContext, str string, tags []string, count int) []domain.Topic
 	AddTag(ctx ReqContext, tagname, topicname string) bool
 	DeleteTag(ctx ReqContext, tagname, topicname string) bool
 	GetTags(ctx ReqContext, topicnames []string) []domain.TopicTag
