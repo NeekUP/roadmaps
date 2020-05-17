@@ -219,7 +219,7 @@ func main() {
 		r.Use(api.Auth(domain.All, tokenService, newLogger("auth")))
 		r.Post("/api/topic/tree", apiGetTopicTree)
 		r.Post("/api/topic/get", apiGetTopic)
-		r.Post("/api/topic/search", apiSearchTopic)
+		r.Post("/api/search", apiSearchTopic)
 
 		r.Post("/api/plan/get", apiGetPlan)
 		r.Post("/api/plan/list", apiGetPlanList)

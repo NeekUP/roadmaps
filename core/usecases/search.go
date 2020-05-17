@@ -7,21 +7,21 @@ import (
 
 const MAX_TOPIC_SEARCH_RESULTS_SOUNT = 30
 
-type SearchTopic interface {
+type Search interface {
 	Do(ctx core.ReqContext, str string, tags []string, count int) []domain.Topic
 }
 
-type searchTopic struct {
+type search struct {
 	topicRepo core.TopicRepository
 	log       core.AppLogger
 }
 
-func NewSearchTopic(topicRepo core.TopicRepository, log core.AppLogger) SearchTopic {
-	return &searchTopic{topicRepo: topicRepo, log: log}
+func NewSearchTopic(topicRepo core.TopicRepository, log core.AppLogger) Search {
+	return &search{topicRepo: topicRepo, log: log}
 }
 
-func (usecase *searchTopic) Do(ctx core.ReqContext, str string, tags []string, count int) []domain.Topic {
-	trace := ctx.StartTrace("searchTopic")
+func (usecase *search) Do(ctx core.ReqContext, str string, tags []string, count int) []domain.Topic {
+	trace := ctx.StartTrace("search")
 	defer ctx.StopTrace(trace)
 
 	count = usecase.adjustResultsCount(count)
@@ -38,7 +38,7 @@ func (usecase *searchTopic) Do(ctx core.ReqContext, str string, tags []string, c
 	return usecase.topicRepo.Search(ctx, str, tags, count)
 }
 
-func (usecase *searchTopic) adjustResultsCount(count int) int {
+func (usecase *search) adjustResultsCount(count int) int {
 	if count == 0 {
 		count = 10
 	} else if count > MAX_TOPIC_SEARCH_RESULTS_SOUNT {
@@ -47,7 +47,7 @@ func (usecase *searchTopic) adjustResultsCount(count int) int {
 	return count
 }
 
-func (usecase *searchTopic) validate(str string) *core.AppError {
+func (usecase *search) validate(str string) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicTitle(str) {
 		errors["search"] = core.InvalidFormat.String()
