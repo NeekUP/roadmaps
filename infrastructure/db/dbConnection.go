@@ -6,24 +6,20 @@ import (
 	"github.com/NeekUP/roadmaps/core"
 	"github.com/NeekUP/roadmaps/infrastructure"
 	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v4"
 )
 
 type DbConnection struct {
-	Conn *pgx.Conn
+	Conn *pgxpool.Pool
 	Log  core.AppLogger
 }
 
 func NewDbConnection(config infrastructure.DbConf, log core.AppLogger) *DbConnection {
-	pgdb, err := pgx.ConnectConfig(context.Background(), configure(config, log))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connection to database: %v\n", err)
-		os.Exit(1)
-	}
-
-	err = pgdb.Ping(context.Background())
+	pgdb, err := pgxpool.ConnectConfig(context.Background(), configure(config, log))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connection to database: %v\n", err)
 		os.Exit(1)
@@ -35,14 +31,16 @@ func NewDbConnection(config infrastructure.DbConf, log core.AppLogger) *DbConnec
 	}
 }
 
-func configure(conf infrastructure.DbConf, log core.AppLogger) *pgx.ConnConfig {
-	config, _ := pgx.ParseConfig(conf.ConnString)
+func configure(conf infrastructure.DbConf, log core.AppLogger) *pgxpool.Config {
+	config, _ := pgxpool.ParseConfig(conf.ConnString)
+	config.MaxConns = conf.PoolSettings.MaxConn
+	config.HealthCheckPeriod = time.Second * time.Duration(conf.PoolSettings.HealthCheckSeconds)
 	logLevel, err := pgx.LogLevelFromString(conf.LogLevel)
 	if err != nil {
 		log.Errorw("LogLevel value is invalid, default level: error")
 		logLevel = pgx.LogLevelError
 	}
-	config.Logger = &logger{Logger: log, Level: logLevel}
+	config.ConnConfig.Logger = &logger{Logger: log, Level: logLevel}
 	return config
 }
 
