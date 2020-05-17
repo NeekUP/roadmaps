@@ -60,7 +60,11 @@ type OauthProviders struct {
 }
 
 type DbConf struct {
-	ConnString string `json:"connString"`
+	ConnString   string `json:"connString"`
+	PoolSettings struct {
+		MaxConn            int32 `json:"maxConn"`
+		HealthCheckSeconds int64 `json:"healthCheckSeconds"`
+	}
 	// Valid levels:
 	//	trace
 	//	debug
