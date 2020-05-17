@@ -13,6 +13,10 @@
   },
   "Db": {
     "connString": "user=postgres password=1004287 host=localhost port=5432 database=roadmaps sslmode=disable",
+    "poolSettings": {
+      "maxConn": 42,
+      "healthCheckSeconds": 10
+    },
     "logLevel": "none"
   },
   "logger": {
