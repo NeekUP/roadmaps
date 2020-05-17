@@ -4,6 +4,7 @@
 On the first start, app should be able to create default users. For allow this, we should need to add environment variables called `adminname{n}`,`adminemail{n}`,`adminpass{n}` where `{n}` is positive integer up to 10. It will be created only if table `users` is empty.
 
 # API
+## [Search](#search)
 ## [Users](#user-api)
 - [Registration](#registration)
 - [Login](#login)
@@ -31,7 +32,6 @@ On the first start, app should be able to create default users. For allow this, 
 - [Add](#add-topic)
 - [Get](#topic-get)
 - [Topic tree](#topic-tree)
-- [Search](#topic-search)
 - [Add tag](#topic-add-tag)
 - [Remove tag](#topic-remove-tag)
 - [Edit](#edit-topic-as-admin)
@@ -59,6 +59,34 @@ rtoken used with `/api/user/refresh` method when atoken is expired.
 fp - fingerprint (https://github.com/Valve/fingerprintjs2). Auth token can be refreshed only if request contains the same fingerprint like a login when token pair has been created.
 
 In future Login and Registration request will be protected with Invisible Recaptcha.
+
+
+## Search
+#### /api/search
+
+Поиск не более _сount_ тем у которых есть в тегах все перечисленные в _tags_ теги (topic.name) и есть совпадения _query_ в title
+Чем раньше встречается _query_ в имени темы, тем она выше в списке
+Request
+```javascript
+{
+    "query": "string"
+    "count": int,
+    "tags": []string 
+}
+```
+Response
+### 200 - OK
+```javascript
+{
+    "query": "string"
+    "topic": {
+        "name": "string",
+        "title": "string",
+        "desc": "string",
+        "tags": [string]
+    }
+}
+```
 
 ### Registration
 #### /api/user/registration
@@ -840,32 +868,6 @@ No Body
 
 ---
 
-### Topic search
-#### /api/topic/search
-
-Поиск не более _сount_ тем у которых есть в тегах все перечисленные в _tags_ теги (topic.name) и есть совпадения _query_ в title
-Чем раньше встречается _query_ в имени темы, тем она выше в списке
-Request
-```javascript
-{
-    "query": "string"
-    "count": int,
-    "tags": []string 
-}
-```
-Response
-### 200 - OK
-```javascript
-{
-    "query": "string"
-    "topic": {
-        "name": "string",
-        "title": "string",
-        "desc": "string",
-        "tags": [string]
-    }
-}
-```
 
 ### Topic add tag
 #### /api/topic/tag/add
