@@ -102,6 +102,14 @@ func IsValidTopicName(name string) bool {
 	return l > 0 && l < 100 && slug.IsSlug(name)
 }
 
+func IsValidReferenceType(str domain.ReferenceType) bool {
+	return str.IsValid()
+}
+
+func IsValidSourceType(str domain.SourceType) bool {
+	return str.IsValid()
+}
+
 func IsValidPlanTitle(title string) bool {
 	r := regexp.MustCompile("[<>;\"'/\\.]")
 	doubleSpace := regexp.MustCompile("[\\s]{2,}")
