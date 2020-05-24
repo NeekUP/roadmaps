@@ -21,8 +21,10 @@ func (req *addPlanRequest) Sanitize() {
 }
 
 type planstep struct {
-	ReferenceId   int64                `json:"referenceId"`
-	ReferenceType domain.ReferenceType `json:"referenceType"`
+	Type   domain.ReferenceType `json:"type"`
+	Source struct {
+		Id int64 `json:"id"`
+	}
 }
 
 type addPlanResponse struct {
@@ -49,7 +51,7 @@ func AddPlan(addPlan usecases.AddPlan, log core.AppLogger) func(w http.ResponseW
 		}
 
 		for _, v := range data.Steps {
-			addPlanReq.Steps = append(addPlanReq.Steps, usecases.PlanStep{ReferenceId: v.ReferenceId, ReferenceType: v.ReferenceType})
+			addPlanReq.Steps = append(addPlanReq.Steps, usecases.PlanStep{ReferenceId: v.Source.Id, ReferenceType: v.Type})
 		}
 
 		plan, err := addPlan.Do(infrastructure.NewContext(r.Context()), addPlanReq)
@@ -110,7 +112,7 @@ func EditPlan(editPlan usecases.EditPlan, log core.AppLogger) func(w http.Respon
 		}
 
 		for _, v := range data.Steps {
-			addPlanReq.Steps = append(addPlanReq.Steps, usecases.PlanStep{ReferenceId: v.ReferenceId, ReferenceType: v.ReferenceType})
+			addPlanReq.Steps = append(addPlanReq.Steps, usecases.PlanStep{ReferenceId: v.Source.Id, ReferenceType: v.Type})
 		}
 
 		_, err = editPlan.Do(infrastructure.NewContext(r.Context()), addPlanReq)
