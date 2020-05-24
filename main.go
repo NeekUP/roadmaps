@@ -95,6 +95,7 @@ func main() {
 	commentsRepo := db.NewCommentsRepository(dbConnection)
 	pointsRepo := db.NewPointsRepository(dbConnection)
 	changesRepository := db.NewChangeLogRepository(dbConnection)
+	projectsRepo := db.NewProjectsRepository(dbConnection)
 	changeLog := infrastructure.NewChangesCollector(changesRepository, newLogger("changeLog"))
 	emailService := infrastructure.NewEmailSender(Cfg.SiteHost, Cfg.SMTP.SenderEmail, Cfg.SMTP.SenderName, Cfg.SMTP.Host, Cfg.SMTP.Pass, Cfg.SMTP.Port, newLogger("emails"))
 
@@ -125,11 +126,11 @@ func main() {
 	editTopic := usecases.NewEditTopic(topicRepo, changeLog, newLogger("editTopic"))
 
 	// Plans
-	addPlan := usecases.NewAddPlan(planRepo, changeLog, newLogger("addPlan"))
+	addPlan := usecases.NewAddPlan(planRepo, sourceRepo, topicRepo, projectsRepo, changeLog, newLogger("addPlan"))
 	getPlanTree := usecases.NewGetPlanTree(planRepo, topicRepo, stepRepo, usersPlanRepo, newLogger("getPlanTree"))
 	getPlan := usecases.NewGetPlan(planRepo, userRepo, stepRepo, sourceRepo, topicRepo, newLogger("getPlan"))
 	getPlanList := usecases.NewGetPlanList(planRepo, userRepo, newLogger("getPlanList"))
-	editPlan := usecases.NewEditPlan(planRepo, changeLog, newLogger("editPlan"))
+	editPlan := usecases.NewEditPlan(planRepo, sourceRepo, topicRepo, projectsRepo, changeLog, newLogger("editPlan"))
 	removePlan := usecases.NewRemovePlan(planRepo, changeLog, newLogger("removePlan"))
 
 	// Users Plans
@@ -213,7 +214,6 @@ func main() {
 	/*
 		Http server
 	**************************************/
-
 	// for all
 	r.Group(func(r chi.Router) {
 		r.Use(api.Auth(domain.All, tokenService, newLogger("auth")))
