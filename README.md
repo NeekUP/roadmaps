@@ -75,7 +75,7 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "query": "string"
@@ -101,12 +101,12 @@ Request
 ```
 
 Response
-### 200 - OK,
+##### 200 - OK,
 No Body
 
 
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -123,7 +123,7 @@ No Body
 | validation | Parameter validation description           | "INVALID_PASSWORD", "INVALID_EMAIL", "INVALID_USERNAME", "ALREADY_EXISTS"(name,email) |
 
 
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 -----
@@ -139,7 +139,7 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
 	"atoken": "string",
@@ -152,7 +152,7 @@ Response
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | AUTHENTICATION_ERROR",
@@ -163,7 +163,7 @@ Response
 }
 ```
 
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -179,7 +179,7 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
 	"atoken": "string",
@@ -187,7 +187,7 @@ Response
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -199,7 +199,7 @@ Response
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -219,14 +219,14 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```json
 {
 	"url": "string",
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```json
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -236,7 +236,7 @@ Response
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -253,7 +253,7 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```json
 {
 	"user":{
@@ -267,7 +267,7 @@ Response
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```json
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -279,7 +279,7 @@ Response
 }
 ```
 
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -294,14 +294,14 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```json
 {
 	"url": "string",
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```json
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -310,7 +310,7 @@ Response
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -328,7 +328,7 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```json
 {
     "user":{
@@ -341,7 +341,7 @@ Response
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```json
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -351,7 +351,7 @@ Response
 }
 ```
 
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -365,14 +365,14 @@ Request
 }
 ```
 
-### 200 - OK
+##### 200 - OK
 ```json
 {
     "isFree": bool
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 if name not a string
     NoBody
 else
@@ -384,7 +384,7 @@ else
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -411,7 +411,7 @@ Request
     }]
 }
 ```
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR ",
@@ -424,7 +424,7 @@ Request
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -439,21 +439,21 @@ Request
 ```
 
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "success": bool
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST"
 }
 ```
 
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -468,14 +468,14 @@ Request
 ```
 
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "success": bool
 }
 ```
 
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -489,7 +489,7 @@ Request
 }
 ```
 Responses
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "id": "string",
@@ -539,7 +539,7 @@ For steps.type == Topic fields:
     steps.source.type, steps.source.props, steps.source.img will be omitted. But img in future should be used.  
     id - string
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -549,7 +549,7 @@ For steps.type == Topic fields:
 }
 ```
 
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -564,7 +564,7 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 [
     {
@@ -588,7 +588,7 @@ Response
 ```
 inFavorites: if this plan user select as favorite within topic
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -598,7 +598,7 @@ inFavorites: if this plan user select as favorite within topic
 }
 ```
 
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -613,7 +613,7 @@ Request
 ```
 
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "nodes": [
@@ -635,7 +635,7 @@ Response
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR ",
@@ -644,7 +644,7 @@ Response
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ### Edit plan
@@ -665,10 +665,10 @@ Request
 ```
 
 Response
-### 200 - OK
+##### 200 - OK
 No Body
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR ",
@@ -682,7 +682,7 @@ No Body
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -694,10 +694,10 @@ No Body
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 No Body
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -706,7 +706,7 @@ No Body
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
  
 ---
@@ -723,7 +723,7 @@ Request
 ```
 
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
 	"id": "int",
@@ -734,7 +734,7 @@ Response
 	"desc":"string"
 }
 ```
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -744,7 +744,7 @@ Response
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -762,7 +762,7 @@ Request
 ```
 
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
 	"name": "string (Id)",
@@ -776,7 +776,7 @@ Response
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | ALREADY_EXISTS | INTERNAL_ERROR ",
@@ -785,7 +785,7 @@ Response
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -800,7 +800,7 @@ No Body
 ```
 
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "topic": {
@@ -816,7 +816,7 @@ Response
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -825,7 +825,7 @@ Response
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -840,7 +840,7 @@ Request
 ```
 
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "nodes": [
@@ -862,7 +862,7 @@ Response
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR",
@@ -871,7 +871,7 @@ Response
     }
 }
 ```
-### 500 - Internal Error
+##### 500 - Internal Error
 No Body
 
 ---
@@ -887,7 +887,7 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "added": bool
@@ -904,7 +904,7 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "removed": bool
@@ -925,13 +925,13 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 NoBody
 
-### 403 - Forbidden
+##### 403 - Forbidden
 NoBody
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INTERNAL_ERROR | INVALID_REQUEST",
@@ -956,17 +956,17 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "id": int
 }
 ```
 
-### 403 - Forbidden
+##### 403 - Forbidden
 NoBody
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INTERNAL_ERROR | INVALID_REQUEST",
@@ -989,13 +989,13 @@ Request
 }
 ```
 
-### 200 - OK
+##### 200 - OK
 NoBody
 
-### 403 - Forbidden
+##### 403 - Forbidden
 NoBody
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INTERNAL_ERROR | INVALID_REQUEST",
@@ -1016,7 +1016,7 @@ Request
 }
 ```
 
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "hasMore": false,
@@ -1048,7 +1048,7 @@ Request
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INTERNAL_ERROR | INVALID_REQUEST",
@@ -1072,7 +1072,7 @@ Request
 }
 ```
 
-### 200 - OK
+##### 200 - OK
 ```javascript
 [
     {
@@ -1124,7 +1124,7 @@ Request
     }
 ]
 ```
-### 400 - BadRequest
+##### 400 - BadRequest
 ```javascript
 {
     "error": "INTERNAL_ERROR | INVALID_REQUEST",
@@ -1149,14 +1149,14 @@ Request
 }
 ```
 Response
-### 200 - OK
+##### 200 - OK
 ```javascript
 {
     "success": bool 
 }
 ```
 
-### 400 - BadRequest
+##### 400 - BadRequest
 if value has invalid value
 ```javascript
 {
