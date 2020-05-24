@@ -10,9 +10,12 @@ type EditPlan interface {
 }
 
 type editPlan struct {
-	planRepo  core.PlanRepository
-	log       core.AppLogger
-	changeLog core.ChangeLog
+	planRepo     core.PlanRepository
+	sourceRepo   core.SourceRepository
+	topicRepo    core.TopicRepository
+	projectsRepo core.ProjectsRepository
+	log          core.AppLogger
+	changeLog    core.ChangeLog
 }
 
 type EditPlanReq struct {
@@ -22,8 +25,13 @@ type EditPlanReq struct {
 	Steps     []PlanStep
 }
 
-func NewEditPlan(planRepo core.PlanRepository, changeLog core.ChangeLog, log core.AppLogger) EditPlan {
-	return &editPlan{planRepo: planRepo, changeLog: changeLog, log: log}
+func NewEditPlan(planRepo core.PlanRepository, sourceRepo core.SourceRepository, topicRepo core.TopicRepository, projectsRepo core.ProjectsRepository, changeLog core.ChangeLog, log core.AppLogger) EditPlan {
+	return &editPlan{planRepo: planRepo,
+		sourceRepo:   sourceRepo,
+		topicRepo:    topicRepo,
+		projectsRepo: projectsRepo,
+		changeLog:    changeLog,
+		log:          log}
 }
 
 func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) {
@@ -32,7 +40,7 @@ func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) 
 
 	old := usecase.planRepo.Get(ctx, req.Id)
 	userId := ctx.UserId()
-	appErr := usecase.validate(req, userId, old)
+	appErr := usecase.validate(ctx, req, userId, old)
 	if appErr != nil {
 		usecase.log.Errorw("invalid request",
 			"reqid", ctx.ReqId(),
@@ -75,7 +83,7 @@ func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) 
 	return true, nil
 }
 
-func (usecase *editPlan) validate(req EditPlanReq, userId string, plan *domain.Plan) *core.AppError {
+func (usecase *editPlan) validate(ctx core.ReqContext, req EditPlanReq, userId string, plan *domain.Plan) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicName(req.TopicName) {
 		errors["topic"] = core.InvalidFormat.String()
@@ -87,6 +95,29 @@ func (usecase *editPlan) validate(req EditPlanReq, userId string, plan *domain.P
 
 	if len(req.Steps) == 0 {
 		errors["steps"] = core.InvalidCount.String()
+	}
+
+	for _, v := range req.Steps {
+		if v.ReferenceId == 0 {
+			errors["source.id"] = core.InvalidValue.String()
+		}
+		if !core.IsValidReferenceType(v.ReferenceType) {
+			errors["type"] = core.InvalidValue.String()
+		}
+		switch v.ReferenceType {
+		case domain.ResourceReference:
+			if usecase.sourceRepo.Get(ctx, v.ReferenceId) == nil {
+				errors["source.id"] = core.NotExists.String()
+			}
+		case domain.ProjectReference:
+			if usecase.projectsRepo.Get(ctx, int(v.ReferenceId)) == nil {
+				errors["source.id"] = core.NotExists.String()
+			}
+		case domain.TopicReference:
+			if usecase.topicRepo.GetById(ctx, int(v.ReferenceId)) == nil {
+				errors["source.id"] = core.NotExists.String()
+			}
+		}
 	}
 
 	if plan == nil {

@@ -10,9 +10,12 @@ type AddPlan interface {
 }
 
 type addPlan struct {
-	planRepo  core.PlanRepository
-	log       core.AppLogger
-	changeLog core.ChangeLog
+	planRepo     core.PlanRepository
+	sourceRepo   core.SourceRepository
+	topicRepo    core.TopicRepository
+	projectsRepo core.ProjectsRepository
+	log          core.AppLogger
+	changeLog    core.ChangeLog
 }
 
 type AddPlanReq struct {
@@ -26,14 +29,19 @@ type PlanStep struct {
 	ReferenceType domain.ReferenceType
 }
 
-func NewAddPlan(planRepo core.PlanRepository, changeLog core.ChangeLog, log core.AppLogger) AddPlan {
-	return &addPlan{planRepo: planRepo, changeLog: changeLog, log: log}
+func NewAddPlan(planRepo core.PlanRepository, sourceRepo core.SourceRepository, topicRepo core.TopicRepository, projectsRepo core.ProjectsRepository, changeLog core.ChangeLog, log core.AppLogger) AddPlan {
+	return &addPlan{planRepo: planRepo,
+		sourceRepo:   sourceRepo,
+		topicRepo:    topicRepo,
+		projectsRepo: projectsRepo,
+		changeLog:    changeLog,
+		log:          log}
 }
 
 func (usecase *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, error) {
 	trace := ctx.StartTrace("addPlan")
 	defer ctx.StopTrace(trace)
-	appErr := usecase.validate(req)
+	appErr := usecase.validate(ctx, req)
 	if appErr != nil {
 		usecase.log.Errorw("invalid request",
 			"reqid", ctx.ReqId(),
@@ -76,7 +84,7 @@ func (usecase *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, e
 	return plan, nil
 }
 
-func (usecase *addPlan) validate(req AddPlanReq) *core.AppError {
+func (usecase *addPlan) validate(ctx core.ReqContext, req AddPlanReq) *core.AppError {
 	errors := make(map[string]string)
 	if !core.IsValidTopicName(req.TopicName) {
 		errors["topic"] = core.InvalidFormat.String()
@@ -88,6 +96,29 @@ func (usecase *addPlan) validate(req AddPlanReq) *core.AppError {
 
 	if len(req.Steps) == 0 {
 		errors["steps"] = core.InvalidCount.String()
+	}
+
+	for _, v := range req.Steps {
+		if v.ReferenceId == 0 {
+			errors["source.id"] = core.InvalidValue.String()
+		}
+		if !core.IsValidReferenceType(v.ReferenceType) {
+			errors["type"] = core.InvalidValue.String()
+		}
+		switch v.ReferenceType {
+		case domain.ResourceReference:
+			if usecase.sourceRepo.Get(ctx, v.ReferenceId) == nil {
+				errors["source.id"] = core.NotExists.String()
+			}
+		case domain.ProjectReference:
+			if usecase.projectsRepo.Get(ctx, int(v.ReferenceId)) == nil {
+				errors["source.id"] = core.NotExists.String()
+			}
+		case domain.TopicReference:
+			if usecase.topicRepo.GetById(ctx, int(v.ReferenceId)) == nil {
+				errors["source.id"] = core.NotExists.String()
+			}
+		}
 	}
 
 	if len(errors) > 0 {

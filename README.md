@@ -331,7 +331,7 @@ Response
 ### 200 - OK
 ```json
 {
-	"user":{
+    "user":{
         "id": "string",
         "name": "string",
         "img": "string"
@@ -401,12 +401,14 @@ Plans identifies by id(string). This is a short interpretation of int.
 Request
 ```javascript
 {
-	"topic": "string (topic name)",
-	"title": "string",
-	"steps": [{
-		"referenceId": "int",
-		"referenceType":"Resource | Topic | Test"
-	}]
+    "topic": "string (topic name)",
+    "title": "string",
+    "steps": [{
+        "type": "Resource | Topic | Test",
+        "source":{
+            "id":"int"
+        }
+    }]
 }
 ```
 ### 400 - BadRequest
@@ -414,9 +416,11 @@ Request
 {
     "error": "INVALID_REQUEST | INTERNAL_ERROR ",
     "validation": {
-		"topic": "INVALID_FORMAT"
+        "topic": "INVALID_FORMAT"
         "title": "INVALID_FORMAT",
-		"steps": "INVALID_COUNT"
+        "steps": "INVALID_COUNT",
+        "type": "INVALID_VALUE",
+        "source.id": "INVALID_VALUE | NOT_EXISTS",
     }
 }
 ```
@@ -430,7 +434,7 @@ No Body
 Request
 ```javascript
 {
-	"planId": "string"
+    "planId": "string"
 }
 ```
 
@@ -459,7 +463,7 @@ No Body
 Request
 ```javascript
 {
-	"planId": "string"
+    "planId": "string"
 }
 ```
 
@@ -481,7 +485,7 @@ No Body
 Request
 ```javascript
 {
-	"id": "string"
+    "id": "string"
 }
 ```
 Responses
@@ -506,7 +510,7 @@ Responses
     "steps": [
         {
             "id": int,
-            "type": "Resource | Test | Topic",
+            "type": "Resource | Topic",
             "position": int,
             "source": {
                 "id": int,
@@ -651,9 +655,11 @@ Request
     "id": "string",
     "title":"string",
     "topic":"string",
-    "steps":[{
-        "referenceId": "int",
-        "referenceType":"Resource | Topic | Test"
+    "steps": [{
+        "type": "Resource | Topic",
+        "source":{
+            "id":"int"
+        }
     }]
 }
 ```
@@ -670,6 +676,8 @@ No Body
         "topic": "INVALID_FORMAT"
         "title": "INVALID_FORMAT",
         "steps": "INVALID_COUNT",
+        "type": "INVALID_VALUE",
+        "source.id": "INVALID_VALUE | NOT_EXISTS",
         "id":"NOT_EXISTS | ACCESS_DENIED | INVALID_VALUE"
     }
 }
