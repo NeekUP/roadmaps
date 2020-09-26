@@ -291,7 +291,7 @@ func attachePoints(comments []domain.Comment, getPointsList usecases.GetPointsLi
 		idList[i] = int64(comments[i].Id)
 	}
 
-	points, err := getPointsList.Do(ctx, domain.PlanEntity, idList)
+	points, err := getPointsList.Do(ctx, domain.CommentEntity, idList)
 	if err != nil {
 		log.Errorw("fail to retrieve points for comments",
 			"reqid", ctx.ReqId(),
