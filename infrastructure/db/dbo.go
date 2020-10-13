@@ -171,7 +171,7 @@ func (dbo *UserDBO) ToUser() *domain.User {
 		EmailConfirmation: dbo.EmailConfirmation,
 		Img:               dbo.Img.String,
 		Tokens:            tokens,
-		Rights:            domain.Rights(dbo.Rights),
+		Rights:            domain.Permissions(dbo.Rights),
 		Pass:              dbo.Pass,
 		Salt:              dbo.Salt,
 	}

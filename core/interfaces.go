@@ -60,6 +60,13 @@ type PlanRepository interface {
 	All() []domain.Plan
 }
 
+type PermissionsRepository interface {
+	Get(ctx ReqContext, userId string, entityType domain.EntityType, entityId int64) domain.Permissions
+	GetGlobal(ctx ReqContext, userId string) domain.Permissions
+	Set(ctx ReqContext, userId string, entityType domain.EntityType, entityId int64, permissions domain.Permissions) *AppError
+	SetGlobal(ctx ReqContext, userId string, permissions domain.Permissions) *AppError
+}
+
 type StepRepository interface {
 	GetByPlan(ctx ReqContext, planid int) []domain.Step
 	//dev

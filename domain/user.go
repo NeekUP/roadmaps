@@ -11,7 +11,7 @@ type User struct {
 	EmailConfirmation string
 	Img               string
 	Tokens            []UserToken
-	Rights            Rights
+	Rights            Permissions
 	Pass              []byte
 	Salt              []byte
 	OAuth             bool
@@ -29,6 +29,6 @@ func (this *User) RemoveToken(i int) {
 	this.Tokens = this.Tokens[:len(this.Tokens)-1]
 }
 
-func (this *User) HasRights(r Rights) bool {
-	return Rights(this.Rights).HasFlag(r)
+func (this *User) HasRights(r Permissions) bool {
+	return Permissions(this.Rights).HasFlag(r)
 }

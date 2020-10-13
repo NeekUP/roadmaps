@@ -1,5 +1,5 @@
 # roadmaps
-
+Service what allow users create new or select existing study plans for knowledge areas, combine them into high-level planspg, observe 
 ## Run
 On the first start, app should be able to create default users. For allow this, we should need to add environment variables called `adminname{n}`,`adminemail{n}`,`adminpass{n}` where `{n}` is positive integer up to 10. It will be created only if table `users` is empty.
 
