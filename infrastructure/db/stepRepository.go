@@ -18,7 +18,7 @@ func NewStepsRepository(db *DbConnection) core.StepRepository {
 }
 
 func (r stepRepo) All() []domain.Step {
-	query := "SELECT id, planid, referenceid, referencetype, position FROM steps;"
+	query := "SELECT id, planid, referenceid, referencetype, position, title FROM steps;"
 	rows, err := r.Db.Conn.Query(context.Background(), query)
 	if err != nil {
 		return []domain.Step{}
@@ -39,7 +39,7 @@ func (r stepRepo) All() []domain.Step {
 func (r stepRepo) GetByPlan(ctx core.ReqContext, planid int) []domain.Step {
 	tr := ctx.StartTrace("StepRepository.GetByPlan")
 	defer ctx.StopTrace(tr)
-	query := "SELECT id, planid, referenceid, referencetype, position FROM steps WHERE planid=$1;"
+	query := "SELECT id, planid, referenceid, referencetype, position, title FROM steps WHERE planid=$1;"
 	rows, err := r.Db.Conn.Query(context.Background(), query, planid)
 	if err != nil {
 		r.Db.LogError(err, query)
@@ -60,7 +60,7 @@ func (r stepRepo) GetByPlan(ctx core.ReqContext, planid int) []domain.Step {
 
 func (r *stepRepo) scanRow(row pgx.Row) (*StepDBO, error) {
 	st := StepDBO{}
-	err := row.Scan(&st.Id, &st.PlanId, &st.ReferenceId, &st.ReferenceType, &st.Position)
+	err := row.Scan(&st.Id, &st.PlanId, &st.ReferenceId, &st.ReferenceType, &st.Position, &st.Title)
 	if err != nil && err.Error() == "no rows in result set" {
 		return &st, sql.ErrNoRows
 	}
