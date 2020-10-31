@@ -8,4 +8,5 @@ type Plan struct {
 	Steps     []Step
 	Owner     *User
 	Points    *Points
+	IsDraft   bool
 }

@@ -48,6 +48,7 @@ type plan struct {
 	Points      *points `json:"points"`
 	InFavorites bool    `json:"inFavorites"`
 	Steps       []step  `json:"steps,omitempty"`
+	IsDraft     bool    `json:"isDraft"`
 }
 
 func NewPlanDto(p *domain.Plan, inFavorites bool) *plan {
@@ -58,6 +59,7 @@ func NewPlanDto(p *domain.Plan, inFavorites bool) *plan {
 		TopicName:   p.TopicName,
 		Owner:       NewUserDto(p.Owner),
 		InFavorites: inFavorites,
+		IsDraft:     p.IsDraft,
 		Steps:       make([]step, len(p.Steps)),
 	}
 

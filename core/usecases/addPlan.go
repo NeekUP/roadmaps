@@ -21,6 +21,7 @@ type addPlan struct {
 type AddPlanReq struct {
 	TopicName string
 	Title     string
+	IsDraft   bool
 	Steps     []PlanStep
 }
 
@@ -68,6 +69,7 @@ func (usecase *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, e
 	plan := &domain.Plan{
 		TopicName: req.TopicName,
 		Title:     req.Title,
+		IsDraft:   req.IsDraft,
 		OwnerId:   userId,
 		Steps:     steps,
 	}
