@@ -50,7 +50,7 @@ func (usecase *getPlan) Do(ctx core.ReqContext, id int) (*domain.Plan, error) {
 		return nil, appErr
 	}
 
-	plan := usecase.planRepo.Get(ctx, id)
+	plan := usecase.planRepo.GetWithDraft(ctx, id, ctx.UserId())
 	if plan != nil {
 		plan.Steps = usecase.stepRepo.GetByPlan(ctx, plan.Id)
 		plan.Owner = usecase.userRepo.Get(ctx, plan.OwnerId)

@@ -22,6 +22,7 @@ type EditPlanReq struct {
 	Id        int
 	TopicName string
 	Title     string
+	IsDraft   bool
 	Steps     []PlanStep
 }
 
@@ -38,7 +39,7 @@ func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) 
 	trace := ctx.StartTrace("editPlan")
 	defer ctx.StopTrace(trace)
 
-	old := usecase.planRepo.Get(ctx, req.Id)
+	old := usecase.planRepo.GetWithDraft(ctx, req.Id, ctx.UserId())
 	userId := ctx.UserId()
 	appErr := usecase.validate(ctx, req, userId, old)
 	if appErr != nil {
@@ -66,6 +67,7 @@ func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) 
 		Id:        req.Id,
 		TopicName: req.TopicName,
 		Title:     req.Title,
+		IsDraft:   req.IsDraft,
 		OwnerId:   userId,
 		Steps:     steps,
 	}
