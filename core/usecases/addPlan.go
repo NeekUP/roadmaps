@@ -27,6 +27,7 @@ type AddPlanReq struct {
 type PlanStep struct {
 	ReferenceId   int64
 	ReferenceType domain.ReferenceType
+	Title         string
 }
 
 func NewAddPlan(planRepo core.PlanRepository, sourceRepo core.SourceRepository, topicRepo core.TopicRepository, projectsRepo core.ProjectsRepository, changeLog core.ChangeLog, log core.AppLogger) AddPlan {
@@ -59,6 +60,7 @@ func (usecase *addPlan) Do(ctx core.ReqContext, req AddPlanReq) (*domain.Plan, e
 			ReferenceId:   v.ReferenceId,
 			ReferenceType: v.ReferenceType,
 			Position:      i,
+			Title:         v.Title,
 		}
 		steps = append(steps, step)
 	}
@@ -104,6 +106,9 @@ func (usecase *addPlan) validate(ctx core.ReqContext, req AddPlanReq) *core.AppE
 		}
 		if !core.IsValidReferenceType(v.ReferenceType) {
 			errors["type"] = core.InvalidValue.String()
+		}
+		if !core.IsValidStepTitle(v.Title) {
+			errors["title"] = core.InvalidValue.String()
 		}
 		switch v.ReferenceType {
 		case domain.ResourceReference:
