@@ -132,6 +132,7 @@ func main() {
 	getPlanList := usecases.NewGetPlanList(planRepo, userRepo, newLogger("getPlanList"))
 	editPlan := usecases.NewEditPlan(planRepo, sourceRepo, topicRepo, projectsRepo, changeLog, newLogger("editPlan"))
 	removePlan := usecases.NewRemovePlan(planRepo, changeLog, newLogger("removePlan"))
+	getListByUser := usecases.NewGetPlanListByUser(planRepo, userRepo, newLogger("getListByUser"))
 
 	// Users Plans
 	addUserPlan := usecases.NewAddUserPlan(planRepo, usersPlanRepo, newLogger("addUserPlan"))
@@ -185,7 +186,7 @@ func main() {
 	apiGetPlanList := api.GetPlanList(getPlanList, getUsersPlans, getPointsList, newLogger("getPlanList"))
 	apiEditPlan := api.EditPlan(editPlan, newLogger("editPlan"))
 	apiRemovePlan := api.RemovePlan(removePlan, newLogger("removePlan"))
-
+	apiGetListByUser := api.GetListByUser(getListByUser, getPointsList, newLogger("getListByUser "))
 	// Users Plans
 	apiAddUserPlan := api.AddUserPlan(addUserPlan, newLogger("addUserPlan"))
 	apiRemoveAddUserPlan := api.RemoveUserPlan(removeUserPlan, newLogger("removeUserPlan"))
@@ -245,6 +246,7 @@ func main() {
 		r.Post("/api/topic/add", apiAddTopic)
 		r.Post("/api/plan/add", apiAddPlan)
 		r.Post("/api/plan/edit", apiEditPlan)
+		r.Post("/api/plan/list/user", apiGetListByUser)
 		r.Post("/api/plan/remove", apiRemovePlan)
 		r.Post("/api/user/plan/favorite", apiAddUserPlan)
 		r.Post("/api/user/plan/unfavorite", apiRemoveAddUserPlan)

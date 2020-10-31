@@ -23,7 +23,7 @@ func (usecase *removePlan) Do(ctx core.ReqContext, id int) (bool, error) {
 	trace := ctx.StartTrace("removePlan")
 	defer ctx.StopTrace(trace)
 
-	plan := usecase.repo.Get(ctx, id)
+	plan := usecase.repo.GetWithDraft(ctx, id, ctx.UserId())
 	userId := ctx.UserId()
 	appErr := usecase.validate(id, userId, plan)
 	if appErr != nil {

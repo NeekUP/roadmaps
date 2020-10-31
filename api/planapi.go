@@ -12,6 +12,7 @@ import (
 type addPlanRequest struct {
 	TopicName string     `json:"topic"`
 	Title     string     `json:"title"`
+	IsDraft   bool       `json:"isDraft"`
 	Steps     []planstep `json:"steps"`
 }
 
@@ -53,6 +54,7 @@ func AddPlan(addPlan usecases.AddPlan, log core.AppLogger) func(w http.ResponseW
 		addPlanReq := usecases.AddPlanReq{
 			Title:     data.Title,
 			TopicName: data.TopicName,
+			IsDraft:   data.IsDraft,
 		}
 
 		for _, v := range data.Steps {
@@ -81,6 +83,7 @@ type editPlanRequest struct {
 	Id        string     `json:"id"`
 	TopicName string     `json:"topic"`
 	Title     string     `json:"title"`
+	IsDraft   bool       `json:"isDraft"`
 	Steps     []planstep `json:"steps"`
 }
 
@@ -117,6 +120,7 @@ func EditPlan(editPlan usecases.EditPlan, log core.AppLogger) func(w http.Respon
 			Id:        id,
 			Title:     data.Title,
 			TopicName: data.TopicName,
+			IsDraft:   data.IsDraft,
 		}
 
 		for _, v := range data.Steps {
@@ -350,6 +354,70 @@ func GetPlanList(getPlanList usecases.GetPlanList, getUsersPlan usecases.GetUser
 			} else {
 				result[i] = *NewPlanDto(&list[i], false)
 			}
+		}
+		valueResponse(w, result)
+	}
+}
+
+type getPlanListByUserReq struct {
+	Count int `json:"count"`
+	Page  int `json:"page"`
+}
+
+func GetListByUser(getByUser usecases.GetPlanListByUser, getPointsList usecases.GetPointsList, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		data := new(getPlanListByUserReq)
+		err := decoder.Decode(data)
+		defer r.Body.Close()
+
+		if err != nil {
+			statusResponse(w, &status{Code: http.StatusBadRequest})
+			return
+		}
+
+		ctx := infrastructure.NewContext(r.Context())
+		list, err := getByUser.Do(ctx, data.Count, data.Page)
+		if err != nil {
+			if err.Error() != core.InternalError.String() {
+				badRequest(w, err)
+			} else {
+				statusResponse(w, &status{Code: 500})
+			}
+			return
+		}
+
+		idList := make([]int64, len(list))
+		for i := 0; i < len(list); i++ {
+			idList[i] = int64(list[i].Id)
+		}
+
+		points, err := getPointsList.Do(ctx, domain.PlanEntity, idList)
+		if err != nil {
+			log.Errorw("fail to retrieve points for plan",
+				"reqid", ctx.ReqId(),
+				"error", "see db log")
+		} else {
+			for i := 0; i < len(list); i++ {
+				for j := 0; j < len(list); j++ {
+					if int64(list[j].Id) == points[i].Id {
+						list[j].Points = &points[i]
+						break
+					}
+				}
+			}
+		}
+
+		pl := make(map[int]bool)
+		result := make([]plan, len(list))
+		for i := 0; i < len(list); i++ {
+			if pl[list[i].Id] == false {
+				pl[list[i].Id] = true
+			} else {
+				continue
+			}
+
+			result[i] = *NewPlanDto(&list[i], false)
 		}
 		valueResponse(w, result)
 	}

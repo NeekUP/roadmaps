@@ -56,6 +56,7 @@ type PlanDBO struct {
 	Title     string
 	TopicName string
 	OwnerId   string
+	IsDraft   bool
 }
 
 func (dbo *PlanDBO) ToPlan() *domain.Plan {
@@ -64,6 +65,7 @@ func (dbo *PlanDBO) ToPlan() *domain.Plan {
 		Title:     dbo.Title,
 		TopicName: dbo.TopicName,
 		OwnerId:   dbo.OwnerId,
+		IsDraft:   dbo.IsDraft,
 	}
 }
 
@@ -72,6 +74,7 @@ func (dbo *PlanDBO) FromPlan(plan *domain.Plan) {
 	dbo.Title = plan.Title
 	dbo.TopicName = plan.TopicName
 	dbo.OwnerId = plan.OwnerId
+	dbo.IsDraft = plan.IsDraft
 }
 
 /*
