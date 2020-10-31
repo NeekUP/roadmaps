@@ -102,6 +102,11 @@ func IsValidTopicName(name string) bool {
 	return l > 0 && l < 100 && slug.IsSlug(name)
 }
 
+func IsValidStepTitle(name string) bool {
+	l := utf8.RuneCountInString(name)
+	return l > 0 && l < 200
+}
+
 func IsValidReferenceType(str domain.ReferenceType) bool {
 	return str.IsValid()
 }

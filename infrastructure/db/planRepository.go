@@ -43,8 +43,15 @@ func (r *planRepo) SaveWithSteps(ctx core.ReqContext, plan *domain.Plan) (bool, 
 
 	for i := 0; i < len(plan.Steps); i++ {
 		plan.Steps[i].PlanId = plan.Id
-		query := "INSERT INTO steps( planid, referenceid, referencetype, position) VALUES ($1, $2, $3, $4) RETURNING id;"
-		err := r.Db.Conn.QueryRow(context.Background(), query, plan.Steps[i].PlanId, plan.Steps[i].ReferenceId, plan.Steps[i].ReferenceType, plan.Steps[i].Position).Scan(&plan.Steps[i].Id)
+		query := "INSERT INTO steps( planid, referenceid, referencetype, position, title) VALUES ($1, $2, $3, $4, $5) RETURNING id;"
+		err := r.Db.Conn.QueryRow(context.Background(),
+			query, plan.Steps[i].PlanId,
+			plan.Steps[i].ReferenceId,
+			plan.Steps[i].ReferenceType,
+			plan.Steps[i].Position,
+			plan.Steps[i].Title).
+			Scan(&plan.Steps[i].Id)
+
 		tr.Point("insert steps")
 		if err != nil {
 			if e := tx.Rollback(context.Background()); e != nil {

@@ -18,10 +18,15 @@ type addPlanRequest struct {
 func (req *addPlanRequest) Sanitize() {
 	req.TopicName = StrictSanitize(req.TopicName)
 	req.Title = StrictSanitize(req.Title)
+
+	for i := 0; i < len(req.Steps); i++ {
+		req.Steps[i].Title = SanitizeText(req.Steps[i].Title)
+	}
 }
 
 type planstep struct {
 	Type   domain.ReferenceType `json:"type"`
+	Title  string               `json:"title"`
 	Source struct {
 		Id int64 `json:"id"`
 	}
@@ -51,7 +56,7 @@ func AddPlan(addPlan usecases.AddPlan, log core.AppLogger) func(w http.ResponseW
 		}
 
 		for _, v := range data.Steps {
-			addPlanReq.Steps = append(addPlanReq.Steps, usecases.PlanStep{ReferenceId: v.Source.Id, ReferenceType: v.Type})
+			addPlanReq.Steps = append(addPlanReq.Steps, usecases.PlanStep{ReferenceId: v.Source.Id, ReferenceType: v.Type, Title: v.Title})
 		}
 
 		plan, err := addPlan.Do(infrastructure.NewContext(r.Context()), addPlanReq)
@@ -83,6 +88,9 @@ func (req *editPlanRequest) Sanitize() {
 	req.Id = StrictSanitize(req.Id)
 	req.Title = StrictSanitize(req.Title)
 	req.TopicName = StrictSanitize(req.TopicName)
+	for i := 0; i < len(req.Steps); i++ {
+		req.Steps[i].Title = SanitizeText(req.Steps[i].Title)
+	}
 }
 
 func EditPlan(editPlan usecases.EditPlan, log core.AppLogger) func(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +120,7 @@ func EditPlan(editPlan usecases.EditPlan, log core.AppLogger) func(w http.Respon
 		}
 
 		for _, v := range data.Steps {
-			addPlanReq.Steps = append(addPlanReq.Steps, usecases.PlanStep{ReferenceId: v.Source.Id, ReferenceType: v.Type})
+			addPlanReq.Steps = append(addPlanReq.Steps, usecases.PlanStep{ReferenceId: v.Source.Id, ReferenceType: v.Type, Title: v.Title})
 		}
 
 		_, err = editPlan.Do(infrastructure.NewContext(r.Context()), addPlanReq)

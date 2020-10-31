@@ -73,6 +73,7 @@ type step struct {
 	ReferenceType domain.ReferenceType `json:"type"`
 	Position      int                  `json:"position"`
 	Source        interface{}          `json:"source"`
+	Title         string               `json:"title"`
 }
 
 func NewStepDto(s *domain.Step) *step {
@@ -85,6 +86,7 @@ func NewStepDto(s *domain.Step) *step {
 		ReferenceType: s.ReferenceType,
 		Position:      s.Position,
 		Source:        NewSourceDto(s.Source),
+		Title:         s.Title,
 	}
 }
 
