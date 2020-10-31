@@ -7,4 +7,5 @@ type Step struct {
 	ReferenceType ReferenceType
 	Position      int
 	Source        interface{}
+	Title         string
 }

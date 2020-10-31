@@ -57,6 +57,7 @@ func (usecase *editPlan) Do(ctx core.ReqContext, req EditPlanReq) (bool, error) 
 			ReferenceId:   v.ReferenceId,
 			ReferenceType: v.ReferenceType,
 			Position:      i,
+			Title:         v.Title,
 		}
 		steps = append(steps, step)
 	}
@@ -103,6 +104,9 @@ func (usecase *editPlan) validate(ctx core.ReqContext, req EditPlanReq, userId s
 		}
 		if !core.IsValidReferenceType(v.ReferenceType) {
 			errors["type"] = core.InvalidValue.String()
+		}
+		if !core.IsValidStepTitle(v.Title) {
+			errors["title"] = core.InvalidValue.String()
 		}
 		switch v.ReferenceType {
 		case domain.ResourceReference:

@@ -121,6 +121,7 @@ type StepDBO struct {
 	ReferenceId   int64
 	ReferenceType string
 	Position      int
+	Title         string
 }
 
 func (dbo *StepDBO) FromStep(step *domain.Step) {
@@ -129,6 +130,7 @@ func (dbo *StepDBO) FromStep(step *domain.Step) {
 	dbo.Position = step.Position
 	dbo.ReferenceId = step.ReferenceId
 	dbo.ReferenceType = string(step.ReferenceType)
+	dbo.Title = step.Title
 }
 
 func (dbo *StepDBO) ToStep() *domain.Step {
@@ -138,6 +140,7 @@ func (dbo *StepDBO) ToStep() *domain.Step {
 		ReferenceId:   dbo.ReferenceId,
 		ReferenceType: domain.ReferenceType(dbo.ReferenceType),
 		Position:      dbo.Position,
+		Title:         dbo.Title,
 	}
 }
 
