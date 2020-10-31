@@ -105,10 +105,10 @@ func (usecase *addPlan) validate(ctx core.ReqContext, req AddPlanReq) *core.AppE
 			errors["source.id"] = core.InvalidValue.String()
 		}
 		if !core.IsValidReferenceType(v.ReferenceType) {
-			errors["type"] = core.InvalidValue.String()
+			errors["source.type"] = core.InvalidValue.String()
 		}
 		if !core.IsValidStepTitle(v.Title) {
-			errors["title"] = core.InvalidValue.String()
+			errors["source.title"] = core.InvalidValue.String()
 		}
 		switch v.ReferenceType {
 		case domain.ResourceReference:

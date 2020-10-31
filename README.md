@@ -405,6 +405,7 @@ Request
     "title": "string",
     "steps": [{
         "type": "Resource | Topic | Test",
+        "title": "string(255)" 
         "source":{
             "id":"int"
         }
@@ -419,8 +420,9 @@ Request
         "topic": "INVALID_FORMAT"
         "title": "INVALID_FORMAT",
         "steps": "INVALID_COUNT",
-        "type": "INVALID_VALUE",
+        "source.type": "INVALID_VALUE",
         "source.id": "INVALID_VALUE | NOT_EXISTS",
+        "source.title": "INVALID_VALUE",
     }
 }
 ```
@@ -512,9 +514,10 @@ Responses
             "id": int,
             "type": "Resource | Topic",
             "position": int,
+            "title: string
             "source": {
                 "id": int,
-                "title": "string1",
+                "title": "string",
                 "type": "Article | Video | Audio | Book",
                 "props": "string json",
                 "img": "string url",
@@ -524,6 +527,7 @@ Responses
         {
             "id": 0,
             "type": "Topic",
+            "title: "string",
             "position": 2,
             "source": {
                 "id": "javascript",
@@ -657,6 +661,7 @@ Request
     "topic":"string",
     "steps": [{
         "type": "Resource | Topic",
+        "title": "string 256"
         "source":{
             "id":"int"
         }
@@ -676,8 +681,9 @@ No Body
         "topic": "INVALID_FORMAT"
         "title": "INVALID_FORMAT",
         "steps": "INVALID_COUNT",
-        "type": "INVALID_VALUE",
+        "source.type": "INVALID_VALUE",
         "source.id": "INVALID_VALUE | NOT_EXISTS",
+        "source.title": "INVALID_VALUE",
         "id":"NOT_EXISTS | ACCESS_DENIED | INVALID_VALUE"
     }
 }
