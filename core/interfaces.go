@@ -52,10 +52,12 @@ type PlanRepository interface {
 	SaveWithSteps(ctx ReqContext, plan *domain.Plan) (bool, *AppError)
 	// should includes steps
 	Get(ctx ReqContext, id int) *domain.Plan
+	GetWithDraft(ctx ReqContext, id int, userid string) *domain.Plan
 	GetList(ctx ReqContext, id []int) []domain.Plan
 	GetPopularByTopic(ctx ReqContext, topic string, count int) []domain.Plan
 	Update(ctx ReqContext, plan *domain.Plan) (bool, *AppError)
 	Delete(ctx ReqContext, planId int) (bool, *AppError)
+	GetByUser(ctx ReqContext, userid string, count int, page int) []domain.Plan
 	//dev
 	All() []domain.Plan
 }

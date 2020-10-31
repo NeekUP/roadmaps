@@ -19,6 +19,7 @@ On the first start, app should be able to create default users. For allow this, 
 - [Add](#add-plan)
 - [Get](#get-plan-with-steps)
 - [Get list](#plan-list)
+- [Get List For Current User](#plan-list-for-current-user)
 - [Edit](#edit-plan)
 - [Remove](#remove-plan)
 - [Add to favorite](#choose-plan-as-favorite-within-topic) 
@@ -403,6 +404,7 @@ Request
 {
     "topic": "string (topic name)",
     "title": "string",
+    "isDraft: bool,
     "steps": [{
         "type": "Resource | Topic | Test",
         "title": "string(255)" 
@@ -509,6 +511,7 @@ Responses
             "voted": bool // current user already voted fot this entity
      },
     "inFavorites": bool,
+    "isDraft: bool,
     "steps": [
         {
             "id": int,
@@ -586,7 +589,8 @@ Response
                 "value": float, // rating value (used for determine order in list)
                 "voted": bool // current user already voted fot this entity
          },
-        "inFavorites": bool
+        "inFavorites": bool,
+        "isDraft: bool
     }
 ]
 ```
@@ -606,12 +610,64 @@ inFavorites: if this plan user select as favorite within topic
 No Body
 
 ---
+
+### Plan List For Current User
+#### /api/plan/list/user
+List of plan for current user
+Request
+```javascript
+{
+	"count": int,
+    "page": int
+}
+```
+Response
+##### 200 - OK
+```javascript
+[
+    {
+        "id": "string",
+        "title": "string",
+        "topicName": "string",
+        "owner": {
+            "id": "string",
+            "name": "string",
+            "img": "string"
+        },
+        "points": {
+                "count": int, // count of votes
+                "avg": float, // average points per vote
+                "value": float, // rating value (used for determine order in list)
+                "voted": bool // current user already voted fot this entity
+         },
+        "inFavorites": bool,
+        "isDraft: bool
+    }
+]
+```
+
+##### 400 - BadRequest
+```javascript
+{
+    "error": "INVALID_REQUEST | INTERNAL_ERROR",
+    "validation": {
+        "count": "INVALID_VALUE"
+        "page": "INVALID_VALUE"
+    }
+}
+```
+
+##### 500 - Internal Error
+No Body
+
+---
+
+---
 ### Plan tree
 #### /api/plan/tree
 Request
 ```javascript
 {
-
 	"id": "string"
 }
 ```
@@ -659,6 +715,7 @@ Request
     "id": "string",
     "title":"string",
     "topic":"string",
+    "isDraft: bool,
     "steps": [{
         "type": "Resource | Topic",
         "title": "string 256"
